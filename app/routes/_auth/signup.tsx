@@ -8,7 +8,7 @@ import { validate } from '~/lib/data/validate'
 import { matchesCode } from '~/models/.server/base/error'
 import { User } from '~/models/.server/user'
 import { AuthForm, Trailing } from './+/auth-form'
-import { logAuthLink } from './+/helpers.server'
+import { sendAuthEmail } from './+/helpers.server'
 
 export async function loader({ request }) {
   await requireLoggedOut(request)
@@ -39,7 +39,7 @@ export async function action({ request }) {
     user = await User.refreshToken(user.id)
   }
 
-  logAuthLink(`/verify/${user.token}`)
+  await sendAuthEmail(user.email, 'Verify your email', `/verify/${user.token}`)
 
   let headers = redirect_to
     ? await setCookie(request, { redirect_to })
@@ -57,7 +57,7 @@ export default function Page() {
     <>
       <AuthForm
         heading="Sign up"
-        // oauth={['google', 'github']}
+        oauth={['google', 'github']}
         fields={['name', 'email', 'password']}
         newPassword
         submit="Sign up"

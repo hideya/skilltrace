@@ -22,7 +22,6 @@
       ".",
       "./.react-router/types"
     ],
-    "baseUrl": ".",
     "paths": {
       "drizzle-orm": [
         "./node_modules/drizzle-orm"

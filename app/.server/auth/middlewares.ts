@@ -1,6 +1,9 @@
 import { createContext } from 'react-router'
 import type { users } from '~/.server/db/schema'
-import { requireUser as requireUserCookie } from './cookie'
+import {
+  requireAdmin as requireAdminCookie,
+  requireUser as requireUserCookie,
+} from './cookie'
 
 type User = typeof users.$inferSelect
 
@@ -11,7 +14,16 @@ export async function requireUserMiddleware({ request, context }) {
   context.set(userContext, user)
 }
 
+export async function requireAdminMiddleware({ request, context }) {
+  let user = await requireAdminCookie(request)
+  context.set(userContext, user)
+}
+
 export function requireUser(context) {
+  return getOrThrow<User>(context, userContext)
+}
+
+export function requireAdmin(context) {
   return getOrThrow<User>(context, userContext)
 }
 

@@ -11,5 +11,5 @@ export const userInsertSchema = createInsertSchema(users, {
 })
 
 export const userUpdateSchema = userInsertSchema
-  .pick({ name: true, email: true, password: true })
+  .pick({ name: true, email: true, password: true, role: true })
   .partial()

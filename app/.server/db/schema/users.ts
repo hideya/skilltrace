@@ -1,5 +1,7 @@
+import { relations } from 'drizzle-orm'
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { defaultHex, defaultNow, id, idx, timestamp } from '../helpers'
+import { notes } from './notes'
 
 export const users = sqliteTable(
   'users',
@@ -8,6 +10,7 @@ export const users = sqliteTable(
     public_id: defaultHex(),
     email: text().unique().notNull(),
     name: text(),
+    role: text({ enum: ['admin'] }),
     created_at: defaultNow(),
     updated_at: defaultNow(),
     verified_at: timestamp(),
@@ -29,3 +32,7 @@ export type UserBag = {
     github?: { id: number; image_url: string; login: string }
   }
 }
+
+export const userRelations = relations(users, ({ many }) => ({
+  notes: many(notes),
+}))

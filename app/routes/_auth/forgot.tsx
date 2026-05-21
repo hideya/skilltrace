@@ -7,7 +7,7 @@ import { payloadFromRequest } from '~/lib/data/payload'
 import { validate } from '~/lib/data/validate'
 import { User } from '~/models/.server/user'
 import { AuthForm, Trailing } from './+/auth-form'
-import { logAuthLink } from './+/helpers.server'
+import { sendAuthEmail } from './+/helpers.server'
 
 export async function loader({ request }) {
   await requireLoggedOut(request)
@@ -25,7 +25,11 @@ export async function action({ request }) {
 
   if (user) {
     user = await User.refreshToken(user.id)
-    logAuthLink(`/reset-password/${user.token}`)
+    await sendAuthEmail(
+      user.email,
+      'Reset your password',
+      `/reset-password/${user.token}`,
+    )
   }
 
   return redirect(`/forgot?sent=${encodeURIComponent(email)}`)

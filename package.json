@@ -10,7 +10,10 @@
     "tsc": "tsc --noEmit",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
-    "ship": "node scripts/ship.js"
+    "drizzle-studio": "pnpm drizzle-kit studio",
+    "drizzle-studio:prod": "NODE_ENV=production dotenv -- pnpm drizzle-kit studio",
+    "ship": "node scripts/ship.js",
+    "clean": "node scripts/clean.js -e .env -e /tmp -e /data"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
@@ -23,6 +26,7 @@
     "isbot": "^5.1.39",
     "lucide-react": "latest",
     "nanoid": "^5.1.9",
+    "nodemailer": "^8.0.7",
     "qs": "^6.15.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -51,8 +55,5 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
-  },
-  "gistajs": {
-    "pin": "auth:2026-04-25-001"
   }
 }

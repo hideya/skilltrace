@@ -6,6 +6,8 @@ import {
   replaceWithWarning,
 } from 'remix-toast'
 import type { users } from '~/.server/db/schema'
+import { notFoundError } from '~/lib/.server/errors'
+import { isAdmin } from '~/models/user'
 import { User } from '~/models/.server/user'
 
 let secret = process.env.COOKIE_SECRET || ''
@@ -86,6 +88,12 @@ export async function getUser(request: Request) {
 export async function requireUser(request: Request) {
   let user = await getUser(request)
   if (!user) throw redirectToLogin(request)
+  return user
+}
+
+export async function requireAdmin(request: Request) {
+  let user = await getUser(request)
+  if (!user || !isAdmin(user)) throw notFoundError()
   return user
 }
 
