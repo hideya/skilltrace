@@ -1,3 +1,5 @@
+import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Form, Link, useSearchParams } from 'react-router'
 import { useBusy } from '~/hooks/use-busy'
 import { InputError } from '~/ui/forms/input-error'
@@ -14,6 +16,7 @@ export function AuthForm({
   let busy = useBusy()
   let [searchParams] = useSearchParams()
   let redirect_to = searchParams.get('redirect_to')
+  let [showPassword, setShowPassword] = useState(false)
 
   return (
     <div className="space-y-4">
@@ -87,13 +90,27 @@ export function AuthForm({
 
         {fields.includes('password') && (
           <div className="space-y-2">
-            <input
-              className="input w-full rounded-full border-none"
-              name="password"
-              type="password"
-              placeholder="&nbsp;&nbsp;Password"
-              autoComplete={newPassword ? 'new-password' : 'current-password'}
-            />
+            <label className="input flex w-full items-center rounded-full border-none pr-2">
+              <input
+                className="grow"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="&nbsp;&nbsp;Password"
+                autoComplete={newPassword ? 'new-password' : 'current-password'}
+              />
+              <button
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="btn btn-circle btn-ghost btn-sm"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="size-5" />
+                ) : (
+                  <EyeIcon className="size-5" />
+                )}
+              </button>
+            </label>
             <InputError name="password" />
           </div>
         )}
