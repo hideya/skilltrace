@@ -24,7 +24,11 @@ export async function action({ request }) {
 
   if (!user.verified_at) {
     user = await User.refreshToken(user.id)
-    await sendAuthEmail(user.email, 'Verify your email', `/verify/${user.token}`)
+    await sendAuthEmail(
+      user.email,
+      'Verify your email',
+      `/verify/${user.token}`,
+    )
     return replaceWithSuccess(
       `/verify?sent=${encodeURIComponent(user.email)}`,
       'Please verify your email first. We sent a new verification link.',
@@ -54,6 +58,13 @@ export default function Page() {
           Sign up
         </Link>
       </Trailing>
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="mt-4 text-sm">
+          <Link to="/clear-session" className="link link-primary">
+            Clear session (dev)
+          </Link>
+        </div>
+      )}
     </>
   )
 }
