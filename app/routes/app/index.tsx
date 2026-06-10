@@ -1,4 +1,4 @@
-import { Form, Link } from 'react-router'
+import { Form } from 'react-router'
 import { replaceWithSuccess } from 'remix-toast'
 import { requireUser } from '~/.server/auth/middlewares'
 import { noteInsertSchema } from '~/.server/db/validators'
@@ -54,29 +54,16 @@ export default function Page({ loaderData: { user, notes } }) {
   let busy = useBusy()
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-10">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
-          <p className="badge rounded-full badge-outline">Protected</p>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-bold text-balance">
-              Hello, {user.name || user.email}
-            </h1>
-            <p className="text-base-content/70">
-              Your private notes dashboard is ready.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <Link to="/app/settings" className="btn rounded-full btn-ghost">
-            Settings
-          </Link>
-          <Form action="/logout" method="post" replace>
-            <button className="btn rounded-full" disabled={busy}>
-              Logout
-            </button>
-          </Form>
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
+      <header className="space-y-3">
+        <p className="badge rounded-full badge-outline">Protected</p>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-bold text-balance">
+            Hello, {user.name || user.email}
+          </h1>
+          <p className="text-base-content/70">
+            Your private notes dashboard is ready.
+          </p>
         </div>
       </header>
 
