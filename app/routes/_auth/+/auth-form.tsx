@@ -50,7 +50,8 @@ export function AuthForm({
                 <img
                   src="/github.svg"
                   alt="GitHub"
-                  className="mr-2 size-6 dark:invert"
+                  // className="mr-2 size-6 dark:invert"
+                  className="mr-2 size-6"
                 />
                 Continue with GitHub
               </button>
