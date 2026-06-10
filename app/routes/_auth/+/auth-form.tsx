@@ -34,7 +34,7 @@ export function AuthForm({
               {redirect_to && (
                 <input type="hidden" name="redirect_to" value={redirect_to} />
               )}
-              <button className="btn w-full rounded-full">
+              <button className="btn w-full rounded-full bg-base-100">
                 <img src="/google.png" alt="Google" className="mr-2 size-6" />
                 Continue with Google
               </button>
@@ -46,7 +46,7 @@ export function AuthForm({
               {redirect_to && (
                 <input type="hidden" name="redirect_to" value={redirect_to} />
               )}
-              <button className="btn w-full rounded-full">
+              <button className="btn w-full rounded-full bg-base-100">
                 <img
                   src="/github.svg"
                   alt="GitHub"
