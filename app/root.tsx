@@ -30,7 +30,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [toast])
 
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" data-theme="light" className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
