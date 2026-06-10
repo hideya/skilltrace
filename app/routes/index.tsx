@@ -66,7 +66,10 @@ export default function Page({ loaderData: { user } }) {
 
         {process.env.NODE_ENV !== 'production' && (
           <div className="mt-4 text-sm">
-            <Link to="/clear-session" className="link link-primary">
+            <Link
+              to="/clear-session"
+              className="link rounded-full link-primary"
+            >
               Clear session (dev)
             </Link>
           </div>

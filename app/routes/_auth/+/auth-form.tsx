@@ -31,7 +31,7 @@ export function AuthForm({
               {redirect_to && (
                 <input type="hidden" name="redirect_to" value={redirect_to} />
               )}
-              <button className="btn w-full">
+              <button className="btn w-full rounded-full">
                 <img src="/google.png" alt="Google" className="mr-2 size-6" />
                 Continue with Google
               </button>
@@ -43,7 +43,7 @@ export function AuthForm({
               {redirect_to && (
                 <input type="hidden" name="redirect_to" value={redirect_to} />
               )}
-              <button className="btn w-full">
+              <button className="btn w-full rounded-full">
                 <img
                   src="/github.svg"
                   alt="GitHub"
@@ -62,10 +62,10 @@ export function AuthForm({
         {fields.includes('name') && (
           <div className="space-y-2">
             <input
-              className="input w-full"
+              className="input w-full rounded-full border-none"
               name="name"
               type="text"
-              placeholder="Full name"
+              placeholder="&nbsp;&nbsp;Full name"
               autoComplete="name"
             />
             <InputError name="name" />
@@ -75,10 +75,10 @@ export function AuthForm({
         {fields.includes('email') && (
           <div className="space-y-2">
             <input
-              className="input w-full"
+              className="input w-full rounded-full border-none"
               name="email"
-              type="text"
-              placeholder="Email"
+              type="email"
+              placeholder="&nbsp;&nbsp;Email"
               autoComplete="email"
             />
             <InputError name="email" />
@@ -88,10 +88,10 @@ export function AuthForm({
         {fields.includes('password') && (
           <div className="space-y-2">
             <input
-              className="input w-full"
+              className="input w-full rounded-full border-none"
               name="password"
               type="password"
-              placeholder="Password"
+              placeholder="&nbsp;&nbsp;Password"
               autoComplete={newPassword ? 'new-password' : 'current-password'}
             />
             <InputError name="password" />
@@ -111,7 +111,10 @@ export function AuthForm({
 
         {submit && (
           <div className="flex justify-center">
-            <button className="btn w-full btn-primary" disabled={busy}>
+            <button
+              className="btn w-full rounded-full btn-primary"
+              disabled={busy}
+            >
               {busy ? 'Processing...' : submit}
             </button>
           </div>
