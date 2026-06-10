@@ -68,12 +68,15 @@ Local development uses `data/dev.db` by default.
 - `pnpm build`: build the app for production.
 - `pnpm atlas`: apply the local database schema.
 - `pnpm atlas:prod`: apply the production database schema.
+- `pnpm db:pull`: replace the local DB with a Turso copy after creating a local backup.
+- `pnpm db:push`: replace Turso tables with local DB data after typed confirmation.
 - `pnpm drizzle-studio`: open Drizzle Studio for local data.
 - `pnpm drizzle-studio:prod`: open Drizzle Studio for production data.
 - `pnpm ship`: merge `dev` to `main` and deploy through Vercel.
 - `pnpm clean`: remove generated local files while preserving `.env`, `/tmp`, and `/data`.
 
 Schema migrations are intentionally manual. Review schema changes before running Atlas commands.
+Use `pnpm db:push` as a rare bootstrap/destructive sync tool, not as a normal migration path.
 
 ## Auth Flows
 
@@ -108,6 +111,8 @@ Routes are generated from `app/routes.ts` with `react-router-auto-routes`.
 ## Local Development Notes
 
 Auth emails use `SMTP_CONFIG` when configured. Without a valid SMTP config, the app logs verify and reset links with an `[auth-link]` prefix so local development stays simple.
+
+Use `pnpm db:pull` when debugging production-like data locally. Stop the dev server first so it does not keep the old SQLite file open.
 
 The protected app routes use middleware from `app/.server/auth/middlewares.ts`.
 Use `requireUser(request)` or `getUser(request)` from `app/.server/auth/cookie.ts`

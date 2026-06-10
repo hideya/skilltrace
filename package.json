@@ -10,6 +10,8 @@
     "tsc": "tsc --noEmit",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
+    "db:pull": "tsx scripts/sync-turso-to-local-db.ts",
+    "db:push": "tsx scripts/sync-local-db-to-turso.ts",
     "drizzle-studio": "pnpm drizzle-kit studio",
     "drizzle-studio:prod": "NODE_ENV=production dotenv -- pnpm drizzle-kit studio",
     "ship": "node scripts/ship.js",
