@@ -43,7 +43,7 @@ export default function Page({ loaderData: { user } }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-10">
       <header className="space-y-3">
-        <p className="badge badge-outline">Protected</p>
+        <p className="badge rounded-full badge-outline">Protected</p>
         <div className="space-y-1">
           <h1 className="text-4xl font-bold text-balance">Settings</h1>
           <p className="text-base-content/70">
@@ -85,7 +85,12 @@ export default function Page({ loaderData: { user } }) {
           Current account: {user.name || user.email}
         </div>
 
-        <Form id="settings-form" method="post" replace className="mt-6 flex gap-3">
+        <Form
+          id="settings-form"
+          method="post"
+          replace
+          className="mt-6 flex gap-3"
+        >
           <button className="btn btn-primary">Save changes</button>
           <Link to="/app" className="btn btn-ghost">
             Back to dashboard

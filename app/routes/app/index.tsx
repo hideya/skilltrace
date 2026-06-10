@@ -2,11 +2,11 @@ import { Form, Link } from 'react-router'
 import { replaceWithSuccess } from 'remix-toast'
 import { requireUser } from '~/.server/auth/middlewares'
 import { noteInsertSchema } from '~/.server/db/validators'
+import { useBusy } from '~/hooks/use-busy'
 import { notFoundError } from '~/lib/.server/errors'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { validate } from '~/lib/data/validate'
 import { Note } from '~/models/.server/note'
-import { useBusy } from '~/hooks/use-busy'
 import { InputError } from '~/ui/forms/input-error'
 
 const createNoteSchema = noteInsertSchema.pick({
@@ -57,7 +57,7 @@ export default function Page({ loaderData: { user, notes } }) {
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
-          <p className="badge badge-outline">Protected</p>
+          <p className="badge rounded-full badge-outline">Protected</p>
           <div className="space-y-1">
             <h1 className="text-4xl font-bold text-balance">
               Hello, {user.name || user.email}
@@ -69,11 +69,11 @@ export default function Page({ loaderData: { user, notes } }) {
         </div>
 
         <div className="flex gap-3">
-          <Link to="/app/settings" className="btn btn-ghost">
+          <Link to="/app/settings" className="btn rounded-full btn-ghost">
             Settings
           </Link>
           <Form action="/logout" method="post" replace>
-            <button className="btn" disabled={busy}>
+            <button className="btn rounded-full" disabled={busy}>
               Logout
             </button>
           </Form>
@@ -153,7 +153,10 @@ export default function Page({ loaderData: { user, notes } }) {
                   <Form method="post" replace>
                     <input type="hidden" name="intent" value="delete" />
                     <input type="hidden" name="note_id" value={note.id} />
-                    <button className="btn btn-ghost btn-sm text-error" disabled={busy}>
+                    <button
+                      className="btn text-error btn-ghost btn-sm"
+                      disabled={busy}
+                    >
                       Delete
                     </button>
                   </Form>

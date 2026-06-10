@@ -24,12 +24,14 @@ export default function Layout({ loaderData }: LayoutProps) {
               <ShieldCheckIcon className="size-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-[0.24em] text-base-content/50">
+              <p className="text-xs font-medium tracking-[0.24em] text-base-content/50 uppercase">
                 Admin
               </p>
               <h1 className="text-lg font-bold">Admin</h1>
             </div>
-            <span className="badge badge-error badge-outline">Protected</span>
+            <span className="badge rounded-full badge-outline badge-error">
+              Protected
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
