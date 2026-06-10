@@ -57,7 +57,7 @@ export function AuthForm({
             </Form>
           )}
 
-          <div className="divider">OR</div>
+          <div className="divider text-xs">OR</div>
         </div>
       )}
 
