@@ -32,7 +32,7 @@ export default function Layout({ loaderData }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-base-200 pt-16">
-      <header className="navbar fixed inset-x-0 top-0 z-50 bg-base-100/50 px-6 shadow-sm backdrop-blur">
+      <header className="navbar fixed inset-x-0 top-0 z-50 bg-primary/50 px-6 text-white backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="text-2xl">App Name</div>
