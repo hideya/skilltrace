@@ -5,9 +5,9 @@
 
 @plugin 'daisyui/theme' {
   /* Use a custom theme name to avoid production selector collisions with built-in `light`. */
-  name: 'ub-light';
+  name: 'my-light';
   default: true;
-  --color-primary: var(--color-blue-800);
+  --color-primary: var(--color-teal-500);
 }
 
 @theme {

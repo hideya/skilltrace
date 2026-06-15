@@ -41,7 +41,9 @@ export default function Page({ loaderData: { user } }) {
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-16">
       <header className="space-y-3">
         <p className="badge rounded-full badge-outline">App Name</p>
-        <h1 className="text-4xl font-bold text-balance">Auth is prewired.</h1>
+        <h1 className="color-primary text-4xl font-bold text-balance">
+          Auth is prewired.
+        </h1>
         <p className="text-base-content/70">
           Start from login, signup, OAuth, and protected routes.
         </p>

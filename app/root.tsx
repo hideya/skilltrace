@@ -32,7 +32,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [toast])
 
   return (
-    <html lang="en" data-theme="light" className="h-full">
+    // Keep this in sync with `app/tailwind.css` custom daisyUI theme name.
+    <html lang="en" className="h-full" data-theme="my-light">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
