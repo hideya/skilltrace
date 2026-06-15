@@ -27,6 +27,7 @@ export default function Layout({ loaderData }: LayoutProps) {
     !!navigation.formAction &&
     navigation.formAction.endsWith('/logout')
   let homeBusy = pendingPath === '/app'
+  let adminBusy = pendingPath?.startsWith('/admin')
   let settingsBusy = pendingPath === '/app/settings'
 
   return (
@@ -40,6 +41,11 @@ export default function Layout({ loaderData }: LayoutProps) {
             </AppNavLink>
           </div>
           <div className="ml-auto flex w-auto items-center justify-end gap-0 sm:gap-1">
+            {user.role === 'admin' ? (
+              <AppNavLink to="/admin" className="shrink-0" busy={adminBusy}>
+                Admin
+              </AppNavLink>
+            ) : null}
             <AppNavLink
               to="/app/settings"
               state={{ returnTo: settingsReturnTo }}

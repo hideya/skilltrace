@@ -21,7 +21,7 @@ export function AuthForm({
   return (
     <div className="space-y-4">
       {heading && (
-        <h2 className="text-center text-2xl leading-9 font-bold tracking-tight">
+        <h2 className="text-center text-2xl leading-9 font-light tracking-tight">
           {heading}
         </h2>
       )}
@@ -66,7 +66,7 @@ export function AuthForm({
         {fields.includes('name') && (
           <div className="space-y-2">
             <input
-              className="input w-full rounded-full border-none"
+              className="input w-full"
               name="name"
               type="text"
               placeholder="&nbsp;&nbsp;Full name"
@@ -79,7 +79,7 @@ export function AuthForm({
         {fields.includes('email') && (
           <div className="space-y-2">
             <input
-              className="input w-full rounded-full border-none"
+              className="input w-full"
               name="email"
               type="email"
               placeholder="&nbsp;&nbsp;Email"
@@ -91,7 +91,7 @@ export function AuthForm({
 
         {fields.includes('password') && (
           <div className="space-y-2">
-            <label className="input flex w-full items-center rounded-full border-none pr-2">
+            <label className="input flex w-full items-center pr-2">
               <input
                 className="grow"
                 name="password"
@@ -101,7 +101,7 @@ export function AuthForm({
               />
               <button
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="btn btn-circle btn-ghost btn-sm"
+                className="btn btn-circle opacity-50 btn-ghost btn-sm"
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
               >
