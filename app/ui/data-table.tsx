@@ -162,7 +162,7 @@ function formatTime(
     return <time className={className}>—</time>
 
   let iso = date.toISOString()
-  let full = date.toLocaleString()
+  let full = `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
   return (
     <time dateTime={iso} title={full} className={className}>

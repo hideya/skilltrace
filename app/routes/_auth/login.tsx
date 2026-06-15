@@ -58,7 +58,7 @@ export default function Page() {
           Sign up
         </Link>
       </Trailing>
-      {process.env.NODE_ENV !== 'production' && (
+      {import.meta.env.DEV && (
         <div className="mt-4 w-full text-right text-sm">
           <Link to="/clear-session" className="link link-primary">
             Clear session (dev)
