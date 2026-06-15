@@ -21,8 +21,8 @@ export default function Layout({ loaderData }: LayoutProps) {
   let user = loaderData.user
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <header className="navbar border-b border-base-300 bg-base-100/90 px-8 shadow-sm backdrop-blur">
+    <div className="min-h-screen bg-base-200 pt-16">
+      <header className="navbar fixed inset-x-0 top-0 z-50 border-b border-base-300 bg-base-100/50 px-8 shadow-sm backdrop-blur-xs">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <div className="text-error">
