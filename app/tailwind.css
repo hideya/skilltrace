@@ -2,3 +2,38 @@
 @plugin 'daisyui/index.js' {
   logs: false;
 }
+
+@plugin 'daisyui/theme' {
+  /* Use a custom theme name to avoid production selector collisions with built-in `light`. */
+  name: 'ub-light';
+  default: true;
+  --color-primary: var(--color-blue-800);
+}
+
+@theme {
+  --font-sans:
+    'Poppins', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+  --font-serif: 'Playfair Display', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --animate-app-fade-in: app-fade-in 500ms ease-out both;
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .app-fade-in {
+    animation: var(--animate-app-fade-in);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-fade-in {
+      animation: none;
+    }
+  }
+}

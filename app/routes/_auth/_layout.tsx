@@ -11,7 +11,9 @@ export default function Layout() {
           </div> */}
           <div className="text-4xl">App Name Here</div>
         </div>
-        <Outlet />
+        <div className="app-fade-in">
+          <Outlet />
+        </div>
       </div>
     </div>
   )

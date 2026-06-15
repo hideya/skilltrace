@@ -34,7 +34,7 @@ export default function Layout({ loaderData }: LayoutProps) {
       <header className="navbar fixed inset-x-0 top-0 z-50 bg-base-100/50 px-6 shadow-sm backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            <div className="text-2xl">Auth Starter</div>
+            <div className="text-2xl">App Name</div>
             <AppNavLink to="/app" end busy={homeBusy}>
               Home
             </AppNavLink>
@@ -65,7 +65,9 @@ export default function Layout({ loaderData }: LayoutProps) {
         </div>
       </header>
 
-      <Outlet />
+      <div className="app-fade-in">
+        <Outlet />
+      </div>
     </div>
   )
 }

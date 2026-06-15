@@ -1,3 +1,3 @@
 export const starter = {
-  appName: 'Auth Starter',
+  appName: 'App Name',
 } as const

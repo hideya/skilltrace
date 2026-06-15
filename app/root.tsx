@@ -14,6 +14,8 @@ import { PublicEnv } from '~/config/.server/env'
 import { starter } from '~/config/starter'
 import './tailwind.css'
 
+const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'
+
 export async function loader({ request }) {
   let { toast, headers } = await getToast(request)
   let user = await getUser(request)
@@ -36,6 +38,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{starter.appName}</title>
         <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
+        />
+        <Links />
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        />
         <Links />
         {PublicEnv && (
           <script
@@ -46,8 +63,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </head>
       <body className="h-full bg-base-200">
-        {children}
+        <div className="app-fade-in">{children}</div>
         <ScrollRestoration />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || []
+function gtag(){dataLayer.push(arguments)}
+gtag('js', new Date())
+gtag('config', '${GA_MEASUREMENT_ID}')`,
+          }}
+        />
         <Toaster
           toastOptions={{
             unstyled: true,
