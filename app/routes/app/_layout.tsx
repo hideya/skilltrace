@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Form, NavLink, Outlet, useLocation, useNavigation } from 'react-router'
 import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
 
@@ -14,6 +15,8 @@ export async function loader({ context }) {
 }
 
 export default function Layout({ loaderData }: LayoutProps) {
+  let navRef = useRef<HTMLElement>(null)
+  let isPastNav = useIsPastNavHeight(navRef)
   let user = loaderData.user
   let location = useLocation()
   let navigation = useNavigation()
@@ -32,7 +35,12 @@ export default function Layout({ loaderData }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-base-200 pt-16">
-      <header className="navbar fixed inset-x-0 top-0 z-50 bg-primary/50 px-6 text-white backdrop-blur">
+      <header
+        ref={navRef}
+        className={`navbar fixed inset-x-0 top-0 z-50 px-6 text-white backdrop-blur transition-colors duration-200 ${
+          isPastNav ? 'bg-primary/50' : 'bg-primary'
+        }`}
+      >
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="text-2xl">App Name</div>
@@ -76,6 +84,28 @@ export default function Layout({ loaderData }: LayoutProps) {
       </div>
     </div>
   )
+}
+
+function useIsPastNavHeight(ref: RefObject<HTMLElement | null>) {
+  let [isPast, setIsPast] = useState(false)
+
+  useEffect(() => {
+    let update = () => {
+      let height = ref.current?.getBoundingClientRect().height || 0
+      setIsPast(window.scrollY > height)
+    }
+
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+
+    return () => {
+      window.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [ref])
+
+  return isPast
 }
 
 function UserNavLabel({ user }: UserNavLabelProps) {
