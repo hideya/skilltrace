@@ -7,7 +7,7 @@ data "external_schema" "drizzle" {
 }
 
 env "dev" {
-  url = "sqlite://data/dev.db"
+  url = "sqlite://data/local/dev.db"
   dev = "sqlite://dev?mode=memory"
   schema {
     src = data.external_schema.drizzle.url

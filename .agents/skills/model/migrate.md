@@ -10,7 +10,7 @@ This starter uses Atlas declarative workflow (`atlas schema apply`), not version
 
 ## Commands
 
-- **Local:** `pnpm atlas` — runs `atlas schema apply --env dev` against `data/dev.db`
+- **Local:** `pnpm atlas` — runs `atlas schema apply --env dev` against `data/local/dev.db`
 - **Production:** `pnpm atlas:prod` — runs `dotenv -- atlas schema apply --env prod` (requires `DB_URL` and `DB_AUTH_TOKEN`)
 
 Atlas reads the Drizzle schema, compares it to the database, shows a plan, and asks for confirmation.
@@ -23,7 +23,7 @@ Atlas reads the Drizzle schema, compares it to the database, shows a plan, and a
 
 **Column removed:** Atlas may drop or recreate structures depending on the change. This can delete data.
 
-**Fresh start:** Delete `data/dev.db` and run `pnpm atlas` again to recreate from scratch.
+**Fresh start:** Delete `data/local/dev.db` and run `pnpm atlas` again to recreate from scratch.
 
 ## Rules
 

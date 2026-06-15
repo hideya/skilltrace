@@ -58,7 +58,7 @@ Open the local URL printed by React Router, usually `http://localhost:5173`.
 - `GITHUB_CLIENT_ID`: GitHub OAuth client ID.
 - `GITHUB_CLIENT_SECRET`: GitHub OAuth client secret.
 
-Local development uses `data/dev.db` by default.
+Local development uses `data/local/dev.db` by default.
 
 ## Scripts
 

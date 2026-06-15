@@ -1,6 +1,6 @@
 import path from 'path'
 
-const dbName = 'dev.db'
+const dbName = 'local/dev.db'
 export const dbPath = path.join(process.cwd(), 'data', dbName)
 
 const isProd = process.env.NODE_ENV === 'production'
