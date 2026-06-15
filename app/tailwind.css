@@ -27,6 +27,12 @@
 }
 
 @layer utilities {
+  .btn {
+    --btn-shadow: none;
+    box-shadow: none;
+    text-shadow: none;
+  }
+
   .app-fade-in {
     animation: var(--animate-app-fade-in);
   }
