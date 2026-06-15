@@ -8,6 +8,7 @@
   name: 'my-light';
   default: true;
   --color-primary: var(--color-teal-500);
+  --color-secondary: var(--color-orange-500);
 }
 
 @theme {

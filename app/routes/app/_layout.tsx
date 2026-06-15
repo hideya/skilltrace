@@ -6,6 +6,7 @@ export const middleware = [requireUserMiddleware]
 const activeClass = 'underline underline-offset-4 decoration-2'
 const navItemClass =
   'btn rounded-full btn-ghost btn-sm font-normal tracking-wider h-8 min-h-8' +
+  ' hover:bg-white/20 hover:text-white' +
   ' px-2 text-xs whitespace-nowrap sm:h-9 sm:min-h-9 sm:px-3' +
   ' sm:text-sm border-none shadow-none'
 
@@ -92,7 +93,7 @@ function useIsPastNavHeight(ref: RefObject<HTMLElement | null>) {
   useEffect(() => {
     let update = () => {
       let height = ref.current?.getBoundingClientRect().height || 0
-      setIsPast(window.scrollY > height)
+      setIsPast(window.scrollY > height / 2)
     }
 
     update()
