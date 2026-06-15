@@ -38,6 +38,14 @@
     border-radius: calc(infinity * 1px);
   }
 
+  :where(.input, .select, .textarea):focus,
+  :where(.input, .select, .textarea):focus-within {
+    border-color: transparent;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 0;
+    box-shadow: none;
+  }
+
   .app-fade-in {
     animation: var(--animate-app-fade-in);
   }
