@@ -91,8 +91,8 @@ export default function Page({ loaderData: { user } }) {
           replace
           className="mt-6 flex gap-3"
         >
-          <button className="btn btn-primary">Save changes</button>
-          <Link to="/app" className="btn btn-ghost">
+          <button className="btn rounded-full btn-primary">Save changes</button>
+          <Link to="/app" className="btn rounded-full btn-ghost">
             Back to dashboard
           </Link>
         </Form>
