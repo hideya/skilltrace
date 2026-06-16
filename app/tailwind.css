@@ -35,6 +35,10 @@
     border-radius: calc(infinity * 1px);
   }
 
+  .badge {
+    border-radius: calc(infinity * 1px);
+  }
+
   .input {
     border-radius: calc(infinity * 1px);
   }
