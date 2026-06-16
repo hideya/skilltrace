@@ -46,7 +46,7 @@ Follow structure and patterns in existing code when making changes.
 
 - After finishing the edits, run 'pnpm tsc' to quickly check the types and fix any issues.
 - Once the type check is complete and you are ready to run the dev server to test the updated code, hand over to the collaborating developer, as it is easier for them to run the dev server and perform the visual checks.
-- At the end of a session involving reasonable edits, suggest a one-line Git commit message.
+- At the end of an editing session, suggest a one-line Git commit message.
 
 ## Auth
 
