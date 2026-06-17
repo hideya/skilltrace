@@ -25,11 +25,11 @@ export default function Layout({ loaderData }: LayoutProps) {
   let user = loaderData.user
 
   return (
-    <div className="min-h-screen bg-base-200 pt-16">
+    <div className="min-h-screen bg-base-200 pt-12">
       <header
         ref={navRef}
         className={
-          `navbar fixed inset-x-0 top-0 z-50 border-b border-none px-8` +
+          `navbar fixed inset-x-0 top-0 z-50 h-12 min-h-12 border-b border-none px-8 py-0` +
           ` text-white backdrop-blur-xs transition-colors duration-200 ${
             isPastNav ? 'bg-secondary/50' : 'bg-secondary'
           }`

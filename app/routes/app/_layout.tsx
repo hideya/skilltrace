@@ -35,10 +35,10 @@ export default function Layout({ loaderData }: LayoutProps) {
   let settingsBusy = pendingPath === '/app/settings'
 
   return (
-    <div className="min-h-screen bg-base-200 pt-16">
+    <div className="min-h-screen bg-base-200 pt-12">
       <header
         ref={navRef}
-        className={`navbar fixed inset-x-0 top-0 z-50 px-6 text-white backdrop-blur transition-colors duration-200 ${
+        className={`navbar fixed inset-x-0 top-0 z-50 h-12 min-h-12 px-6 py-0 text-white backdrop-blur transition-colors duration-200 ${
           isPastNav ? 'bg-primary/50' : 'bg-primary'
         }`}
       >
