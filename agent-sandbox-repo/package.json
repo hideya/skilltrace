@@ -1,0 +1,12 @@
+{
+  "name": "skilltrace-agent-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tsc": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.28.2"
+}
