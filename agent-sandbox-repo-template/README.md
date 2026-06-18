@@ -27,7 +27,7 @@ Start SkillTrace from the main project in another terminal:
 pnpm traceskill serve
 ```
 
-Use `traceskill serve` rather than `pnpm dev` for this test so the daemon can prime sudo before starting `opensnoop`.
+`traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 
 Register the SkillTrace MCP server from the main SkillTrace project:
 
@@ -43,6 +43,7 @@ pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$P
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.
+The command prints a probe log path. If passive events do not appear, restart with `--debug-probe` and inspect that log.
 
 To remove the SkillTrace MCP server later:
 

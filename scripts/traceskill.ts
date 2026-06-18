@@ -1,7 +1,10 @@
 import path from 'path'
-import { spawnSync } from 'child_process'
+import fs from 'fs'
+import { spawn, spawnSync } from 'child_process'
+import { fileURLToPath } from 'url'
 
 const DEFAULT_SERVER = 'http://localhost:5173'
+const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
@@ -13,7 +16,6 @@ async function main() {
   } else if (command === 'status') {
     await status(args)
   } else if (command === 'serve') {
-    primeSudo()
     run(['pnpm', 'dev'])
   } else if (command === 'mcp') {
     run(['pnpm', 'skilltrace:mcp'])
@@ -27,11 +29,29 @@ async function start(args: string[]) {
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
+  primeSudo()
+
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
   })
+  let worker = startProbeWorker({
+    runId: result.session.run_id,
+    targetRoot,
+    server,
+    debug: options.debugProbe,
+  })
 
-  printSession('Started SkillTrace session', server, result.session)
+  await postJson(server, '/api/sessions/probe', {
+    run_id: result.session.run_id,
+    probe_pid: worker.pid,
+    probe_log_path: worker.logPath,
+  })
+
+  printSession('Started SkillTrace session', server, {
+    ...result.session,
+    probe_pid: worker.pid,
+    probe_log_path: worker.logPath,
+  })
 }
 
 async function end(args: string[]) {
@@ -77,6 +97,8 @@ function parseArgs(args: string[]) {
       options.target = args[++index]
     } else if (arg === '--server') {
       options.server = args[++index]
+    } else if (arg === '--debug-probe') {
+      options.debugProbe = true
     } else {
       usage(`Unknown option: ${arg}`)
     }
@@ -115,7 +137,10 @@ function printSession(label: string, server: string, session: any) {
   console.log(label)
   console.log(`  run: ${session.run_id}`)
   console.log(`  repo: ${session.target_root}`)
-  console.log(`  probe: ${session.probe_pid ?? 'not running'}`)
+  console.log(`  probe: ${probeStatus(session.probe_pid)}`)
+  if (session.probe_log_path) {
+    console.log(`  probe log: ${session.probe_log_path}`)
+  }
   console.log(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
 }
 
@@ -126,6 +151,63 @@ function run(command: string[]) {
   })
 
   process.exit(result.status ?? 1)
+}
+
+function probeStatus(pid?: number) {
+  if (!pid) return 'not running'
+
+  try {
+    process.kill(pid, 0)
+    return `${pid} running`
+  } catch {
+    return `${pid} not running`
+  }
+}
+
+function startProbeWorker(options: ProbeWorkerOptions) {
+  let logPath = path.join(
+    PROJECT_ROOT,
+    'data/local',
+    `traceskill-probe-${options.runId}.log`,
+  )
+  fs.mkdirSync(path.dirname(logPath), { recursive: true })
+  let logFd = fs.openSync(logPath, 'a')
+  let args = [
+    '--dir',
+    PROJECT_ROOT,
+    'exec',
+    'tsx',
+    'scripts/traceskill-probe-worker.ts',
+    '--run',
+    options.runId,
+    '--target',
+    options.targetRoot,
+    '--server',
+    options.server,
+  ]
+  if (options.debug) args.push('--debug')
+
+  let child = spawn(
+    'pnpm',
+    args,
+    {
+      detached: false,
+      stdio: ['ignore', logFd, logFd],
+      env: process.env,
+    },
+  )
+
+  child.unref()
+  fs.closeSync(logFd)
+
+  if (typeof child.pid !== 'number') {
+    throw new Error('Failed to start TraceSkill probe worker')
+  }
+
+  return {
+    pid: child.pid,
+    logPath,
+  }
 }
 
 function primeSudo() {
@@ -147,4 +229,12 @@ await main()
 type Options = {
   target?: string
   server?: string
+  debugProbe?: boolean
+}
+
+type ProbeWorkerOptions = {
+  runId: string
+  targetRoot: string
+  server: string
+  debug?: boolean
 }

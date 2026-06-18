@@ -36,7 +36,7 @@ pnpm --dir /path/to/skill-trace traceskill start --target "$PWD"
 ```
 
 That starts a macOS `opensnoop` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
-Use `traceskill serve` rather than `pnpm dev` for passive-probe testing so sudo is primed in the daemon terminal.
+`traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 
 ## Start Command
 
