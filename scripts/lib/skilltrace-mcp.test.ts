@@ -73,6 +73,18 @@ describe('skilltrace MCP helpers', () => {
     expect(runId).toBe('run_fixed')
   })
 
+  test('prefers session run ID over run stem', () => {
+    let runId = mcpRunId(
+      {
+        sessionRunId: 'run_session',
+        runStem: 'run_agent_sandbox_type_fix',
+      },
+      new Date('2026-06-19T00:15:30Z'),
+    )
+
+    expect(runId).toBe('run_session')
+  })
+
   test('formats timestamps for run IDs', () => {
     expect(timestampId(new Date('2026-06-19T00:15:30.123Z'))).toBe(
       '20260619_001530',

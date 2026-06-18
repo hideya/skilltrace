@@ -37,12 +37,19 @@ Register the SkillTrace MCP server from the main SkillTrace project:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
-  --env SKILLTRACE_SERVER=http://localhost:5173 \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:probe-mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
 ```
 
-Then open a new command-line Codex session for this sandbox repository.
+Then launch the supervised probe session from the main SkillTrace project:
+
+```bash
+pnpm skilltrace:probe-session \
+  --target agent-sandbox-repo \
+  --server http://localhost:5173 \
+  --stem run_agent_sandbox_type_fix
+```
+
+This starts the passive probe before launching command-line Codex for this sandbox repository.
 
 To remove the SkillTrace MCP server later:
 
@@ -50,7 +57,7 @@ To remove the SkillTrace MCP server later:
 /Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
 ```
 
-The MCP server prints the generated run ID when it starts. It looks like:
+The session supervisor prints the generated run ID before launching Codex. It looks like:
 
 ```text
 run_agent_sandbox_type_fix_20260619_001530

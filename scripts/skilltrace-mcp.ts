@@ -7,13 +7,20 @@ import {
   skillTraceServerUrl,
   type SkillLogEventInput,
 } from './lib/skilltrace-mcp'
+import { readActiveSession, sessionFilePath } from './lib/skilltrace-session'
 
+const ACTIVE_SESSION = readActiveSession(
+  sessionFilePath({
+    sessionFile: process.env.SKILLTRACE_SESSION_FILE,
+  }),
+)
 const MCP_RUN_ID = mcpRunId({
   runId: process.env.SKILLTRACE_RUN_ID,
+  sessionRunId: ACTIVE_SESSION?.run_id,
   runStem: process.env.SKILLTRACE_RUN_STEM,
 })
 const SERVER_URL = skillTraceServerUrl({
-  server: process.env.SKILLTRACE_SERVER,
+  server: process.env.SKILLTRACE_SERVER ?? ACTIVE_SESSION?.server,
 })
 
 const server = new McpServer({

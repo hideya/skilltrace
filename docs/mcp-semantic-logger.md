@@ -27,13 +27,13 @@ It is intentionally small:
 
 It does not implement passive file observation, skill loading, or a full agent platform.
 
-For the current full local prototype, prefer:
+For the current best local prototype, prefer:
 
 ```bash
-pnpm skilltrace:probe-mcp
+pnpm skilltrace:probe-session --target <repo>
 ```
 
-That command wraps this semantic logger with a macOS `opensnoop` passive probe and uses one generated run ID for both passive and semantic events.
+That command starts a macOS `opensnoop` passive probe before launching Codex, writes an active session file, and lets this semantic logger use the same run ID.
 
 ## Start Command
 
@@ -51,8 +51,6 @@ For Codex, register the SkillTrace MCP server with:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
-  --env SKILLTRACE_SERVER=http://localhost:5173 \
   -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
 ```
 
@@ -64,6 +62,14 @@ Then confirm the server is registered:
 ```
 
 Open a new Codex session after registration so the tool list is refreshed.
+
+When `skilltrace:probe-session` is active, `skilltrace:mcp` reads:
+
+```text
+data/local/skilltrace-session.json
+```
+
+for the run ID and server URL. Without an active session file, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
 
 To remove the SkillTrace MCP server later:
 

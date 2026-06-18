@@ -43,6 +43,7 @@ export function skillTraceServerUrl(env: SkillTraceMcpEnv) {
 
 export function mcpRunId(env: SkillTraceMcpEnv, date = new Date()) {
   if (env.runId) return env.runId
+  if (env.sessionRunId) return env.sessionRunId
   if (!env.runStem) return undefined
   return `${env.runStem}_${timestampId(date)}`
 }
@@ -72,6 +73,7 @@ export type SkillLogEventInput = {
 
 export type SkillTraceMcpEnv = {
   runId?: string
+  sessionRunId?: string
   runStem?: string
   server?: string
 }

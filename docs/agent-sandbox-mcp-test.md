@@ -13,14 +13,15 @@ This is the first true MCP-path experiment. It is stronger than the CLI fixture 
 
 Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
 
-The current recommended command is `skilltrace:probe-mcp`. It starts a macOS `opensnoop` passive probe and exposes the MCP semantic logger from the same process, so one generated run ID is shared by passive skill reads and semantic declarations.
+The current recommended command is `skilltrace:probe-session`. It starts a macOS `opensnoop` passive probe first, writes the active SkillTrace session run ID, and then launches command-line Codex inside the target repo. The MCP server reads that active session file, so passive skill reads and semantic declarations share the same run ID.
 
 ## Pieces
 
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local MCP server command: `pnpm skilltrace:probe-mcp`.
+- Local session supervisor: `pnpm skilltrace:probe-session`.
+- Local MCP server command: `pnpm skilltrace:mcp`.
 - Passive probe: `sudo -n opensnoop`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
@@ -72,13 +73,11 @@ agent-sandbox-repo/src/profile.ts
 
 ## Register SkillTrace MCP
 
-Register the local SkillTrace MCP server with Codex:
+Register the local SkillTrace MCP server with Codex. This registration is generic and does not name the target repo:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
-  --env SKILLTRACE_SERVER=http://localhost:5173 \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:probe-mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
 ```
 
 Then confirm it is registered:
@@ -92,28 +91,36 @@ The command should show:
 - `enabled: true`
 - `transport: stdio`
 - `command: pnpm`
-- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:probe-mcp`
-- `SKILLTRACE_RUN_STEM`
-- `SKILLTRACE_SERVER`
+- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp`
 
-Open a new command-line Codex session after registering the MCP server so the tool list is refreshed.
+The run ID is not configured in the MCP registration. The session supervisor writes it to:
+
+```text
+data/local/skilltrace-session.json
+```
+
+and `skilltrace:mcp` reads it when Codex starts the MCP server.
 
 ## Run The Experiment
 
-Open `agent-sandbox-repo` in command-line Codex:
+Start the supervised probe session from the main SkillTrace repo:
 
 ```bash
-cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
-/Applications/Codex.app/Contents/Resources/codex
+pnpm skilltrace:probe-session \
+  --target agent-sandbox-repo \
+  --server http://localhost:5173 \
+  --stem run_agent_sandbox_type_fix
 ```
 
-In that Codex session, run:
+This starts `opensnoop`, writes the active session file, and then launches command-line Codex in `agent-sandbox-repo`.
+
+In the launched Codex session, run:
 
 ```text
 /mcp
 ```
 
-Confirm that `skilltrace` is enabled before starting the repair task.
+Confirm that `skilltrace` is enabled before starting the repair task. The passive probe is already running at this point.
 
 The probe discovers the target repo from the command-line Codex session. The sandbox template includes:
 
@@ -200,10 +207,10 @@ This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the `skill_log_event` tool.
-- The local macOS probe can observe skill file reads with `opensnoop`.
+- The local macOS probe can observe skill file reads with `opensnoop` before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
-- The run ID generated from `SKILLTRACE_RUN_STEM` correlates events from one MCP server process.
+- The session run ID correlates passive probe events and MCP semantic events.
 - The SkillTrace UI can display the resulting run timeline.
 
 This test does not yet verify:
@@ -246,9 +253,8 @@ pnpm sandbox:reset
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
-- The MCP server is registered with `SKILLTRACE_SERVER=http://localhost:5173`.
-- The MCP server command is `skilltrace:probe-mcp`.
-- You opened a new command-line Codex session after registering the MCP server.
+- The MCP server command is `skilltrace:mcp`.
+- You launched Codex through `pnpm skilltrace:probe-session`.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated timestamped ID, not the fixed stem.
@@ -263,7 +269,7 @@ sudo -v
 
 then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that command-line Codex was started from the target repo directory.
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that Codex was launched by `skilltrace:probe-session` rather than started manually.
 
 If the sandbox starts already fixed, run:
 
