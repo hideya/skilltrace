@@ -18,9 +18,18 @@ export async function action({ request }) {
     throw badRequestError('target_root is required')
   }
 
-  let session = await startTraceSession({
-    target_root: input.target_root,
-  })
+  let session
+  try {
+    session = await startTraceSession({
+      target_root: input.target_root,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('sudo is not ready')) {
+      throw badRequestError(error.message)
+    }
+
+    throw error
+  }
 
   return Response.json({
     ok: true,

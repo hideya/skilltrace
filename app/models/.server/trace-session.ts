@@ -245,7 +245,9 @@ function assertMacOpenSnoopReady() {
 
   let sudo = spawnSync('sudo', ['-n', 'true'], { stdio: 'pipe' })
   if (sudo.status !== 0) {
-    throw new Error('sudo is not ready. Run `sudo -v` before traceskill start.')
+    throw new Error(
+      'sudo is not ready in the SkillTrace daemon terminal. Start the daemon with `pnpm traceskill serve`, or run `sudo -v` in that terminal before traceskill start.',
+    )
   }
 }
 
