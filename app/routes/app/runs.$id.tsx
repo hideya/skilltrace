@@ -217,7 +217,13 @@ function Timeline({ events }: TimelineProps) {
                     event
                   )} ${isMatch ? '' : 'opacity-40'}`}
                 />
-                {isMatch ? <EventCard event={event} /> : null}
+                {isMatch ? (
+                  <EventCard event={event} />
+                ) : (
+                  <p className="pt-0.5 font-mono text-xs text-base-content/40">
+                    {mutedEventLabel(event)}
+                  </p>
+                )}
               </li>
             )
           })}
@@ -360,6 +366,24 @@ function eventDotClass(event: any) {
   if (isSemanticEvent(event)) return 'bg-info'
   if (isPassiveEvent(event)) return 'bg-primary'
   return 'bg-base-content'
+}
+
+function mutedEventLabel(event: any) {
+  let name = fileNameForEvent(event)
+  if (!name) return event.event_type
+  return `${event.event_type} ${name}`
+}
+
+function fileNameForEvent(event: any) {
+  let filePath =
+    event.payload?.path ||
+    event.payload?.file_path ||
+    event.skill_path ||
+    event.payload?.skill_path
+
+  if (!filePath || typeof filePath !== 'string') return null
+
+  return filePath.split(/[\\/]/).filter(Boolean).at(-1) || null
 }
 
 function formatDate(value?: Date | string | null) {
