@@ -27,13 +27,16 @@ It is intentionally small:
 
 It does not implement passive file observation, skill loading, or a full agent platform.
 
-For the current best local prototype, prefer:
+For the current best local prototype, prefer the local daemon flow:
 
 ```bash
-pnpm skilltrace:probe-session --target <repo>
+pnpm traceskill serve
+cd <repo>
+pnpm --dir /path/to/skill-trace traceskill start
 ```
 
-That command starts a macOS `opensnoop` passive probe before launching Codex, writes an active session file, and lets this semantic logger use the same run ID.
+That starts a macOS `opensnoop` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
+Use `traceskill serve` rather than `pnpm dev` for passive-probe testing so sudo is primed in the daemon terminal.
 
 ## Start Command
 
@@ -51,7 +54,7 @@ For Codex, register the SkillTrace MCP server with:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
 ```
 
 Then confirm the server is registered:
@@ -63,13 +66,7 @@ Then confirm the server is registered:
 
 Open a new Codex session after registration so the tool list is refreshed.
 
-When `skilltrace:probe-session` is active, `skilltrace:mcp` reads:
-
-```text
-data/local/skilltrace-session.json
-```
-
-for the run ID and server URL. Without an active session file, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
+When `traceskill start` is active, `traceskill:mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
 
 To remove the SkillTrace MCP server later:
 

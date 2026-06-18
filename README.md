@@ -88,22 +88,46 @@ SkillTrace compares the two.
 
 ## MVP architecture
 
+SkillTrace is currently local-first. The initial product shape is a local
+debugging utility:
+
+```bash
+pnpm traceskill serve
+cd <repo>
+pnpm --dir /path/to/skill-trace traceskill start
+codex
+pnpm --dir /path/to/skill-trace traceskill end
+```
+
+The local daemon serves the web UI, owns one active trace session globally,
+supervises the passive probe, and receives MCP semantic events.
+
 ```text
 Local LLM environment
   ├─ Agent / LLM client
   ├─ Skills directory
-  ├─ File access tracking harness
-  │    └─ watches SKILL.md / references / scripts access
+  ├─ traceskill CLI
+  │    └─ starts / ends the active local trace session
+  ├─ macOS passive probe
+  │    └─ watches SKILL.md / references access
   │
   └─ MCP client
        └─ calls skill_log_event MCP tool
 
-SkillTrace server
-  ├─ MCP server
-  │    └─ skill_log_event
+SkillTrace local daemon
+  ├─ Web UI
+  │    ├─ run timeline
+  │    ├─ skill access view
+  │    ├─ semantic log view
+  │    └─ mismatch detection
   │
-  ├─ Passive event receiver
-  │    └─ receives file access events from local harness
+  ├─ Local HTTP API
+  │    ├─ active session lifecycle
+  │    ├─ passive event receiver
+  │    └─ semantic event receiver
+  │
+  ├─ MCP server command
+  │    └─ skill_log_event
   │
   ├─ Trace store
   │    ├─ mechanical events
@@ -112,17 +136,14 @@ SkillTrace server
   │
   ├─ Consistency checker
   │    └─ compares passive activation and declared use
-  │
-  └─ Web app
-       ├─ run timeline
-       ├─ skill access view
-       ├─ semantic log view
-       └─ mismatch detection
 ```
 
-The initial design avoids introducing a heavy skill runner.
+The initial design avoids introducing a heavy skill runner or remote service.
 
-A strong runner may change the execution environment too much. Instead, SkillTrace keeps normal agent execution as intact as possible and adds observability around it.
+A strong runner may change the execution environment too much. A remote service
+also complicates the best local passive-observation experience. Instead,
+SkillTrace keeps normal agent execution as intact as possible and adds
+observability around it.
 
 > Keep execution as natural as possible. Add observability around it.
 

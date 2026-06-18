@@ -24,32 +24,25 @@ Then open `agent-sandbox-repo` as a separate Codex project.
 Start SkillTrace from the main project in another terminal:
 
 ```bash
-pnpm dev
+pnpm traceskill serve
 ```
 
-Prime sudo before starting command-line Codex:
-
-```bash
-sudo -v
-```
+Use `traceskill serve` rather than `pnpm dev` for this test so the daemon can prime sudo before starting `opensnoop`.
 
 Register the SkillTrace MCP server from the main SkillTrace project:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
 ```
 
-Then launch the supervised probe session from the main SkillTrace project:
+Then start the passive trace session from this sandbox repository:
 
 ```bash
-pnpm skilltrace:probe-session \
-  --target agent-sandbox-repo \
-  --server http://localhost:5173 \
-  --stem run_agent_sandbox_type_fix
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start
 ```
 
-This starts the passive probe before launching command-line Codex for this sandbox repository.
+This starts the passive probe before you launch command-line Codex for this sandbox repository.
 
 To remove the SkillTrace MCP server later:
 
@@ -57,10 +50,16 @@ To remove the SkillTrace MCP server later:
 /Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
 ```
 
-The session supervisor prints the generated run ID before launching Codex. It looks like:
+`traceskill start` prints the generated run ID. It looks like:
 
 ```text
-run_agent_sandbox_type_fix_20260619_001530
+agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
+```
+
+Then start command-line Codex from this repository:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex
 ```
 
 ## Test Prompt
@@ -90,3 +89,9 @@ http://localhost:5173/app/runs/<generated_run_id>
 ```
 
 The timeline should include the passive skill read and semantic started/finished declarations. The consistency panel should report `Observed and declared`.
+
+When you are done, stop the active trace session:
+
+```bash
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill end
+```

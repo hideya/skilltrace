@@ -37,8 +37,12 @@ server.registerTool(
     inputSchema: skillLogEventInputSchema,
   },
   async (input) => {
+    let session = MCP_RUN_ID
+      ? undefined
+      : await resolveActiveSession(SERVER_URL)
+    let runId = MCP_RUN_ID || session?.run_id
     let event = buildMcpSkillLogEvent(input as SkillLogEventInput, {
-      runId: MCP_RUN_ID,
+      runId,
     })
     let result = await postSkillLogEvent(SERVER_URL, event)
 
@@ -79,12 +83,41 @@ async function postSkillLogEvent(serverUrl: string, event: any) {
   return await response.json()
 }
 
+async function resolveActiveSession(serverUrl: string) {
+  let response = await fetch(new URL('/api/sessions/resolve', serverUrl), {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      target_root: sessionTargetRoot(),
+    }),
+  })
+
+  if (!response.ok) {
+    let body = await response.text()
+    throw new Error(`SkillTrace session resolve failed: ${response.status} ${body}`)
+  }
+
+  let data = await response.json()
+  return data.session
+}
+
+function sessionTargetRoot() {
+  return (
+    process.env.SKILLTRACE_TARGET_ROOT ||
+    process.env.INIT_CWD ||
+    process.env.PWD ||
+    process.cwd()
+  )
+}
+
 async function main() {
   let transport = new StdioServerTransport()
   await server.connect(transport)
   console.error('SkillTrace MCP server running on stdio')
   console.error(`SkillTrace server: ${SERVER_URL}`)
-  console.error(`SkillTrace run ID: ${MCP_RUN_ID || '(tool input required)'}`)
+  console.error(`SkillTrace run ID: ${MCP_RUN_ID || '(active session required)'}`)
 }
 
 await main()

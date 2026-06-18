@@ -1,7 +1,7 @@
-import { Link } from 'react-router'
+import { Form, Link, redirect } from 'react-router'
 import { requireUser } from '~/.server/auth/middlewares'
 import { notFoundError } from '~/lib/.server/errors'
-import { getRunTimeline } from '~/models/.server/trace'
+import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 
 export async function loader({ context, params }) {
   requireUser(context)
@@ -9,6 +9,15 @@ export async function loader({ context, params }) {
 
   let timeline = await getRunTimeline(params.id)
   return { timeline }
+}
+
+export async function action({ context, params }) {
+  requireUser(context)
+  if (!params.id) throw notFoundError()
+
+  await clearRunEvents(params.id)
+
+  return redirect(`/app/runs/${params.id}`)
 }
 
 export default function Page({ loaderData }: PageProps) {
@@ -41,6 +50,12 @@ export default function Page({ loaderData }: PageProps) {
             <p className="text-3xl font-bold">{timeline.events.length}</p>
           </div>
         </div>
+
+        <Form method="post">
+          <button className="btn btn-outline" type="submit">
+            Start new attempt
+          </button>
+        </Form>
       </header>
 
       <section className="grid gap-4 md:grid-cols-3">

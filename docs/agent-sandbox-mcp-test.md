@@ -13,15 +13,15 @@ This is the first true MCP-path experiment. It is stronger than the CLI fixture 
 
 Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
 
-The current recommended command is `skilltrace:probe-session`. It starts a macOS `opensnoop` passive probe first, writes the active SkillTrace session run ID, and then launches command-line Codex inside the target repo. The MCP server reads that active session file, so passive skill reads and semantic declarations share the same run ID.
+The current recommended flow uses `traceskill start`. It asks the local SkillTrace daemon to start a macOS `opensnoop` passive probe for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
 
 ## Pieces
 
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local session supervisor: `pnpm skilltrace:probe-session`.
-- Local MCP server command: `pnpm skilltrace:mcp`.
+- Local CLI: `pnpm traceskill`.
+- Local MCP server command: `pnpm traceskill:mcp`.
 - Passive probe: `sudo -n opensnoop`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
@@ -35,19 +35,15 @@ From the main SkillTrace repo, make sure the local database exists:
 pnpm db:init-local
 ```
 
-Start SkillTrace in another terminal:
+Start the local SkillTrace daemon in another terminal:
 
 ```bash
-pnpm dev
+pnpm traceskill serve
 ```
 
-Prime sudo before starting command-line Codex:
-
-```bash
-sudo -v
-```
-
-The probe uses `sudo -n opensnoop` internally. If sudo is not already authorized, the MCP server exits instead of hanging on a password prompt.
+Because the daemon process starts `opensnoop`, prefer `pnpm traceskill serve`
+over `pnpm dev` for passive-probe testing. `traceskill serve` primes sudo in
+the daemon terminal before starting the local web server.
 
 The examples below assume SkillTrace is running at:
 
@@ -77,7 +73,7 @@ Register the local SkillTrace MCP server with Codex. This registration is generi
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
 ```
 
 Then confirm it is registered:
@@ -91,30 +87,28 @@ The command should show:
 - `enabled: true`
 - `transport: stdio`
 - `command: pnpm`
-- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp`
+- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp`
 
-The run ID is not configured in the MCP registration. The session supervisor writes it to:
-
-```text
-data/local/skilltrace-session.json
-```
-
-and `skilltrace:mcp` reads it when Codex starts the MCP server.
+The run ID is not configured in the MCP registration. The MCP server resolves the daemon's one active session when `skill_log_event` is called.
 
 ## Run The Experiment
 
-Start the supervised probe session from the main SkillTrace repo:
+Start the passive trace session from the sandbox repo:
 
 ```bash
-pnpm skilltrace:probe-session \
-  --target agent-sandbox-repo \
-  --server http://localhost:5173 \
-  --stem run_agent_sandbox_type_fix
+cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start
 ```
 
-This starts `opensnoop`, writes the active session file, and then launches command-line Codex in `agent-sandbox-repo`.
+This starts `opensnoop` through the local daemon. It prints the run URL.
 
-In the launched Codex session, run:
+Then start command-line Codex from the same sandbox repo:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex
+```
+
+In Codex, run:
 
 ```text
 /mcp
@@ -170,7 +164,7 @@ http://localhost:5173/app/runs
 Look for a run ID like:
 
 ```text
-run_agent_sandbox_type_fix_20260619_001530
+agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
 ```
 
 Open the run detail page. The timeline should show semantic events from:
@@ -207,10 +201,10 @@ This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the `skill_log_event` tool.
-- The local macOS probe can observe skill file reads with `opensnoop` before Codex starts reading the target repo.
+- The local daemon can observe skill file reads with `opensnoop` before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
-- The session run ID correlates passive probe events and MCP semantic events.
+- The daemon's one active session ID correlates passive probe events and MCP semantic events.
 - The SkillTrace UI can display the resulting run timeline.
 
 This test does not yet verify:
@@ -253,11 +247,11 @@ pnpm sandbox:reset
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
-- The MCP server command is `skilltrace:mcp`.
-- You launched Codex through `pnpm skilltrace:probe-session`.
+- The MCP server command is `traceskill:mcp`.
+- You ran `pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
-- The run may be under the generated timestamped ID, not the fixed stem.
+- The run may be under the generated path-hash timestamped ID.
 
 If Codex says `skill_log_event` is not available, verify that you are running the command-line Codex session from `agent-sandbox-repo`. In observed testing, Codex via VS Code could show the `skilltrace` MCP server as enabled but still not expose the custom `skill_log_event` tool to the agent.
 
@@ -269,7 +263,7 @@ sudo -v
 
 then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that Codex was launched by `skilltrace:probe-session` rather than started manually.
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill start` was run before Codex started.
 
 If the sandbox starts already fixed, run:
 
@@ -278,3 +272,9 @@ pnpm sandbox:reset
 ```
 
 If the consistency panel says `Declared but not observed`, the semantic MCP part worked, but the passive probe did not catch the skill file read. Add the optional passive read event if you want a pass state for the same run.
+
+When you are done, stop the active session:
+
+```bash
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill end
+```

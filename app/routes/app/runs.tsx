@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import { requireUser } from '~/.server/auth/middlewares'
 import { appName } from '~/config/app-name'
 import { listRunSummaries } from '~/models/.server/trace'
@@ -37,6 +37,7 @@ export default function Page({ loaderData }: PageProps) {
                   <th>Events</th>
                   <th>Sources</th>
                   <th>Last event</th>
+                  <th>Attempt</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,6 +94,13 @@ function RunRow({ summary }: RunRowProps) {
             {formatDate(summary.last_event_at)}
           </div>
         </div>
+      </td>
+      <td>
+        <Form action={`/app/runs/${run.public_id}`} method="post">
+          <button className="btn btn-xs btn-outline" type="submit">
+            Start new attempt
+          </button>
+        </Form>
       </td>
     </tr>
   )
