@@ -1,0 +1,60 @@
+import { z } from 'zod/v4'
+import { buildSkillLogEvent } from './skilltrace-log'
+
+export const skillLogEventInputSchema = {
+  run_id: z.string().trim().optional(),
+  event_type: z.string().trim().min(1).describe('Semantic event type'),
+  skill_name: z.string().trim().optional(),
+  skill_version: z.string().trim().optional(),
+  skill_path: z.string().trim().optional(),
+  skill_file_hash: z.string().trim().optional(),
+  summary: z.string().trim().optional(),
+  confidence: z.string().trim().optional(),
+  related_artifacts: z.array(z.string()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
+}
+
+export function buildMcpSkillLogEvent(
+  input: SkillLogEventInput,
+  env: SkillTraceMcpEnv,
+) {
+  let runId = input.run_id || env.runId
+  if (!runId) {
+    throw new Error('Missing run_id or SKILLTRACE_RUN_ID')
+  }
+
+  return buildSkillLogEvent({
+    runId,
+    eventType: input.event_type,
+    skillName: input.skill_name,
+    skillVersion: input.skill_version,
+    skillPath: input.skill_path,
+    skillFileHash: input.skill_file_hash,
+    summary: input.summary,
+    confidence: input.confidence,
+    relatedArtifacts: input.related_artifacts,
+    data: input.data,
+  })
+}
+
+export function skillTraceServerUrl(env: SkillTraceMcpEnv) {
+  return env.server || 'http://localhost:5173'
+}
+
+export type SkillLogEventInput = {
+  run_id?: string
+  event_type: string
+  skill_name?: string
+  skill_version?: string
+  skill_path?: string
+  skill_file_hash?: string
+  summary?: string
+  confidence?: string
+  related_artifacts?: string[]
+  data?: Record<string, unknown>
+}
+
+export type SkillTraceMcpEnv = {
+  runId?: string
+  server?: string
+}

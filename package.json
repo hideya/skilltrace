@@ -12,6 +12,7 @@
     "skilltrace:read": "tsx scripts/skilltrace-read.ts",
     "skilltrace:log": "tsx scripts/skilltrace-log.ts",
     "skilltrace:demo": "tsx scripts/skilltrace-demo.ts",
+    "skilltrace:mcp": "tsx scripts/skilltrace-mcp.ts",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
     "db:init-local": "tsx scripts/init-local-db.ts",
@@ -43,6 +44,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@react-router/dev": "^7.17.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/react": "^19.2.17",
