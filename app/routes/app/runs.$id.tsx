@@ -1,9 +1,16 @@
+import { useState } from 'react'
 import { Form, Link, redirect } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
+
+const timelineFilters = [
+  { value: 'all', label: 'All' },
+  { value: 'passive', label: 'Passive' },
+  { value: 'semantic', label: 'Semantic' },
+] as const
 
 export async function loader({ params }) {
   // Remote/auth mode reference:
@@ -119,7 +126,9 @@ function ConsistencyPanel({ results }: ConsistencyPanelProps) {
                     {result.message}
                   </p>
                 </div>
-                <span className="badge badge-outline">{result.skill}</span>
+                <span className="badge badge-outline">
+                  skill: {result.skill}
+                </span>
               </div>
             </div>
           ))}
@@ -156,29 +165,61 @@ function Metric({ label, value }: MetricProps) {
 }
 
 function Timeline({ events }: TimelineProps) {
+  let [filter, setFilter] = useState<TimelineFilter>('all')
+  let filteredEvents = events.filter((event) =>
+    matchesTimelineFilter(event, filter)
+  )
+  let counts = getTimelineCounts(events)
+
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-5 flex items-end justify-between gap-4">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Timeline</h2>
           <p className="text-sm text-base-content/60">
-            {events.length} event{events.length === 1 ? '' : 's'}
+            {filteredEvents.length} of {events.length} event
+            {events.length === 1 ? '' : 's'}
           </p>
+        </div>
+
+        <div className="join">
+          {timelineFilters.map((option) => (
+            <button
+              aria-pressed={filter === option.value}
+              className={`btn join-item btn-sm ${
+                filter === option.value ? 'btn-primary' : 'btn-outline'
+              }`}
+              key={option.value}
+              onClick={() => setFilter(option.value)}
+              type="button"
+            >
+              {option.label}
+              <span className="badge badge-sm">
+                {counts[option.value]}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {events.length > 0 ? (
+      {filteredEvents.length > 0 ? (
         <ol className="relative space-y-4 before:absolute before:bottom-0 before:left-3 before:top-2 before:w-px before:bg-base-300">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <li className="relative pl-9" key={event.id}>
-              <span className="absolute left-1.5 top-2 size-3 rounded-full bg-primary ring-4 ring-base-100" />
+              <span
+                className={`absolute left-1.5 top-2 size-3 rounded-full ring-4 ring-base-100 ${
+                  isSemanticEvent(event) ? 'bg-info' : 'bg-primary'
+                }`}
+              />
               <EventCard event={event} />
             </li>
           ))}
         </ol>
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
-          No events recorded.
+          {events.length === 0
+            ? 'No events recorded.'
+            : `No ${filter} events in this run.`}
         </div>
       )}
     </section>
@@ -217,7 +258,9 @@ function EventCard({ event, compact = false }: EventCardProps) {
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{event.event_type}</span>
-            <span className="badge badge-ghost">{event.source}</span>
+            <span className={`badge ${sourceBadgeClass(event)}`}>
+              {event.source}
+            </span>
           </div>
           <p className="text-xs text-base-content/60">
             {formatDate(event.timestamp)}
@@ -225,7 +268,9 @@ function EventCard({ event, compact = false }: EventCardProps) {
         </div>
 
         {event.skill_name ? (
-          <span className="badge badge-outline">{event.skill_name}</span>
+          <span className="badge badge-outline">
+            skill: {event.skill_name}
+          </span>
         ) : null}
       </div>
 
@@ -269,6 +314,37 @@ function JsonBlock({ value }: JsonBlockProps) {
   )
 }
 
+function getTimelineCounts(events: any[]) {
+  let passive = events.filter(isPassiveEvent).length
+  let semantic = events.filter(isSemanticEvent).length
+
+  return {
+    all: events.length,
+    passive,
+    semantic,
+  }
+}
+
+function matchesTimelineFilter(event: any, filter: TimelineFilter) {
+  if (filter === 'all') return true
+  if (filter === 'passive') return isPassiveEvent(event)
+  return isSemanticEvent(event)
+}
+
+function isPassiveEvent(event: any) {
+  return event.source === 'passive_file_harness'
+}
+
+function isSemanticEvent(event: any) {
+  return event.source === 'mcp_semantic_logger'
+}
+
+function sourceBadgeClass(event: any) {
+  if (isSemanticEvent(event)) return 'badge-info badge-outline'
+  if (isPassiveEvent(event)) return 'badge-primary badge-outline'
+  return 'badge-ghost'
+}
+
 function formatDate(value?: Date | string | null) {
   if (!value) return '—'
   return new Date(value).toLocaleString()
@@ -296,6 +372,8 @@ type ConsistencyBadgeProps = {
 type TimelineProps = {
   events: any[]
 }
+
+type TimelineFilter = (typeof timelineFilters)[number]['value']
 
 type EventPanelProps = {
   title: string
