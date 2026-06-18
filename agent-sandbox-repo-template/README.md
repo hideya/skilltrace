@@ -39,7 +39,7 @@ Register the SkillTrace MCP server from the main SkillTrace project:
 Then start the passive trace session from this sandbox repository:
 
 ```bash
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.

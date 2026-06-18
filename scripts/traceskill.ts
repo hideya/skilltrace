@@ -24,7 +24,7 @@ async function main() {
 
 async function start(args: string[]) {
   let options = parseArgs(args)
-  let targetRoot = path.resolve(options.target || process.cwd())
+  let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
   let result = await postJson(server, '/api/sessions/start', {
@@ -56,6 +56,15 @@ async function status(args: string[]) {
   } else {
     console.log('No active SkillTrace session.')
   }
+}
+
+function defaultTargetRoot() {
+  return (
+    process.env.SKILLTRACE_TARGET_ROOT ||
+    process.env.INIT_CWD ||
+    process.env.PWD ||
+    process.cwd()
+  )
 }
 
 function parseArgs(args: string[]) {

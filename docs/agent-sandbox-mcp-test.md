@@ -97,7 +97,7 @@ Start the passive trace session from the sandbox repo:
 
 ```bash
 cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start
+pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"
 ```
 
 This starts `opensnoop` through the local daemon. It prints the run URL.
@@ -248,7 +248,7 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
 - The MCP server command is `traceskill:mcp`.
-- You ran `pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start` from the target repo before launching Codex.
+- You ran `pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated path-hash timestamped ID.
@@ -277,4 +277,20 @@ When you are done, stop the active session:
 
 ```bash
 pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill end
+```
+
+For convenience, add a shell function:
+
+```bash
+traceskill() {
+  pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill "$@" --target "$PWD"
+}
+```
+
+Then from any repo you can run:
+
+```bash
+traceskill start
+traceskill status
+traceskill end
 ```

@@ -94,7 +94,7 @@ debugging utility:
 ```bash
 pnpm traceskill serve
 cd <repo>
-pnpm --dir /path/to/skill-trace traceskill start
+pnpm --dir /path/to/skill-trace traceskill start --target "$PWD"
 codex
 pnpm --dir /path/to/skill-trace traceskill end
 ```

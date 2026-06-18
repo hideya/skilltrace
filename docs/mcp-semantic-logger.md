@@ -32,7 +32,7 @@ For the current best local prototype, prefer the local daemon flow:
 ```bash
 pnpm traceskill serve
 cd <repo>
-pnpm --dir /path/to/skill-trace traceskill start
+pnpm --dir /path/to/skill-trace traceskill start --target "$PWD"
 ```
 
 That starts a macOS `opensnoop` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
