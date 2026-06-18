@@ -25,7 +25,7 @@ It is intentionally small:
 - posts to `/api/skill-log-events`
 - uses `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER`
 
-It does not implement passive file observation, skill loading, or a full agent platform.
+By itself, this command does not implement passive file observation, skill loading, or a full agent platform.
 
 For the current best local prototype, prefer the local daemon flow:
 

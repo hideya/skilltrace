@@ -60,7 +60,7 @@ describe('skilltrace probe helpers', () => {
     expect(config?.targetRoot).toBe(target)
   })
 
-  test('parses the watched path from an opensnoop line', () => {
+  test('parses the watched path from an absolute probe line', () => {
     let root = '/tmp/repo/.skills'
     let line = `501 123 Codex 3 ${root}/type-fix/SKILL.md`
 

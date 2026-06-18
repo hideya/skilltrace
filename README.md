@@ -102,6 +102,9 @@ pnpm --dir /path/to/skill-trace traceskill end
 The local daemon serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.
 
+See `docs/architecture-decisions.md` for the decisions and complications found
+while building the first local prototype.
+
 ```text
 Local LLM environment
   ├─ Agent / LLM client
