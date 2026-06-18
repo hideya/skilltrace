@@ -10,6 +10,7 @@
     "test": "vitest run",
     "tsc": "tsc --noEmit",
     "skilltrace:read": "tsx scripts/skilltrace-read.ts",
+    "skilltrace:log": "tsx scripts/skilltrace-log.ts",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
     "db:init-local": "tsx scripts/init-local-db.ts",
