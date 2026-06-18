@@ -27,6 +27,14 @@ It is intentionally small:
 
 It does not implement passive file observation, skill loading, or a full agent platform.
 
+For the current full local prototype, prefer:
+
+```bash
+pnpm skilltrace:probe-mcp
+```
+
+That command wraps this semantic logger with a macOS `opensnoop` passive probe and uses one generated run ID for both passive and semantic events.
+
 ## Start Command
 
 ```bash

@@ -13,12 +13,15 @@ This is the first true MCP-path experiment. It is stronger than the CLI fixture 
 
 Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
 
+The current recommended command is `skilltrace:probe-mcp`. It starts a macOS `opensnoop` passive probe and exposes the MCP semantic logger from the same process, so one generated run ID is shared by passive skill reads and semantic declarations.
+
 ## Pieces
 
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local MCP server command: `pnpm skilltrace:mcp`.
+- Local MCP server command: `pnpm skilltrace:probe-mcp`.
+- Passive probe: `sudo -n opensnoop`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
 `agent-sandbox-repo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
@@ -36,6 +39,14 @@ Start SkillTrace in another terminal:
 ```bash
 pnpm dev
 ```
+
+Prime sudo before starting command-line Codex:
+
+```bash
+sudo -v
+```
+
+The probe uses `sudo -n opensnoop` internally. If sudo is not already authorized, the MCP server exits instead of hanging on a password prompt.
 
 The examples below assume SkillTrace is running at:
 
@@ -67,7 +78,7 @@ Register the local SkillTrace MCP server with Codex:
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
   --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
   --env SKILLTRACE_SERVER=http://localhost:5173 \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:probe-mcp
 ```
 
 Then confirm it is registered:
@@ -81,7 +92,7 @@ The command should show:
 - `enabled: true`
 - `transport: stdio`
 - `command: pnpm`
-- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp`
+- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:probe-mcp`
 - `SKILLTRACE_RUN_STEM`
 - `SKILLTRACE_SERVER`
 
@@ -103,6 +114,20 @@ In that Codex session, run:
 ```
 
 Confirm that `skilltrace` is enabled before starting the repair task.
+
+The probe discovers the target repo from the command-line Codex session. The sandbox template includes:
+
+```text
+.skilltrace.json
+```
+
+with:
+
+```json
+{
+  "skill_roots": [".skills"]
+}
+```
 
 Ask Codex:
 
@@ -147,21 +172,27 @@ Open the run detail page. The timeline should show semantic events from:
 mcp_semantic_logger
 ```
 
-The semantic declarations panel should show the started and finished events.
+It should also show passive events from:
+
+```text
+passive_file_harness
+```
+
+The semantic declarations panel should show the started and finished events. The passive skill access panel should show the `.skills/type-fix/SKILL.md` read.
 
 The consistency panel should show:
 
 ```text
-Declared but not observed
+Observed and declared
 ```
 
 with a message like:
 
 ```text
-type-fix was declared, but no passive skill read was observed.
+type-fix was read, started, and finished.
 ```
 
-That is expected for this pure MCP test because it only exercises semantic logging. Add the optional passive event check below if you want the same run to pass the consistency check.
+If the consistency panel says `Declared but not observed`, the MCP semantic path worked but the passive probe did not observe the skill read.
 
 ## What This Test Proves
 
@@ -169,21 +200,22 @@ This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the `skill_log_event` tool.
+- The local macOS probe can observe skill file reads with `opensnoop`.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
+- Passive file read observations can reach `/api/passive-events`.
 - The run ID generated from `SKILLTRACE_RUN_STEM` correlates events from one MCP server process.
 - The SkillTrace UI can display the resulting run timeline.
 
 This test does not yet verify:
 
-- passive file-read observation
-- automatic detection that `.skills/type-fix/SKILL.md` was read
 - general compliance across many skills
 - remote HTTP MCP transport
+- Linux or Windows passive probing
 - production deployment behavior
 
 ## Optional Passive Event Check
 
-If you want the same run to include passive-style file access evidence, run the read harness manually using the generated run ID:
+If the passive probe misses the read and you want to force the same run into the pass state, run the read harness manually using the generated run ID:
 
 ```bash
 pnpm skilltrace:read \
@@ -215,6 +247,7 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
 - The MCP server is registered with `SKILLTRACE_SERVER=http://localhost:5173`.
+- The MCP server command is `skilltrace:probe-mcp`.
 - You opened a new command-line Codex session after registering the MCP server.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
@@ -222,10 +255,20 @@ If no run appears, check that:
 
 If Codex says `skill_log_event` is not available, verify that you are running the command-line Codex session from `agent-sandbox-repo`. In observed testing, Codex via VS Code could show the `skilltrace` MCP server as enabled but still not expose the custom `skill_log_event` tool to the agent.
 
+If the MCP server fails to start, run:
+
+```bash
+sudo -v
+```
+
+then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
+
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that command-line Codex was started from the target repo directory.
+
 If the sandbox starts already fixed, run:
 
 ```bash
 pnpm sandbox:reset
 ```
 
-If the consistency panel says `Declared but not observed`, that is expected for the pure MCP test. Add the optional passive read event if you want a pass state for the same run.
+If the consistency panel says `Declared but not observed`, the semantic MCP part worked, but the passive probe did not catch the skill file read. Add the optional passive read event if you want a pass state for the same run.

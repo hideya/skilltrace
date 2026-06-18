@@ -4,17 +4,19 @@ import { createHash } from 'crypto'
 export function buildSkillReadEvent(options: BuildSkillReadEventOptions) {
   let absolutePath = path.resolve(options.filePath)
   let skillName = options.skillName || inferSkillName(absolutePath)
+  let baseDir = options.baseDir ?? process.cwd()
+  let reader = options.reader ?? 'skilltrace-read'
 
   return {
     run_id: options.runId,
     event_type: eventTypeForPath(absolutePath),
     skill: {
       name: skillName,
-      path: path.relative(process.cwd(), absolutePath),
+      path: path.relative(baseDir, absolutePath),
       file_hash: sha256(options.content),
     },
     payload: {
-      reader: 'skilltrace-read',
+      reader,
       file_path: absolutePath,
       size_bytes: Buffer.byteLength(options.content),
     },
@@ -42,4 +44,6 @@ export type BuildSkillReadEventOptions = {
   skillName?: string
   filePath: string
   content: string
+  baseDir?: string
+  reader?: string
 }
