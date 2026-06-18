@@ -1,0 +1,146 @@
+# SkillTrace Dogfood Fixture
+
+This document explains the first manual dogfood loop for SkillTrace.
+
+The purpose is to verify the full trace path end to end:
+
+1. read a fixture skill file
+2. emit passive file access events
+3. emit active semantic skill-use events
+4. view the run timeline
+5. confirm the consistency checker reports a pass
+
+This is a test driver for the observability loop. It is not a real agent runtime and does not prove general file-read monitoring.
+
+## Fixture Skill
+
+The fixture skill lives at:
+
+```text
+fixtures/skills/pr-review/SKILL.md
+```
+
+It is intentionally separate from real working Codex skills. Codex does not treat this fixture directory as an installed skill root.
+
+The fixture includes:
+
+```text
+fixtures/skills/pr-review/SKILL.md
+fixtures/skills/pr-review/references/checklist.md
+```
+
+## Prerequisites
+
+Start the SkillTrace dev server in another terminal:
+
+```bash
+pnpm dev
+```
+
+Make sure the local DB has the SkillTrace tables:
+
+```bash
+pnpm db:init-local
+```
+
+## Happy Path
+
+Run the fixture dogfood sequence:
+
+```bash
+pnpm skilltrace:dogfood --server http://localhost:5173
+```
+
+The command posts four events in order:
+
+- `skill_file_read`
+- `skill_reference_read`
+- `skill_use_started`
+- `skill_use_finished`
+
+At the end, it prints a run URL:
+
+```text
+http://localhost:5173/app/runs/<run_id>
+```
+
+Open that URL in the browser.
+
+Expected result:
+
+- the Timeline shows all four events
+- Passive skill access shows the file reads
+- Semantic declarations shows start and finish events
+- Consistency shows `Observed and declared` with a `pass` badge
+
+## Fixed Run ID
+
+Use a fixed run ID when you want repeatable manual testing:
+
+```bash
+pnpm skilltrace:dogfood \
+  --run run_fixture_pr_review_demo \
+  --server http://localhost:5173
+```
+
+Repeated runs with the same run ID append more events to the same timeline. Use a new run ID when you want a clean timeline.
+
+## Manual Pieces
+
+The dogfood command is equivalent to running the lower-level harness commands manually.
+
+Passive read:
+
+```bash
+pnpm skilltrace:read \
+  --run run_fixture_pr_review_manual \
+  --skill pr-review \
+  --server http://localhost:5173 \
+  fixtures/skills/pr-review/SKILL.md
+```
+
+Semantic start:
+
+```bash
+pnpm skilltrace:log \
+  --run run_fixture_pr_review_manual \
+  --skill pr-review \
+  --event skill_use_started \
+  --summary "Using PR review fixture." \
+  --confidence medium \
+  --server http://localhost:5173
+```
+
+Semantic finish:
+
+```bash
+pnpm skilltrace:log \
+  --run run_fixture_pr_review_manual \
+  --skill pr-review \
+  --event skill_use_finished \
+  --summary "Completed PR review fixture." \
+  --confidence medium \
+  --server http://localhost:5173
+```
+
+## What This Test Proves
+
+This fixture proves that SkillTrace can correlate passive and semantic events for one run.
+
+It verifies:
+
+- passive event ingestion
+- semantic event ingestion
+- run ID aggregation
+- timeline rendering
+- consistency checking
+
+It does not verify:
+
+- real agent behavior
+- real Codex skill activation
+- filesystem-level read monitoring
+- MCP protocol transport
+- instrumentation compliance by a model
+
+Those are later experiments.
