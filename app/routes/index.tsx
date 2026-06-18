@@ -11,7 +11,7 @@ export default function Page({ loaderData: { user } }) {
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-16">
         <header className="space-y-3">
-          <p className="badge rounded-full badge-outline">App Name</p>
+          <p className="badge rounded-full badge-outline">SkillTrace</p>
           <h1 className="text-4xl font-bold text-balance">Welcome back</h1>
           <p className="text-base-content/70">Signed in as {user.email}</p>
         </header>
@@ -40,7 +40,7 @@ export default function Page({ loaderData: { user } }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-16">
       <header className="space-y-3">
-        <p className="badge rounded-full badge-outline">App Name</p>
+        <p className="badge rounded-full badge-outline">SkillTrace</p>
         <h1 className="color-primary text-4xl font-bold text-balance">
           Auth is prewired.
         </h1>

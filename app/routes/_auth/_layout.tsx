@@ -9,7 +9,7 @@ export default function Layout() {
           {/* <div className="rounded-full bg-base-200 p-3">
             <LockKeyholeIcon className="size-6" />
           </div> */}
-          <div className="text-4xl">App Name Here</div>
+          <div className="text-4xl">SkillTrace</div>
         </div>
         <div className="app-fade-in">
           <Outlet />

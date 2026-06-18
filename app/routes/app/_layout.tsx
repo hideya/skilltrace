@@ -45,7 +45,7 @@ export default function Layout({ loaderData }: LayoutProps) {
       >
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            <div className="text-2xl">App Name</div>
+            <div className="text-2xl">SkillTrace</div>
             <AppNavLink to="/app" end busy={homeBusy}>
               Home
             </AppNavLink>
