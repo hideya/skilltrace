@@ -1,131 +1,400 @@
-# Auth Starter
+# SkillTrace
 
-A React Router v7 SSR starter with cookie-session auth, email/password flows,
-OAuth, protected routes, and a small notes dashboard.
+**SkillTrace is an experimental observability substrate for AI agent skills.**
 
-This repo is based on: https://github.com/gistajs/auth
+It correlates passive traces of skill activation, such as `SKILL.md` file access, with active semantic declarations emitted by the model through an MCP logging tool.
 
-## Stack
+The goal is to understand when a natural-language skill is merely read, when it is declared as used, and when it may have actually influenced an agent run.
 
-- React Router v7 SSR
-- React 19
-- Tailwind CSS v4 + daisyUI v5
-- Drizzle ORM + Atlas schema flow
-- SQLite locally, Turso/libSQL-compatible database in production
-- Cookie sessions
-- Google + GitHub OAuth
-- Nodemailer for auth emails
+Long term, SkillTrace aims to help turn AI agent failures into reusable, postmortem-backed procedural knowledge.
 
-## Quick Start
+> The unit of human knowledge accumulation is shifting from documents to executable work units enriched with failure histories.
 
-Install dependencies:
+---
 
-```bash
-pnpm install
+## Why SkillTrace?
+
+AI agent skills are becoming a new way to package procedural knowledge.
+
+A skill may contain:
+
+- natural-language instructions
+- applicability conditions
+- constraints
+- reference materials
+- scripts
+- tools
+- templates
+- organizational context
+
+Unlike traditional documents, skills are not only read by humans. They can be directly consumed and acted upon by AI agents.
+
+This creates a new observability problem.
+
+Tool calls are relatively easy to trace because they cross an external boundary. Skills are harder. A model may read a `SKILL.md` file, absorb it into context, and apply it without producing a clear external event that says:
+
+> “This skill was used here.”
+
+SkillTrace starts from a simple question:
+
+> When a skill fails, do we have enough evidence to reconstruct, analyze, improve, and re-evaluate that failure?
+
+---
+
+## Core idea
+
+SkillTrace separates two kinds of evidence.
+
+### 1. Passive mechanical traces
+
+Facts captured without relying on the model’s self-report.
+
+Examples:
+
+- `SKILL.md` was accessed
+- a reference file was accessed
+- a script was executed
+- a skill file hash was recorded
+- an MCP tool was called
+- an artifact was read or written
+
+Passive traces help answer:
+
+> What actually happened at the system boundary?
+
+### 2. Active semantic traces
+
+Structured declarations emitted by the model through an MCP logging tool.
+
+Examples:
+
+- why the skill appears applicable
+- what assumptions the model is making
+- what risks it has identified
+- which steps it expects to apply
+- which steps it actually applied
+- where it deviated from the skill
+- what uncertainty remains
+
+Active traces help answer:
+
+> How did the model claim to understand and use the skill?
+
+SkillTrace compares the two.
+
+> Capture mechanical facts passively. Ask models to declare semantic intent actively.
+
+---
+
+## MVP architecture
+
+```text
+Local LLM environment
+  ├─ Agent / LLM client
+  ├─ Skills directory
+  ├─ File access tracking harness
+  │    └─ watches SKILL.md / references / scripts access
+  │
+  └─ MCP client
+       └─ calls skill_log_event MCP tool
+
+SkillTrace server
+  ├─ MCP server
+  │    └─ skill_log_event
+  │
+  ├─ Passive event receiver
+  │    └─ receives file access events from local harness
+  │
+  ├─ Trace store
+  │    ├─ mechanical events
+  │    ├─ semantic events
+  │    └─ artifacts / snapshots
+  │
+  ├─ Consistency checker
+  │    └─ compares passive activation and declared use
+  │
+  └─ Web app
+       ├─ run timeline
+       ├─ skill access view
+       ├─ semantic log view
+       └─ mismatch detection
 ```
 
-Prepare `.env` and generate a `COOKIE_SECRET`:
+The initial design avoids introducing a heavy skill runner.
 
-```bash
-pnpm prep
+A strong runner may change the execution environment too much. Instead, SkillTrace keeps normal agent execution as intact as possible and adds observability around it.
+
+> Keep execution as natural as possible. Add observability around it.
+
+---
+
+## Debug instrumentation
+
+A skill may include debug instrumentation in `SKILL.md`, or the same instructions may be injected through an external instrumentation overlay.
+
+Example:
+
+```md
+## Debug instrumentation
+
+When instrumentation is enabled:
+
+Before applying this skill, call the `skill_log_event` MCP tool with:
+- event_type: "skill_use_started"
+- skill_name
+- skill_version
+- why_applicable
+- assumptions
+- expected_steps
+- risk_flags
+
+After applying this skill, call the `skill_log_event` MCP tool with:
+- event_type: "skill_use_finished"
+- skill_name
+- skill_version
+- steps_applied
+- deviations_from_skill
+- uncertainties
+- artifacts_created
+- recommended_followup
+
+If instrumentation is unavailable, continue the task normally and report that instrumentation was unavailable.
 ```
 
-Apply the local database schema:
+This does not attempt to capture hidden chain-of-thought.
 
-```bash
-pnpm atlas
+It asks the model to emit explicit, inspectable declarations that can be compared with passive traces.
+
+---
+
+## Example semantic event
+
+```json
+{
+  "run_id": "run_2026_001",
+  "event_type": "skill_use_started",
+  "skill": {
+    "name": "pr-review",
+    "version": "0.1.0",
+    "file_hash": "sha256:..."
+  },
+  "summary": "Using pr-review because the task asks for review of a pull request diff.",
+  "data": {
+    "why_applicable": [
+      "input contains a pull request diff",
+      "user asks for review rather than modification"
+    ],
+    "assumptions": [
+      "diff is complete",
+      "test results are unavailable"
+    ],
+    "risk_flags": [
+      "possible breaking change",
+      "insufficient test coverage"
+    ],
+    "expected_steps": [
+      "check API compatibility",
+      "check migration risk",
+      "check test coverage"
+    ]
+  },
+  "related_artifacts": [],
+  "confidence": "medium"
+}
 ```
 
-Start the dev server:
+---
 
-```bash
-pnpm dev
-```
+## Consistency checks
 
-Open the local URL printed by React Router, usually `http://localhost:5173`.
+SkillTrace’s first useful feature is a simple consistency checker.
 
-## Environment Variables
+Examples:
 
-`pnpm prep` creates `.env` from `.env.example` if needed.
+### Observed and declared
 
-- `COOKIE_SECRET`: required for signing cookie sessions. Must be at least 32 characters.
-- `ORIGIN`: public app origin used for OAuth callbacks and auth email links.
-- `DB_URL`: production Turso/libSQL database URL.
-- `DB_AUTH_TOKEN`: production Turso/libSQL auth token.
-- `SMTP_CONFIG`: JSON Nodemailer transport config. If omitted or invalid, verify/reset links are logged to server output in dev.
-- `GOOGLE_CLIENT_ID`: Google OAuth client ID.
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret.
-- `GITHUB_CLIENT_ID`: GitHub OAuth client ID.
-- `GITHUB_CLIENT_SECRET`: GitHub OAuth client secret.
+- `SKILL.md` was read
+- `skill_use_started` was logged
+- `skill_use_finished` was logged
 
-Local development uses `data/local/dev.db` by default.
+Interpretation:
 
-## Scripts
+> Activation and declared use are aligned.
 
-- `pnpm prep`: create `.env` and generate a cookie secret.
-- `pnpm dev`: run the React Router dev server.
-- `pnpm tsc`: run a quick TypeScript check.
-- `pnpm build`: build the app for production.
-- `pnpm atlas`: apply the local database schema.
-- `pnpm atlas:prod`: apply the production database schema.
-- `pnpm db:pull`: replace the local DB with a Turso copy after creating a local backup.
-- `pnpm db:push`: replace Turso tables with local DB data after typed confirmation.
-- `pnpm drizzle-studio`: open Drizzle Studio for local data.
-- `pnpm drizzle-studio:prod`: open Drizzle Studio for production data.
-- `pnpm ship`: merge `dev` to `main` and deploy through Vercel.
-- `pnpm clean`: remove generated local files while preserving `.env`, `/tmp`, and `/data`.
+### Read but not declared
 
-Schema migrations are intentionally manual. Review schema changes before running Atlas commands.
-Use `pnpm db:push` as a rare bootstrap/destructive sync tool, not as a normal migration path.
+- `SKILL.md` was read
+- no `skill_use_started` event was logged
 
-## Auth Flows
+Possible interpretations:
 
-- `/signup`: create an email/password account.
-- `/login`: sign in with email/password or OAuth.
-- `/logout`: end the current session.
-- `/verify`: request a verification email.
-- `/verify/:token`: verify an email token.
-- `/forgot`: request a password reset link.
-- `/reset-password/:token`: set a new password.
-- `/oauth/google`: start Google OAuth.
-- `/oauth/github`: start GitHub OAuth.
-- `/app`: protected notes dashboard.
-- `/app/settings`: protected account settings.
-- `/admin`: admin-only user overview.
-- `/admin/notes`: admin-only notes overview.
+- the instrumentation instruction was ignored
+- the skill was read but not used
+- the skill was implicitly applied
+- activation and use are hard to distinguish
 
-## Project Structure
+### Declared but not observed
 
-- `app/routes/_auth`: login, signup, logout, verify, forgot password, and reset password routes.
-- `app/routes/oauth`: Google and GitHub OAuth routes and callbacks.
-- `app/routes/app`: protected app shell, dashboard, and settings page.
-- `app/routes/admin`: admin-only routes.
-- `app/.server/auth`: cookie session helpers and auth middleware.
-- `app/models/.server`: server-side model layer.
-- `app/.server/db`: database schema, connection, and validators.
-- `app/ui`: shared UI components.
-- `scripts`: project setup, cleanup, admin promotion, and deploy helpers.
+- no `SKILL.md` read was observed
+- `skill_use_started` was logged
 
-Routes are generated from `app/routes.ts` with `react-router-auto-routes`.
+Possible interpretations:
 
-## Local Development Notes
+- the skill was already in context
+- the passive harness missed the access
+- the model hallucinated skill use
+- an external instrumentation overlay triggered the declaration
 
-Auth emails use `SMTP_CONFIG` when configured. Without a valid SMTP config, the app logs verify and reset links with an `[auth-link]` prefix so local development stays simple.
+### Started but not finished
 
-Use `pnpm db:pull` when debugging production-like data locally. Stop the dev server first so it does not keep the old SQLite file open.
+- `SKILL.md` was read
+- `skill_use_started` was logged
+- no `skill_use_finished` event was logged
 
-The protected app routes use middleware from `app/.server/auth/middlewares.ts`.
-Use `requireUser(request)` or `getUser(request)` from `app/.server/auth/cookie.ts`
-when working outside middleware-backed routes.
+Possible interpretations:
 
-## Deployment
+- the task was interrupted
+- a tool failed
+- the model deviated to another skill
+- completion logging was skipped
 
-This project is Vercel-ready.
+---
 
-Before deploying:
+## Initial experiment
 
-1. Set production environment variables in Vercel.
-2. Apply the production schema manually with `pnpm atlas:prod`.
-3. Deploy from `main`.
+The first experiment compares the same skill, same task, and same model under different observability conditions.
 
-`vercel.json` currently allows deployments from `main` and disables automatic deployments from other branches.
+### Condition A: No instrumentation
+
+Normal skill execution. Only input and output are saved.
+
+### Condition B: Passive monitoring only
+
+The file access tracking harness is enabled, but no semantic logging is requested.
+
+### Condition C: Passive monitoring + inline debug instrumentation
+
+Debug instrumentation is added inside `SKILL.md`.
+
+### Condition D: Passive monitoring + external instrumentation overlay
+
+The skill file remains unchanged, but instrumentation instructions are injected externally.
+
+### Condition E: Strong debug protocol
+
+The model is strongly instructed to declare skill use before and after execution, including assumptions, risks, deviations, and uncertainties.
+
+Evaluation dimensions:
+
+- output quality
+- tool call count
+- latency
+- token usage
+- skill access frequency
+- logging compliance
+- passive / active trace consistency
+- failure reconstructability
+- postmortem draftability
+- regression case extractability
+- behavior drift caused by instrumentation
+
+---
+
+## Initial target skill
+
+The first target skill should be useful in real daily development work.
+
+Recommended starting point:
+
+> PR review skill
+
+Reasons:
+
+- inputs and outputs are concrete
+- Git diffs, tests, CI results, and review comments are natural artifacts
+- failures are relatively easy to identify
+- failures can often be turned into regression cases
+- SkillTrace can be dogfooded during its own development
+
+Other possible early skills:
+
+- implementation planning skill
+- technical research skill
+- test failure triage skill
+- DB migration review skill
+
+---
+
+## MVP v0 scope
+
+MVP v0 includes:
+
+- `skill_log_event` MCP tool
+- passive file access event receiver
+- local file access tracking harness
+- trace event store
+- run ID correlation
+- simple consistency checker
+- run timeline web UI
+- instrumentation ON/OFF comparison support
+
+MVP v0 does not include:
+
+- advanced postmortem generation
+- automatic regression test generation
+- skill trust cards
+- public skill registry
+- complex permission management
+- multi-user collaboration
+- supply-chain security
+- full OpenTelemetry integration
+
+The first milestone is not to manage skills.
+
+It is to observe them.
+
+---
+
+## Long-term vision
+
+Most agent and skill discussions focus on:
+
+- making agents more autonomous
+- improving tool use
+- increasing task success rates
+- automating workflows
+- packaging reusable prompts or procedures
+
+SkillTrace focuses on a different question:
+
+> Can a skill failure become reusable collective knowledge?
+
+Long term, SkillTrace may evolve toward:
+
+- skill incident schemas
+- skill postmortem schemas
+- skill trust cards
+- known failure modes
+- regression case registries
+- skill version lineage
+- GitHub PR integration
+- OpenTelemetry integration
+- skill reliability metrics
+- public and private skill trace sharing
+- LLM-assisted postmortem drafting
+- postmortem-backed skill registries
+
+The goal is not merely a skill repository.
+
+The goal is:
+
+> A system for attaching failure histories and improvement histories to executable knowledge.
+
+---
+
+## Slogan
+
+> Trace skill activation passively.  
+> Ask models to declare skill use actively.  
+> Compare the two.  
+> Turn failures into reusable procedural knowledge.
