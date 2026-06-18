@@ -55,20 +55,38 @@ export function loadProbeConfig(root: string) {
   }
 }
 
-export function parseOpenSnoopPath(line: string, roots: string[]) {
+export function parseOpenSnoopPath(
+  line: string,
+  roots: string[],
+  targetRoot?: string,
+) {
+  let lowerLine = line.toLowerCase()
+
   for (let root of roots) {
-    let index = line.indexOf(root)
-    if (index !== -1) return line.slice(index).trim()
+    let index = lowerLine.indexOf(root.toLowerCase())
+    if (index !== -1) return firstPathToken(line.slice(index))
+  }
+
+  if (targetRoot) {
+    for (let root of roots) {
+      let relativeRoot = path.relative(targetRoot, root)
+      if (!relativeRoot || relativeRoot.startsWith('..')) continue
+
+      let index = lowerLine.indexOf(relativeRoot.toLowerCase())
+      if (index !== -1) {
+        return path.resolve(targetRoot, firstPathToken(line.slice(index)))
+      }
+    }
   }
 
   return undefined
 }
 
 export function isWatchedSkillPath(filePath: string, roots: string[]) {
-  let absolutePath = path.resolve(filePath)
+  let absolutePath = path.resolve(filePath).toLowerCase()
 
   for (let root of roots) {
-    let absoluteRoot = path.resolve(root)
+    let absoluteRoot = path.resolve(root).toLowerCase()
     if (
       absolutePath === absoluteRoot ||
       absolutePath.startsWith(`${absoluteRoot}${path.sep}`)
@@ -116,6 +134,10 @@ export class ProbeDeduper {
 
 function unique(values: string[]) {
   return [...new Set(values)]
+}
+
+function firstPathToken(value: string) {
+  return value.trim().split(/\s+/)[0]
 }
 
 export type DiscoverProbeConfigOptions = {

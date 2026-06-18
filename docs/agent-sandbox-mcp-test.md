@@ -13,7 +13,7 @@ This is the first true MCP-path experiment. It is stronger than the CLI fixture 
 
 Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
 
-The current recommended flow uses `traceskill start`. It asks the local SkillTrace daemon to create an active session, then launches a macOS `opensnoop` probe worker for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
+The current recommended flow uses `traceskill start`. It asks the local SkillTrace daemon to create an active session, then launches a macOS `fs_usage` probe worker for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
 
 ## Pieces
 
@@ -22,7 +22,7 @@ The current recommended flow uses `traceskill start`. It asks the local SkillTra
 - Generated sandbox repo: `agent-sandbox-repo`.
 - Local CLI: `pnpm traceskill`.
 - Local MCP server command: `pnpm traceskill:mcp`.
-- Passive probe: `sudo -n opensnoop`.
+- Passive probe: `sudo -n fs_usage -w -f filesys`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
 `agent-sandbox-repo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
@@ -99,7 +99,7 @@ cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
 pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"
 ```
 
-This starts a background `opensnoop` probe worker and prints the run URL.
+This starts a background `fs_usage` probe worker and prints the run URL.
 It also prints a probe log path under:
 
 ```text
@@ -213,7 +213,7 @@ This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the `skill_log_event` tool.
-- The local probe worker can observe skill file reads with `opensnoop` before Codex starts reading the target repo.
+- The local probe worker can observe skill file reads with `fs_usage` before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
 - The daemon's one active session ID correlates passive probe events and MCP semantic events.

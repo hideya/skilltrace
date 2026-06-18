@@ -19,9 +19,9 @@ async function main() {
   })
   if (!config) usage('Target repo must contain .skilltrace.json or .skills')
 
-  assertMacOpenSnoopReady()
+  assertMacProbeReady()
 
-  let probe = startOpenSnoopProbe({
+  let probe = startFsUsageProbe({
     runId: options.run,
     serverUrl: options.server,
     targetRoot: config.targetRoot,
@@ -32,6 +32,7 @@ async function main() {
   bindCleanup(probe)
 
   console.error(`TraceSkill probe worker started: ${process.pid}`)
+  console.error('TraceSkill probe backend: fs_usage')
   console.error(`TraceSkill run ID: ${options.run}`)
   console.error(`TraceSkill target root: ${config.targetRoot}`)
   console.error(`TraceSkill skill roots: ${config.skillRoots.join(', ')}`)
@@ -59,8 +60,8 @@ function parseArgs(args: string[]) {
   return options
 }
 
-function startOpenSnoopProbe(options: OpenSnoopProbeOptions) {
-  let probe = spawn('sudo', ['-n', 'opensnoop'], {
+function startFsUsageProbe(options: ProbeOptions) {
+  let probe = spawn('sudo', ['-n', 'fs_usage', '-w', '-f', 'filesys'], {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let deduper = new ProbeDeduper()
@@ -75,7 +76,7 @@ function startOpenSnoopProbe(options: OpenSnoopProbeOptions) {
     buffer = lines.pop() ?? ''
 
     for (let line of lines) {
-      void handleOpenSnoopLine(line, options, deduper).catch((error) => {
+      void handleProbeLine(line, options, deduper).catch((error) => {
         console.error(`TraceSkill passive event failed: ${error.message}`)
       })
     }
@@ -86,30 +87,34 @@ function startOpenSnoopProbe(options: OpenSnoopProbeOptions) {
   })
 
   probe.on('error', (error) => {
-    console.error(`TraceSkill opensnoop failed: ${error.message}`)
+    console.error(`TraceSkill fs_usage failed: ${error.message}`)
     process.exit(1)
   })
 
   probe.on('exit', (code, signal) => {
-    console.error(`TraceSkill opensnoop exited: code=${code} signal=${signal}`)
+    console.error(`TraceSkill fs_usage exited: code=${code} signal=${signal}`)
     process.exit(code ?? 1)
   })
 
   return probe
 }
 
-async function handleOpenSnoopLine(
+async function handleProbeLine(
   line: string,
-  options: OpenSnoopProbeOptions,
+  options: ProbeOptions,
   deduper: ProbeDeduper,
 ) {
-  let filePath = parseOpenSnoopPath(line, options.skillRoots)
+  let filePath = parseOpenSnoopPath(
+    line,
+    options.skillRoots,
+    options.targetRoot,
+  )
   if (!filePath && options.debug && line.includes('.skills')) {
-    console.error(`TraceSkill opensnoop unmatched: ${line}`)
+    console.error(`TraceSkill fs_usage unmatched: ${line}`)
   }
   if (!filePath) return
   if (options.debug) {
-    console.error(`TraceSkill opensnoop matched: ${line}`)
+    console.error(`TraceSkill fs_usage matched: ${line}`)
   }
   if (!isWatchedSkillPath(filePath, options.skillRoots)) return
   if (deduper.has(filePath)) return
@@ -124,14 +129,14 @@ async function handleOpenSnoopLine(
   console.error(`TraceSkill passive event: ${event.event_type} ${filePath}`)
 }
 
-function assertMacOpenSnoopReady() {
+function assertMacProbeReady() {
   if (process.platform !== 'darwin') {
     throw new Error('traceskill passive probing currently supports macOS only')
   }
 
-  let which = spawnSync('which', ['opensnoop'], { stdio: 'pipe' })
+  let which = spawnSync('which', ['fs_usage'], { stdio: 'pipe' })
   if (which.status !== 0) {
-    throw new Error('opensnoop was not found on PATH')
+    throw new Error('fs_usage was not found on PATH')
   }
 
   let sudo = spawnSync('sudo', ['-n', 'true'], { stdio: 'pipe' })
@@ -194,7 +199,7 @@ type Options = {
   debug?: boolean
 }
 
-type OpenSnoopProbeOptions = {
+type ProbeOptions = {
   runId: string
   serverUrl: string
   targetRoot: string
