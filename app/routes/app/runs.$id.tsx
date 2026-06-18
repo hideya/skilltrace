@@ -49,6 +49,8 @@ export default function Page({ loaderData }: PageProps) {
         <Metric label="Semantic" value={timeline.semantic_events.length} />
       </section>
 
+      <ConsistencyPanel results={timeline.consistency} />
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
 
@@ -67,6 +69,60 @@ export default function Page({ loaderData }: PageProps) {
       </section>
     </main>
   )
+}
+
+function ConsistencyPanel({ results }: ConsistencyPanelProps) {
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Consistency</h2>
+          <p className="text-sm text-base-content/60">
+            {results.length} check{results.length === 1 ? '' : 's'}
+          </p>
+        </div>
+      </div>
+
+      {results.length > 0 ? (
+        <div className="grid gap-3">
+          {results.map((result, index) => (
+            <div
+              className="rounded-box border border-base-300 bg-base-100 p-4"
+              key={`${result.skill}-${result.title}-${index}`}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{result.title}</span>
+                    <ConsistencyBadge status={result.status} />
+                  </div>
+                  <p className="text-sm text-base-content/70">
+                    {result.message}
+                  </p>
+                </div>
+                <span className="badge badge-outline">{result.skill}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
+          No keyed skill events to check yet.
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ConsistencyBadge({ status }: ConsistencyBadgeProps) {
+  let className =
+    status === 'pass'
+      ? 'badge-success'
+      : status === 'warning'
+        ? 'badge-warning'
+        : 'badge-info'
+
+  return <span className={`badge ${className}`}>{status}</span>
 }
 
 function Metric({ label, value }: MetricProps) {
@@ -208,6 +264,14 @@ type PageProps = {
 type MetricProps = {
   label: string
   value: any
+}
+
+type ConsistencyPanelProps = {
+  results: any[]
+}
+
+type ConsistencyBadgeProps = {
+  status: 'pass' | 'warning' | 'incomplete'
 }
 
 type TimelineProps = {

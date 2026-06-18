@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
+import { checkTraceConsistency } from './trace-consistency'
 
 export const passiveEventSchema = z.object({
   run_id: z.string().trim().min(1, 'run_id is required'),
@@ -114,6 +115,7 @@ export async function getRunTimeline(publicId: string) {
     events,
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
+    consistency: checkTraceConsistency(events),
   }
 }
 
