@@ -24,20 +24,18 @@ export function buildDemoEvents(options: DemoEventOptions) {
   )
   let skillContent = fs.readFileSync(skillPath, 'utf8')
   let referenceContent = fs.readFileSync(referencePath, 'utf8')
+  let reads = buildReadEvents({
+    runId: options.runId,
+    skillPath,
+    referencePath,
+    skillContent,
+    referenceContent,
+  })
+
+  if (options.caseName === 'warning') return reads
 
   return [
-    buildSkillReadEvent({
-      runId: options.runId,
-      skillName: FIXTURE_SKILL,
-      filePath: skillPath,
-      content: skillContent,
-    }),
-    buildSkillReadEvent({
-      runId: options.runId,
-      skillName: FIXTURE_SKILL,
-      filePath: referencePath,
-      content: referenceContent,
-    }),
+    ...reads,
     buildSkillLogEvent({
       runId: options.runId,
       eventType: 'skill_use_started',
@@ -63,12 +61,65 @@ export function buildDemoEvents(options: DemoEventOptions) {
   ]
 }
 
+export function demoRunCases(caseName: DemoCase, baseRunId: string) {
+  if (caseName === 'pass') {
+    return [{ label: 'Pass run', runId: `${baseRunId}_pass`, caseName }]
+  }
+
+  if (caseName === 'warning') {
+    return [{ label: 'Warning run', runId: `${baseRunId}_warning`, caseName }]
+  }
+
+  return [
+    { label: 'Pass run', runId: `${baseRunId}_pass`, caseName: 'pass' },
+    {
+      label: 'Warning run',
+      runId: `${baseRunId}_warning`,
+      caseName: 'warning',
+    },
+  ] satisfies DemoRunCase[]
+}
+
 export function runUrl(server: string, runId: string) {
   return new URL(`/app/runs/${runId}`, server).toString()
 }
 
+function buildReadEvents(options: ReadEventOptions) {
+  return [
+    buildSkillReadEvent({
+      runId: options.runId,
+      skillName: FIXTURE_SKILL,
+      filePath: options.skillPath,
+      content: options.skillContent,
+    }),
+    buildSkillReadEvent({
+      runId: options.runId,
+      skillName: FIXTURE_SKILL,
+      filePath: options.referencePath,
+      content: options.referenceContent,
+    }),
+  ]
+}
+
 export type DemoEventOptions = {
   runId: string
+  caseName?: Exclude<DemoCase, 'both'>
   skillPath?: string
   referencePath?: string
+}
+
+export type DemoCase = 'pass' | 'warning' | 'both'
+
+export type DemoRunCase = {
+  label: string
+  runId: string
+  caseName: Exclude<DemoCase, 'both'>
+}
+
+type ReadEventOptions = {
+  runId: string
+  skillPath: string
+  referencePath: string
+  skillContent: string
+  referenceContent: string
 }

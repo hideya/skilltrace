@@ -2,13 +2,13 @@
 
 This document explains the first manual trace fixture loop for SkillTrace.
 
-The purpose is to verify the full trace path end to end:
+The purpose is to verify trace behavior end to end:
 
 1. read a fixture skill file
 2. emit passive file access events
 3. emit active semantic skill-use events
 4. view the run timeline
-5. confirm the consistency checker reports a pass
+5. confirm the consistency checker reports expected pass and warning states
 
 This is a test driver for the observability loop. It is not a real agent runtime and does not prove general file-read monitoring.
 
@@ -43,7 +43,7 @@ Make sure the local DB has the SkillTrace tables:
 pnpm db:init-local
 ```
 
-## Happy Path
+## Demo Runs
 
 Run the fixture demo sequence:
 
@@ -51,20 +51,14 @@ Run the fixture demo sequence:
 pnpm skilltrace:demo --server http://localhost:5173
 ```
 
-The command posts four events in order:
+By default, the command creates two runs.
+
+The pass run posts:
 
 - `skill_file_read`
 - `skill_reference_read`
 - `skill_use_started`
 - `skill_use_finished`
-
-At the end, it prints a run URL:
-
-```text
-http://localhost:5173/app/runs/<run_id>
-```
-
-Open that URL in the browser.
 
 Expected result:
 
@@ -73,17 +67,52 @@ Expected result:
 - Semantic declarations shows start and finish events
 - Consistency shows `Observed and declared` with a `pass` badge
 
+The warning run posts:
+
+- `skill_file_read`
+- `skill_reference_read`
+
+Expected result:
+
+- the Timeline shows passive file events
+- Passive skill access shows the file reads
+- Semantic declarations is empty
+- Consistency shows `Read but not declared` with a `warning` badge
+
+At the end, it prints run URLs:
+
+```text
+http://localhost:5173/app/runs/<run_id>
+```
+
+Open those URLs in the browser.
+
+## Cases
+
+Run only the passing case:
+
+```bash
+pnpm skilltrace:demo --case pass --server http://localhost:5173
+```
+
+Run only the warning case:
+
+```bash
+pnpm skilltrace:demo --case warning --server http://localhost:5173
+```
+
 ## Fixed Run ID
 
 Use a fixed run ID when you want repeatable manual testing:
 
 ```bash
 pnpm skilltrace:demo \
+  --case both \
   --run run_fixture_pr_review_demo \
   --server http://localhost:5173
 ```
 
-Repeated runs with the same run ID append more events to the same timeline. Use a new run ID when you want a clean timeline.
+Repeated runs with the same base run ID append more events to the same timelines. Use a new run ID when you want clean timelines.
 
 ## Manual Pieces
 
