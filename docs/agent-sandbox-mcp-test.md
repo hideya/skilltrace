@@ -11,6 +11,8 @@ The goal is to verify that an agent working in a separate fake repository can:
 
 This is the first true MCP-path experiment. It is stronger than the CLI fixture because the semantic events come from an MCP tool call made by the agent. It is still not full passive file monitoring.
 
+Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
+
 ## Pieces
 
 - Main SkillTrace app: this repository.
@@ -83,11 +85,24 @@ The command should show:
 - `SKILLTRACE_RUN_STEM`
 - `SKILLTRACE_SERVER`
 
-Open a new Codex session after registering the MCP server so the tool list is refreshed.
+Open a new command-line Codex session after registering the MCP server so the tool list is refreshed.
 
 ## Run The Experiment
 
-Open `agent-sandbox-repo` as a separate Codex project.
+Open `agent-sandbox-repo` in command-line Codex:
+
+```bash
+cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
+/Applications/Codex.app/Contents/Resources/codex
+```
+
+In that Codex session, run:
+
+```text
+/mcp
+```
+
+Confirm that `skilltrace` is enabled before starting the repair task.
 
 Ask Codex:
 
@@ -133,6 +148,20 @@ mcp_semantic_logger
 ```
 
 The semantic declarations panel should show the started and finished events.
+
+The consistency panel should show:
+
+```text
+Declared but not observed
+```
+
+with a message like:
+
+```text
+type-fix was declared, but no passive skill read was observed.
+```
+
+That is expected for this pure MCP test because it only exercises semantic logging. Add the optional passive event check below if you want the same run to pass the consistency check.
 
 ## What This Test Proves
 
@@ -186,9 +215,12 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
 - The MCP server is registered with `SKILLTRACE_SERVER=http://localhost:5173`.
-- You opened a new Codex session after registering the MCP server.
+- You opened a new command-line Codex session after registering the MCP server.
+- You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated timestamped ID, not the fixed stem.
+
+If Codex says `skill_log_event` is not available, verify that you are running the command-line Codex session from `agent-sandbox-repo`. In observed testing, Codex via VS Code could show the `skilltrace` MCP server as enabled but still not expose the custom `skill_log_event` tool to the agent.
 
 If the sandbox starts already fixed, run:
 
