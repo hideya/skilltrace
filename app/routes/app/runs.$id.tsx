@@ -283,7 +283,9 @@ function EventCard({ event, compact = false }: EventCardProps) {
         </div>
 
         {event.skill_name ? (
-          <span className="badge badge-outline">skill: {event.skill_name}</span>
+          <span className="badge badge-outline whitespace-nowrap">
+            skill: {event.skill_name}
+          </span>
         ) : null}
       </div>
 
