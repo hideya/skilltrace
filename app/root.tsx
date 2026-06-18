@@ -13,7 +13,7 @@ import { getToast } from 'remix-toast'
 import { toast as notify, Toaster } from 'sonner'
 import { getUser } from '~/.server/auth/cookie'
 import { PublicEnv } from '~/config/.server/env'
-import { starter } from '~/config/starter'
+import { appName } from '~/config/app-name'
 import { StatusPage } from '~/ui/status-page'
 import './tailwind.css'
 
@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{starter.appName}</title>
+        <title>{appName}</title>
         <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

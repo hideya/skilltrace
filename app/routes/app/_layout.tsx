@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Form, NavLink, Outlet, useLocation, useNavigation } from 'react-router'
 import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
+import { appName } from '~/config/app-name'
 
 export const middleware = [requireUserMiddleware]
 const activeClass = 'underline underline-offset-4 decoration-2'
@@ -45,7 +46,7 @@ export default function Layout({ loaderData }: LayoutProps) {
       >
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            <div className="text-2xl">SkillTrace</div>
+            <div className="text-2xl">{appName}</div>
             <AppNavLink to="/app" end busy={homeBusy}>
               Home
             </AppNavLink>

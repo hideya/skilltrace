@@ -1,5 +1,6 @@
 import { LockKeyholeIcon } from 'lucide-react'
 import { Outlet } from 'react-router'
+import { appName } from '~/config/app-name'
 
 export default function Layout() {
   return (
@@ -9,7 +10,7 @@ export default function Layout() {
           {/* <div className="rounded-full bg-base-200 p-3">
             <LockKeyholeIcon className="size-6" />
           </div> */}
-          <div className="text-4xl">SkillTrace</div>
+          <div className="text-4xl">{appName}</div>
         </div>
         <div className="app-fade-in">
           <Outlet />

@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { requireUser } from '~/.server/auth/middlewares'
+import { appName } from '~/config/app-name'
 import { listRunSummaries } from '~/models/.server/trace'
 
 export async function loader({ context }) {
@@ -15,7 +16,7 @@ export default function Page({ loaderData }: PageProps) {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
       <header className="space-y-3">
-        <p className="badge rounded-full badge-outline">SkillTrace</p>
+        <p className="badge rounded-full badge-outline">{appName}</p>
         <div className="space-y-1">
           <h1 className="text-4xl font-bold text-balance">Runs</h1>
           <p className="text-base-content/70">
