@@ -1,17 +1,17 @@
 import {
-  buildDogfoodEvents,
-  buildDogfoodRunId,
+  buildDemoEvents,
+  buildDemoRunId,
   runUrl,
-} from './lib/skilltrace-dogfood'
+} from './lib/skilltrace-demo'
 
 const DEFAULT_SERVER = 'http://localhost:5173'
 
 async function main() {
   let options = parseArgs(process.argv.slice(2))
-  let runId = options.run || buildDogfoodRunId()
+  let runId = options.run || buildDemoRunId()
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
-  let events = buildDogfoodEvents({ runId })
+  let events = buildDemoEvents({ runId })
 
   for (let event of events) {
     await postEvent(server, event)
@@ -62,7 +62,7 @@ async function postEvent(server: string, event: any) {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: pnpm skilltrace:dogfood [--run <run_id>] [--server <url>]')
+  console.error('Usage: pnpm skilltrace:demo [--run <run_id>] [--server <url>]')
   process.exit(1)
 }
 

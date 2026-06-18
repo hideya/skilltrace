@@ -1,6 +1,6 @@
-# SkillTrace Dogfood Fixture
+# SkillTrace Trace Fixture
 
-This document explains the first manual dogfood loop for SkillTrace.
+This document explains the first manual trace fixture loop for SkillTrace.
 
 The purpose is to verify the full trace path end to end:
 
@@ -45,10 +45,10 @@ pnpm db:init-local
 
 ## Happy Path
 
-Run the fixture dogfood sequence:
+Run the fixture demo sequence:
 
 ```bash
-pnpm skilltrace:dogfood --server http://localhost:5173
+pnpm skilltrace:demo --server http://localhost:5173
 ```
 
 The command posts four events in order:
@@ -78,7 +78,7 @@ Expected result:
 Use a fixed run ID when you want repeatable manual testing:
 
 ```bash
-pnpm skilltrace:dogfood \
+pnpm skilltrace:demo \
   --run run_fixture_pr_review_demo \
   --server http://localhost:5173
 ```
@@ -87,7 +87,7 @@ Repeated runs with the same run ID append more events to the same timeline. Use 
 
 ## Manual Pieces
 
-The dogfood command is equivalent to running the lower-level harness commands manually.
+The demo command is equivalent to running the lower-level harness commands manually.
 
 Passive read:
 

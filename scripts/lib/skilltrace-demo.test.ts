@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { buildDogfoodRunId, runUrl } from './skilltrace-dogfood'
+import { buildDemoRunId, runUrl } from './skilltrace-demo'
 
-describe('skilltrace dogfood helpers', () => {
+describe('skilltrace demo helpers', () => {
   test('builds stable timestamped run IDs', () => {
-    let runId = buildDogfoodRunId(new Date('2026-06-18T09:30:45Z'))
+    let runId = buildDemoRunId(new Date('2026-06-18T09:30:45Z'))
 
     expect(runId).toBe('run_fixture_pr_review_20260618_093045')
   })
