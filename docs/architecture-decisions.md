@@ -28,25 +28,6 @@ Reasons:
 
 Starting a new session should end the previous session and replace the passive probe.
 
-## Stable MCP Registration
-
-The Codex MCP registration should not include repo-specific paths.
-
-Use a stable registration:
-
-```bash
-/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
-```
-
-The active repo is selected by:
-
-```bash
-traceskill start --target "$PWD"
-```
-
-The MCP server resolves the daemon's active session over HTTP when `skill_log_event` is called.
-
 ## CLI-Owned Probe Worker
 
 The local web server does not start the passive probe directly.
@@ -102,14 +83,3 @@ pnpm sandbox:reset
 ```
 
 If a terminal was inside the old generated sandbox when it was reset, `cd` into the sandbox again before running commands.
-
-## Start New Attempt
-
-The UI uses `Start new attempt` rather than `Clear`.
-
-Reason:
-
-- it names the user's intent: retry the same trace session
-- it avoids presenting trace history deletion as the conceptual product action
-
-For v0 it clears events from the selected run. Later this may become an explicit attempt model.
