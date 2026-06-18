@@ -6,7 +6,8 @@
     ".react-router/types/**/*"
   ],
   "exclude": [
-    "agent-sandbox-repo"
+    "agent-sandbox-repo",
+    "agent-sandbox-repo-template"
   ],
   "compilerOptions": {
     "types": [

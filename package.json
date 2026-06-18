@@ -13,6 +13,7 @@
     "skilltrace:log": "tsx scripts/skilltrace-log.ts",
     "skilltrace:demo": "tsx scripts/skilltrace-demo.ts",
     "skilltrace:mcp": "tsx scripts/skilltrace-mcp.ts",
+    "sandbox:reset": "tsx scripts/reset-agent-sandbox.ts",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
     "db:init-local": "tsx scripts/init-local-db.ts",

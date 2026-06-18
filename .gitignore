@@ -5,6 +5,7 @@ node_modules/
 pnpm-lock.yaml
 data/local/*
 !data/.gitkeep
+agent-sandbox-repo/
 
 # React Router
 .react-router/

@@ -1,6 +1,6 @@
 # SkillTrace Agent Sandbox
 
-This is a fake repository used to test SkillTrace with a separate Codex project.
+This is a fake repository generated from `agent-sandbox-repo-template`.
 
 The goal is to verify whether an agent can:
 
@@ -9,13 +9,17 @@ The goal is to verify whether an agent can:
 3. fix intentionally broken TypeScript code
 4. produce semantic trace events that appear in SkillTrace
 
-## Setup
+## Reset From Template
 
-Open this directory as a separate Codex project:
+From the main SkillTrace project, reset this sandbox before each experiment:
 
-```text
-agent-sandbox-repo
+```bash
+pnpm sandbox:reset
 ```
+
+Then open `agent-sandbox-repo` as a separate Codex project.
+
+## Setup
 
 Start SkillTrace from the main project in another terminal:
 
@@ -23,15 +27,7 @@ Start SkillTrace from the main project in another terminal:
 pnpm dev
 ```
 
-Start the SkillTrace MCP server with a run ID stem:
-
-```bash
-SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
-SKILLTRACE_SERVER=http://localhost:5173 \
-pnpm --dir .. skilltrace:mcp
-```
-
-To make the MCP server available to Codex, register it from the main SkillTrace project:
+Register the SkillTrace MCP server from the main SkillTrace project:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
