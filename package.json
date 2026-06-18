@@ -7,6 +7,7 @@
     "prep": "node scripts/prep.js",
     "dev": "react-router dev",
     "build": "react-router build",
+    "test": "vitest run",
     "tsc": "tsc --noEmit",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",
@@ -51,7 +52,8 @@
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
   },
   "packageManager": "pnpm@10.28.2",
   "pnpm": {
