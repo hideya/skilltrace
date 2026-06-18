@@ -202,26 +202,37 @@ function Timeline({ events }: TimelineProps) {
         </div>
       </div>
 
-      {filteredEvents.length > 0 ? (
+      {events.length > 0 ? (
         <ol className="relative space-y-4 before:absolute before:bottom-0 before:left-3 before:top-2 before:w-px before:bg-base-300">
-          {filteredEvents.map((event) => (
-            <li className="relative pl-9" key={event.id}>
-              <span
-                className={`absolute left-1.5 top-2 size-3 rounded-full ring-4 ring-base-100 ${
-                  isSemanticEvent(event) ? 'bg-info' : 'bg-primary'
-                }`}
-              />
-              <EventCard event={event} />
-            </li>
-          ))}
+          {events.map((event) => {
+            let isMatch = matchesTimelineFilter(event, filter)
+
+            return (
+              <li
+                className={`relative pl-9 ${isMatch ? '' : 'min-h-6'}`}
+                key={event.id}
+              >
+                <span
+                  className={`absolute left-1.5 top-2 size-3 rounded-full ring-4 ring-base-100 ${eventDotClass(
+                    event
+                  )} ${isMatch ? '' : 'opacity-40'}`}
+                />
+                {isMatch ? <EventCard event={event} /> : null}
+              </li>
+            )
+          })}
         </ol>
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
-          {events.length === 0
-            ? 'No events recorded.'
-            : `No ${filter} events in this run.`}
+          No events recorded.
         </div>
       )}
+
+      {events.length > 0 && filteredEvents.length === 0 ? (
+        <div className="mt-4 rounded-box border border-dashed border-base-300 p-4 text-center text-sm text-base-content/60">
+          No {filter} events in this run.
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -343,6 +354,12 @@ function sourceBadgeClass(event: any) {
   if (isSemanticEvent(event)) return 'badge-info badge-outline'
   if (isPassiveEvent(event)) return 'badge-primary badge-outline'
   return 'badge-ghost'
+}
+
+function eventDotClass(event: any) {
+  if (isSemanticEvent(event)) return 'bg-info'
+  if (isPassiveEvent(event)) return 'bg-primary'
+  return 'bg-base-content'
 }
 
 function formatDate(value?: Date | string | null) {
