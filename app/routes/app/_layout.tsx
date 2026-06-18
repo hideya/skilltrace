@@ -31,6 +31,7 @@ export default function Layout({ loaderData }: LayoutProps) {
     !!navigation.formAction &&
     navigation.formAction.endsWith('/logout')
   let homeBusy = pendingPath === '/app'
+  let runsBusy = pendingPath?.startsWith('/app/runs')
   let adminBusy = pendingPath?.startsWith('/admin')
   let settingsBusy = pendingPath === '/app/settings'
 
@@ -47,6 +48,9 @@ export default function Layout({ loaderData }: LayoutProps) {
             <div className="text-2xl">App Name</div>
             <AppNavLink to="/app" end busy={homeBusy}>
               Home
+            </AppNavLink>
+            <AppNavLink to="/app/runs" busy={runsBusy}>
+              Runs
             </AppNavLink>
           </div>
           <div className="ml-auto flex w-auto items-center justify-end gap-0 sm:gap-1">

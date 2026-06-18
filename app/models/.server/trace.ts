@@ -51,7 +51,7 @@ export async function appendPassiveEvent(input: PassiveEventInput) {
   return await TraceEvent.create({
     run_id: run.id,
     timestamp,
-    source: 'passive_file_harness',
+    source: PASSIVE_SOURCE,
     event_type: input.event_type,
     skill_name: input.skill?.name,
     skill_version: input.skill?.version,
@@ -69,7 +69,7 @@ export async function appendSemanticEvent(input: SemanticEventInput) {
   return await TraceEvent.create({
     run_id: run.id,
     timestamp,
-    source: 'mcp_semantic_logger',
+    source: SEMANTIC_SOURCE,
     event_type: input.event_type,
     skill_name: input.skill?.name,
     skill_version: input.skill?.version,
@@ -84,9 +84,61 @@ export async function appendSemanticEvent(input: SemanticEventInput) {
   })
 }
 
+export async function listRunSummaries() {
+  let runs = await Run.newestBy('created_at')
+  let events = await TraceEvent.newestBy('timestamp')
+  let eventsByRun = groupEventsByRun(events)
+
+  return runs.map((run) => {
+    let runEvents = eventsByRun.get(run.id) ?? []
+    let lastEvent = runEvents[0]
+
+    return {
+      run,
+      event_count: runEvents.length,
+      last_event_at: lastEvent?.timestamp ?? null,
+      last_event_type: lastEvent?.event_type ?? null,
+      sources: unique(runEvents.map((event) => event.source)),
+    }
+  })
+}
+
+export async function getRunTimeline(publicId: string) {
+  let run = await Run.findByPublicID(publicId)
+  let events = await TraceEvent.oldestBy('timestamp', {
+    where: { run_id: run.id },
+  })
+
+  return {
+    run,
+    events,
+    passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
+    semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
+  }
+}
+
 export type PassiveEventInput = z.infer<typeof passiveEventSchema>
 export type SemanticEventInput = z.infer<typeof semanticEventSchema>
 
+const PASSIVE_SOURCE = 'passive_file_harness'
+const SEMANTIC_SOURCE = 'mcp_semantic_logger'
+
 function isDateString(value: string) {
   return !Number.isNaN(Date.parse(value))
+}
+
+function groupEventsByRun(events: any[]) {
+  let groups = new Map<number, any[]>()
+
+  for (let event of events) {
+    let group = groups.get(event.run_id) ?? []
+    group.push(event)
+    groups.set(event.run_id, group)
+  }
+
+  return groups
+}
+
+function unique(values: string[]) {
+  return [...new Set(values)]
 }
