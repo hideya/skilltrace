@@ -1,6 +1,6 @@
 import { Link, Form } from 'react-router'
 import { replaceWithSuccess } from 'remix-toast'
-import { requireUser } from '~/.server/auth/middlewares'
+import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
 import { userUpdateSchema } from '~/.server/db/validators'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { validate } from '~/lib/data/validate'
@@ -12,6 +12,8 @@ const settingsSchema = userUpdateSchema.pick({
   name: true,
   email: true,
 })
+
+export const middleware = [requireUserMiddleware]
 
 export async function loader({ context }) {
   let user = requireUser(context)

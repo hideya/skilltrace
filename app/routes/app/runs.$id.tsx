@@ -1,18 +1,22 @@
 import { Form, Link, redirect } from 'react-router'
-import { requireUser } from '~/.server/auth/middlewares'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 
-export async function loader({ context, params }) {
-  requireUser(context)
+// Remote/auth mode reference:
+// import { requireUser } from '~/.server/auth/middlewares'
+
+export async function loader({ params }) {
+  // Remote/auth mode reference:
+  // requireUser(context)
   if (!params.id) throw notFoundError()
 
   let timeline = await getRunTimeline(params.id)
   return { timeline }
 }
 
-export async function action({ context, params }) {
-  requireUser(context)
+export async function action({ params }) {
+  // Remote/auth mode reference:
+  // requireUser(context)
   if (!params.id) throw notFoundError()
 
   await clearRunEvents(params.id)

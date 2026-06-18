@@ -1,10 +1,13 @@
 import { Form, Link } from 'react-router'
-import { requireUser } from '~/.server/auth/middlewares'
 import { appName } from '~/config/app-name'
 import { listRunSummaries } from '~/models/.server/trace'
 
-export async function loader({ context }) {
-  requireUser(context)
+// Remote/auth mode reference:
+// import { requireUser } from '~/.server/auth/middlewares'
+
+export async function loader() {
+  // Remote/auth mode reference:
+  // requireUser(context)
   let summaries = await listRunSummaries()
 
   return { summaries }

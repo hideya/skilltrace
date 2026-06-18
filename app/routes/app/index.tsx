@@ -1,6 +1,6 @@
 import { Form } from 'react-router'
 import { replaceWithSuccess } from 'remix-toast'
-import { requireUser } from '~/.server/auth/middlewares'
+import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
 import { noteInsertSchema } from '~/.server/db/validators'
 import { useBusy } from '~/hooks/use-busy'
 import { notFoundError } from '~/lib/.server/errors'
@@ -13,6 +13,8 @@ const createNoteSchema = noteInsertSchema.pick({
   title: true,
   content: true,
 })
+
+export const middleware = [requireUserMiddleware]
 
 export async function loader({ context }) {
   let user = requireUser(context)

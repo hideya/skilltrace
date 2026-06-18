@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
-import { Form, NavLink, Outlet, useLocation, useNavigation } from 'react-router'
-import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
+import { NavLink, Outlet, useNavigation } from 'react-router'
 import { appName } from '~/config/app-name'
 
-export const middleware = [requireUserMiddleware]
+// Remote/auth mode reference:
+// import { Form, NavLink, Outlet, useLocation, useNavigation } from 'react-router'
+// import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
+// export const middleware = [requireUserMiddleware]
+
 const activeClass = 'underline underline-offset-4 decoration-2'
 const navItemClass =
   'btn rounded-full btn-ghost btn-sm font-normal tracking-wider h-8 min-h-8' +
@@ -11,30 +14,32 @@ const navItemClass =
   ' px-2 text-xs whitespace-nowrap sm:h-9 sm:min-h-9 sm:px-3' +
   ' sm:text-sm border-none shadow-none'
 
-export async function loader({ context }) {
-  let user = requireUser(context)
-  return { user }
+export async function loader() {
+  // Remote/auth mode reference:
+  // let user = requireUser(context)
+  // return { user }
+  return {}
 }
 
-export default function Layout({ loaderData }: LayoutProps) {
+export default function Layout() {
   let navRef = useRef<HTMLElement>(null)
   let isPastNav = useIsPastNavHeight(navRef)
-  let user = loaderData.user
-  let location = useLocation()
   let navigation = useNavigation()
   let pendingPath = navigation.location?.pathname || null
-  let currentPath = `${location.pathname}${location.search}${location.hash}`
-  let settingsReturnTo =
-    location.pathname === '/app/settings' ? '/app' : currentPath
-  let logoutBusy =
-    navigation.state !== 'idle' &&
-    navigation.formMethod?.toLowerCase() === 'post' &&
-    !!navigation.formAction &&
-    navigation.formAction.endsWith('/logout')
-  let homeBusy = pendingPath === '/app'
   let runsBusy = pendingPath?.startsWith('/app/runs')
-  let adminBusy = pendingPath?.startsWith('/admin')
-  let settingsBusy = pendingPath === '/app/settings'
+  // Remote/auth mode reference:
+  // let location = useLocation()
+  // let currentPath = `${location.pathname}${location.search}${location.hash}`
+  // let user = loaderData.user
+  // let settingsReturnTo =
+  //   location.pathname === '/app/settings' ? '/app/runs' : currentPath
+  // let logoutBusy =
+  //   navigation.state !== 'idle' &&
+  //   navigation.formMethod?.toLowerCase() === 'post' &&
+  //   !!navigation.formAction &&
+  //   navigation.formAction.endsWith('/logout')
+  // let adminBusy = pendingPath?.startsWith('/admin')
+  // let settingsBusy = pendingPath === '/app/settings'
 
   return (
     <div className="min-h-screen bg-base-200 pt-12">
@@ -47,41 +52,40 @@ export default function Layout({ loaderData }: LayoutProps) {
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="text-2xl">{appName}</div>
-            <AppNavLink to="/app" end busy={homeBusy}>
+            <AppNavLink to="/app/runs" busy={runsBusy}>
               Home
             </AppNavLink>
-            <AppNavLink to="/app/runs" busy={runsBusy}>
-              Runs
-            </AppNavLink>
           </div>
-          <div className="ml-auto flex w-auto items-center justify-end gap-0 sm:gap-1">
-            {user.role === 'admin' ? (
-              <AppNavLink to="/admin" className="shrink-0" busy={adminBusy}>
-                Admin
-              </AppNavLink>
-            ) : null}
-            <AppNavLink
-              to="/app/settings"
-              state={{ returnTo: settingsReturnTo }}
-              className="shrink-0"
-              busy={settingsBusy}
-            >
-              <UserNavLabel user={user} />
-            </AppNavLink>
-            <Form action="/logout" method="post" replace>
-              <button
-                className={`${navItemClass} relative shrink-0`}
-                disabled={logoutBusy}
+          {/* Remote/auth mode reference:
+            <div className="ml-auto flex w-auto items-center justify-end gap-0 sm:gap-1">
+              {user.role === 'admin' ? (
+                <AppNavLink to="/admin" className="shrink-0" busy={adminBusy}>
+                  Admin
+                </AppNavLink>
+              ) : null}
+              <AppNavLink
+                to="/app/settings"
+                state={{ returnTo: settingsReturnTo }}
+                className="shrink-0"
+                busy={settingsBusy}
               >
-                <span className={logoutBusy ? 'invisible' : ''}>Logout</span>
-                {logoutBusy ? (
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="loading loading-sm loading-spinner" />
-                  </span>
-                ) : null}
-              </button>
-            </Form>
-          </div>
+                <UserNavLabel user={user} />
+              </AppNavLink>
+              <Form action="/logout" method="post" replace>
+                <button
+                  className={`${navItemClass} relative shrink-0`}
+                  disabled={logoutBusy}
+                >
+                  <span className={logoutBusy ? 'invisible' : ''}>Logout</span>
+                  {logoutBusy ? (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="loading loading-sm loading-spinner" />
+                    </span>
+                  ) : null}
+                </button>
+              </Form>
+            </div>
+          */}
         </div>
       </header>
 
@@ -114,15 +118,16 @@ function useIsPastNavHeight(ref: RefObject<HTMLElement | null>) {
   return isPast
 }
 
-function UserNavLabel({ user }: UserNavLabelProps) {
-  let name = user.name || '???'
-
-  return (
-    <span className="flex items-center gap-0.5">
-      <span>{name}</span>
-    </span>
-  )
-}
+// Remote/auth mode reference:
+// function UserNavLabel({ user }: UserNavLabelProps) {
+//   let name = user.name || '???'
+//
+//   return (
+//     <span className="flex items-center gap-0.5">
+//       <span>{name}</span>
+//     </span>
+//   )
+// }
 
 function AppNavLink({
   to,
@@ -160,12 +165,13 @@ type AppNavLinkProps = {
   children: any
 }
 
-type UserNavLabelProps = {
-  user: any
-}
-
-type LayoutProps = {
-  loaderData: {
-    user: any
-  }
-}
+// Remote/auth mode reference:
+// type UserNavLabelProps = {
+//   user: any
+// }
+//
+// type LayoutProps = {
+//   loaderData: {
+//     user: any
+//   }
+// }

@@ -15,6 +15,19 @@ Reasons:
 
 Remote service support can come later after the local workflow feels solid.
 
+## Local UI Does Not Require Login
+
+The local runs UI is public in v0.
+
+Reasons:
+
+- the local daemon is meant to run on the developer's own machine
+- login gets in the way of the trace-debugging loop
+- auth is still valuable for a future remote/team version, so the scaffolded auth
+  routes remain in the codebase
+- route-level auth references are kept as comments near the local-mode changes
+  to make a future remote mode easy to restore
+
 ## One Active Session
 
 SkillTrace v0 uses one active trace session globally.
