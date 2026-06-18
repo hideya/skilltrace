@@ -7,9 +7,9 @@ import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 // import { requireUser } from '~/.server/auth/middlewares'
 
 const timelineFilters = [
-  { value: 'all', label: 'All' },
-  { value: 'passive', label: 'Passive' },
   { value: 'semantic', label: 'Semantic' },
+  { value: 'passive', label: 'Passive' },
+  { value: 'all', label: 'All' },
 ] as const
 
 export async function loader({ params }) {
@@ -39,14 +39,14 @@ export default function Page({ loaderData }: PageProps) {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
       <header className="space-y-4">
-        <Link className="link link-hover text-sm" to="/app/runs">
+        <Link className="link text-sm link-hover" to="/app/runs">
           Back to runs
         </Link>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-2">
             <p className="badge rounded-full badge-outline">Run timeline</p>
-            <h1 className="break-words text-4xl font-bold text-balance">
+            <h1 className="text-4xl font-bold text-balance break-words">
               {title}
             </h1>
             {run.description ? (
@@ -55,7 +55,7 @@ export default function Page({ loaderData }: PageProps) {
           </div>
 
           <div className="rounded-box border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-base-content/50">
+            <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
               Events
             </p>
             <p className="text-3xl font-bold">{timeline.events.length}</p>
@@ -156,7 +156,7 @@ function ConsistencyBadge({ status }: ConsistencyBadgeProps) {
 function Metric({ label, value }: MetricProps) {
   return (
     <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.2em] text-base-content/50">
+      <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
         {label}
       </p>
       <p className="mt-2 text-2xl font-bold">{value}</p>
@@ -165,9 +165,9 @@ function Metric({ label, value }: MetricProps) {
 }
 
 function Timeline({ events }: TimelineProps) {
-  let [filter, setFilter] = useState<TimelineFilter>('all')
+  let [filter, setFilter] = useState<TimelineFilter>('semantic')
   let filteredEvents = events.filter((event) =>
-    matchesTimelineFilter(event, filter)
+    matchesTimelineFilter(event, filter),
   )
   let counts = getTimelineCounts(events)
 
@@ -182,7 +182,7 @@ function Timeline({ events }: TimelineProps) {
           </p>
         </div>
 
-        <div className="join">
+        <div className="join gap-2">
           {timelineFilters.map((option) => (
             <button
               aria-pressed={filter === option.value}
@@ -194,16 +194,14 @@ function Timeline({ events }: TimelineProps) {
               type="button"
             >
               {option.label}
-              <span className="badge badge-sm">
-                {counts[option.value]}
-              </span>
+              <span className="badge badge-sm">{counts[option.value]}</span>
             </button>
           ))}
         </div>
       </div>
 
       {events.length > 0 ? (
-        <ol className="relative space-y-4 before:absolute before:bottom-0 before:left-3 before:top-2 before:w-px before:bg-base-300">
+        <ol className="relative space-y-4 before:absolute before:top-2 before:bottom-0 before:left-3 before:w-px before:bg-base-300">
           {events.map((event) => {
             let isMatch = matchesTimelineFilter(event, filter)
 
@@ -213,8 +211,8 @@ function Timeline({ events }: TimelineProps) {
                 key={event.id}
               >
                 <span
-                  className={`absolute left-1.5 top-2 size-3 rounded-full ring-4 ring-base-100 ${eventDotClass(
-                    event
+                  className={`absolute top-2 left-1.5 size-3 rounded-full ring-4 ring-base-100 ${eventDotClass(
+                    event,
                   )} ${isMatch ? '' : 'opacity-40'}`}
                 />
                 {isMatch ? (
@@ -285,17 +283,13 @@ function EventCard({ event, compact = false }: EventCardProps) {
         </div>
 
         {event.skill_name ? (
-          <span className="badge badge-outline">
-            skill: {event.skill_name}
-          </span>
+          <span className="badge badge-outline">skill: {event.skill_name}</span>
         ) : null}
       </div>
 
       <SkillMeta event={event} />
 
-      {!compact || event.payload ? (
-        <JsonBlock value={event.payload} />
-      ) : null}
+      {!compact || event.payload ? <JsonBlock value={event.payload} /> : null}
     </article>
   )
 }
@@ -312,9 +306,12 @@ function SkillMeta({ event }: SkillMetaProps) {
   return (
     <dl className="mt-4 grid gap-2 text-sm">
       {rows.map(([label, value]) => (
-        <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)]" key={label}>
+        <div
+          className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)]"
+          key={label}
+        >
           <dt className="text-base-content/50">{label}</dt>
-          <dd className="min-w-0 break-words font-mono text-xs">{value}</dd>
+          <dd className="min-w-0 font-mono text-xs break-words">{value}</dd>
         </div>
       ))}
     </dl>
