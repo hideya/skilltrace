@@ -23,19 +23,61 @@ It is intentionally small:
 - one MCP tool
 - stdio transport
 - posts to `/api/skill-log-events`
-- uses `SKILLTRACE_RUN_ID` and `SKILLTRACE_SERVER`
+- uses `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER`
 
 It does not implement passive file observation, skill loading, or a full agent platform.
 
 ## Start Command
 
 ```bash
-SKILLTRACE_RUN_ID=run_mcp_fixture_001 \
+SKILLTRACE_RUN_STEM=run_mcp_fixture \
 SKILLTRACE_SERVER=http://localhost:5173 \
 pnpm skilltrace:mcp
 ```
 
 An MCP client should launch this command as a stdio server.
+
+## Codex MCP Registration
+
+For Codex, register the SkillTrace MCP server with:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
+  --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
+  --env SKILLTRACE_SERVER=http://localhost:5173 \
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+```
+
+Then confirm the server is registered:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp list
+/Applications/Codex.app/Contents/Resources/codex mcp get skilltrace
+```
+
+Open a new Codex session after registration so the tool list is refreshed.
+
+To remove the SkillTrace MCP server later:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
+```
+
+When `SKILLTRACE_RUN_STEM` is set, the MCP server generates one run ID at startup:
+
+```text
+run_mcp_fixture_20260619_001530
+```
+
+All tool calls in that MCP server process use the generated run ID unless the tool input explicitly provides `run_id`.
+
+Use `SKILLTRACE_RUN_ID` when you want a fixed run ID instead:
+
+```bash
+SKILLTRACE_RUN_ID=run_mcp_fixture_001 \
+SKILLTRACE_SERVER=http://localhost:5173 \
+pnpm skilltrace:mcp
+```
 
 ## Tool Input
 
@@ -57,7 +99,7 @@ The `skill_log_event` tool accepts:
 }
 ```
 
-`run_id` is optional if `SKILLTRACE_RUN_ID` is set:
+`run_id` is optional if `SKILLTRACE_RUN_ID` or `SKILLTRACE_RUN_STEM` is set:
 
 ```json
 {

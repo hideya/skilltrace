@@ -23,12 +23,35 @@ Start SkillTrace from the main project in another terminal:
 pnpm dev
 ```
 
-Start the SkillTrace MCP server with a run ID:
+Start the SkillTrace MCP server with a run ID stem:
 
 ```bash
-SKILLTRACE_RUN_ID=run_agent_sandbox_type_fix_001 \
+SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
 SKILLTRACE_SERVER=http://localhost:5173 \
 pnpm --dir .. skilltrace:mcp
+```
+
+To make the MCP server available to Codex, register it from the main SkillTrace project:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
+  --env SKILLTRACE_RUN_STEM=run_agent_sandbox_type_fix \
+  --env SKILLTRACE_SERVER=http://localhost:5173 \
+  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace skilltrace:mcp
+```
+
+Then open a new Codex session for this sandbox repository.
+
+To remove the SkillTrace MCP server later:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
+```
+
+The MCP server prints the generated run ID when it starts. It looks like:
+
+```text
+run_agent_sandbox_type_fix_20260619_001530
 ```
 
 ## Test Prompt
@@ -53,7 +76,7 @@ The agent should:
 Then open the SkillTrace run page:
 
 ```text
-http://localhost:5173/app/runs/run_agent_sandbox_type_fix_001
+http://localhost:5173/app/runs/<generated_run_id>
 ```
 
 This sandbox does not test passive file observation yet unless you separately run the SkillTrace read harness.

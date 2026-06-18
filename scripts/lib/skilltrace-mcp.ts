@@ -18,9 +18,9 @@ export function buildMcpSkillLogEvent(
   input: SkillLogEventInput,
   env: SkillTraceMcpEnv,
 ) {
-  let runId = input.run_id || env.runId
+  let runId = input.run_id || mcpRunId(env)
   if (!runId) {
-    throw new Error('Missing run_id or SKILLTRACE_RUN_ID')
+    throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
   }
 
   return buildSkillLogEvent({
@@ -41,6 +41,22 @@ export function skillTraceServerUrl(env: SkillTraceMcpEnv) {
   return env.server || 'http://localhost:5173'
 }
 
+export function mcpRunId(env: SkillTraceMcpEnv, date = new Date()) {
+  if (env.runId) return env.runId
+  if (!env.runStem) return undefined
+  return `${env.runStem}_${timestampId(date)}`
+}
+
+export function timestampId(date = new Date()) {
+  return date
+    .toISOString()
+    .replace(/\.\d{3}Z$/, 'Z')
+    .replaceAll('-', '')
+    .replaceAll(':', '')
+    .replace('T', '_')
+    .replace('Z', '')
+}
+
 export type SkillLogEventInput = {
   run_id?: string
   event_type: string
@@ -56,5 +72,6 @@ export type SkillLogEventInput = {
 
 export type SkillTraceMcpEnv = {
   runId?: string
+  runStem?: string
   server?: string
 }

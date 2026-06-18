@@ -2,10 +2,19 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   buildMcpSkillLogEvent,
+  mcpRunId,
   skillLogEventInputSchema,
   skillTraceServerUrl,
   type SkillLogEventInput,
 } from './lib/skilltrace-mcp'
+
+const MCP_RUN_ID = mcpRunId({
+  runId: process.env.SKILLTRACE_RUN_ID,
+  runStem: process.env.SKILLTRACE_RUN_STEM,
+})
+const SERVER_URL = skillTraceServerUrl({
+  server: process.env.SKILLTRACE_SERVER,
+})
 
 const server = new McpServer({
   name: 'skilltrace-mcp',
@@ -22,12 +31,9 @@ server.registerTool(
   },
   async (input) => {
     let event = buildMcpSkillLogEvent(input as SkillLogEventInput, {
-      runId: process.env.SKILLTRACE_RUN_ID,
-      server: process.env.SKILLTRACE_SERVER,
+      runId: MCP_RUN_ID,
     })
-    let result = await postSkillLogEvent(skillTraceServerUrl({
-      server: process.env.SKILLTRACE_SERVER,
-    }), event)
+    let result = await postSkillLogEvent(SERVER_URL, event)
 
     return {
       content: [
@@ -70,6 +76,8 @@ async function main() {
   let transport = new StdioServerTransport()
   await server.connect(transport)
   console.error('SkillTrace MCP server running on stdio')
+  console.error(`SkillTrace server: ${SERVER_URL}`)
+  console.error(`SkillTrace run ID: ${MCP_RUN_ID || '(tool input required)'}`)
 }
 
 await main()
