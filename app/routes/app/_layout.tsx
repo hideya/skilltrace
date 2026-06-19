@@ -51,7 +51,10 @@ export default function Layout() {
       >
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            <div className="text-2xl">{appName}</div>
+            <div className="flex gap-1 text-2xl">
+              <img src="/ashi.svg" className="w-4 invert" />
+              {appName}
+            </div>
             <AppNavLink to="/app/runs" busy={runsBusy}>
               Home
             </AppNavLink>
