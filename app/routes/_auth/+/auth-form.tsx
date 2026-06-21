@@ -66,10 +66,10 @@ export function AuthForm({
         {fields.includes('name') && (
           <div className="space-y-2">
             <input
-              className="input w-full"
+              className="input w-full px-5"
               name="name"
               type="text"
-              placeholder="&nbsp;&nbsp;Full name"
+              placeholder="Full name"
               autoComplete="name"
             />
             <InputError name="name" />
@@ -79,10 +79,10 @@ export function AuthForm({
         {fields.includes('email') && (
           <div className="space-y-2">
             <input
-              className="input w-full"
+              className="input w-full px-5"
               name="email"
               type="email"
-              placeholder="&nbsp;&nbsp;Email"
+              placeholder="Email"
               autoComplete="email"
             />
             <InputError name="email" />
@@ -93,10 +93,10 @@ export function AuthForm({
           <div className="space-y-2">
             <label className="input flex w-full items-center pr-2">
               <input
-                className="grow"
+                className="grow px-5"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="&nbsp;&nbsp;Password"
+                placeholder="Password"
                 autoComplete={newPassword ? 'new-password' : 'current-password'}
               />
               <button
