@@ -11,7 +11,7 @@ async function main() {
 
   if (command === 'start') {
     await start(args)
-  } else if (command === 'end') {
+  } else if (command === 'end' || command === 'stop') {
     await end(args)
   } else if (command === 'status') {
     await status(args)
@@ -219,7 +219,7 @@ function primeSudo() {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: pnpm traceskill <serve|start|status|end|mcp>')
+  console.error('Usage: pnpm traceskill <serve|start|status|end|stop|mcp>')
   console.error('       pnpm traceskill start [--target <repo>] [--server <url>]')
   process.exit(1)
 }

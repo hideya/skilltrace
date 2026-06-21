@@ -92,12 +92,17 @@ SkillTrace is currently local-first. The initial product shape is a local
 debugging utility:
 
 ```bash
+pnpm traceskill:install
 pnpm traceskill serve
 cd <repo>
-pnpm --dir /path/to/skill-trace traceskill start --target "$PWD"
+traceskill start
 codex
-pnpm --dir /path/to/skill-trace traceskill end
+traceskill end
 ```
+
+`pnpm traceskill:install` creates a local `traceskill` wrapper in
+`~/.local/bin`. The wrapper preserves the repo directory you run it from, so the
+trace target is normally just the current working directory.
 
 The local daemon serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.

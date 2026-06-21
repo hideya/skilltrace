@@ -20,8 +20,8 @@ The current recommended flow uses `traceskill start`. It asks the local SkillTra
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local CLI: `pnpm traceskill`.
-- Local MCP server command: `pnpm traceskill:mcp`.
+- Local CLI: `traceskill`.
+- Local MCP server command: `traceskill mcp`.
 - Passive probe: `sudo -n fs_usage -w -f filesys`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
@@ -34,6 +34,15 @@ From the main SkillTrace repo, make sure the local database exists:
 ```bash
 pnpm db:init-local
 ```
+
+Install the local `traceskill` wrapper once:
+
+```bash
+pnpm traceskill:install
+```
+
+The installer writes `~/.local/bin/traceskill`. If your shell cannot find the
+command afterward, add `~/.local/bin` to your `PATH`.
 
 Start the local SkillTrace daemon in another terminal:
 
@@ -72,7 +81,7 @@ Register the local SkillTrace MCP server with Codex. This registration is generi
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
+  -- traceskill mcp
 ```
 
 Then confirm it is registered:
@@ -85,8 +94,8 @@ The command should show:
 
 - `enabled: true`
 - `transport: stdio`
-- `command: pnpm`
-- `args: --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp`
+- `command: traceskill`
+- `args: mcp`
 
 The run ID is not configured in the MCP registration. The MCP server resolves the daemon's one active session when `skill_log_event` is called.
 
@@ -95,8 +104,8 @@ The run ID is not configured in the MCP registration. The MCP server resolves th
 Start the passive trace session from the sandbox repo:
 
 ```bash
-cd /Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"
+cd agent-sandbox-repo
+traceskill start
 ```
 
 This starts a background `fs_usage` probe worker and prints the run URL.
@@ -109,7 +118,7 @@ data/local/traceskill-probe-<run_id>.log
 If passive events do not appear, restart with:
 
 ```bash
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD" --debug-probe
+traceskill start --debug-probe
 ```
 
 Then inspect the printed probe log.
@@ -259,8 +268,8 @@ pnpm sandbox:reset
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5173`.
-- The MCP server command is `traceskill:mcp`.
-- You ran `pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"` from the target repo before launching Codex.
+- The MCP server command is `traceskill mcp`.
+- You ran `traceskill start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated path-hash timestamped ID.
@@ -289,18 +298,13 @@ If the consistency panel says `Declared but not observed`, the semantic MCP part
 When you are done, stop the active session:
 
 ```bash
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill end
+traceskill end
 ```
 
-For convenience, add a shell function:
+`traceskill stop` is also accepted as an alias, but `end` is the canonical
+command because it ends the active trace session.
 
-```bash
-traceskill() {
-  pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill "$@" --target "$PWD"
-}
-```
-
-Then from any repo you can run:
+From any repo you can run:
 
 ```bash
 traceskill start

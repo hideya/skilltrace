@@ -24,22 +24,23 @@ Then open `agent-sandbox-repo` as a separate Codex project.
 Start SkillTrace from the main project in another terminal:
 
 ```bash
+pnpm traceskill:install
 pnpm traceskill serve
 ```
 
 `traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 
-Register the SkillTrace MCP server from the main SkillTrace project:
+Register the SkillTrace MCP server:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
+  -- traceskill mcp
 ```
 
 Then start the passive trace session from this sandbox repository:
 
 ```bash
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill start --target "$PWD"
+traceskill start
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.
@@ -94,5 +95,5 @@ The timeline should include the passive skill read and semantic started/finished
 When you are done, stop the active trace session:
 
 ```bash
-pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill end
+traceskill end
 ```

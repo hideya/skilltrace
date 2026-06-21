@@ -30,9 +30,10 @@ By itself, this command does not implement passive file observation, skill loadi
 For the current best local prototype, prefer the local daemon flow:
 
 ```bash
+pnpm traceskill:install
 pnpm traceskill serve
 cd <repo>
-pnpm --dir /path/to/skill-trace traceskill start --target "$PWD"
+traceskill start
 ```
 
 That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
@@ -54,7 +55,7 @@ For Codex, register the SkillTrace MCP server with:
 
 ```bash
 /Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- pnpm --dir /Users/hideya/Desktop/WS/PT/skill-trace traceskill:mcp
+  -- traceskill mcp
 ```
 
 Then confirm the server is registered:
@@ -66,7 +67,7 @@ Then confirm the server is registered:
 
 Open a new Codex session after registration so the tool list is refreshed.
 
-When `traceskill start` is active, `traceskill:mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
+When `traceskill start` is active, `traceskill mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
 
 To remove the SkillTrace MCP server later:
 
