@@ -36,6 +36,15 @@ cd <repo>
 traceskill start
 ```
 
+If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+
+```bash
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  source ~/.zshrc
+fi
+```
+
 That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
 `traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 

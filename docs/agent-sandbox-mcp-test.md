@@ -41,8 +41,15 @@ Install the local `traceskill` wrapper once:
 pnpm traceskill:install
 ```
 
-The installer writes `~/.local/bin/traceskill`. If your shell cannot find the
-command afterward, add `~/.local/bin` to your `PATH`.
+The installer writes `~/.local/bin/traceskill`. If your shell cannot find
+`traceskill`, add `~/.local/bin` to your `PATH`:
+
+```bash
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  source ~/.zshrc
+fi
+```
 
 Start the local SkillTrace daemon in another terminal:
 

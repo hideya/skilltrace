@@ -104,6 +104,15 @@ traceskill end
 `~/.local/bin`. The wrapper preserves the repo directory you run it from, so the
 trace target is normally just the current working directory.
 
+If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+
+```bash
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  source ~/.zshrc
+fi
+```
+
 The local daemon serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.
 

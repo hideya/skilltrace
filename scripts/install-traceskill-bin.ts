@@ -1,6 +1,7 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -51,12 +52,29 @@ function uninstall() {
 }
 
 function wrapperContent() {
+  let pnpmPath = resolvePnpmPath()
+
   return `#!/bin/sh
 ${MARKER}
-SKILLTRACE_TARGET_ROOT="\${SKILLTRACE_TARGET_ROOT:-$PWD}" exec pnpm --dir ${shellQuote(
+SKILLTRACE_TARGET_ROOT="\${SKILLTRACE_TARGET_ROOT:-$PWD}" exec ${shellQuote(
+    pnpmPath,
+  )} --dir ${shellQuote(
     PROJECT_ROOT,
   )} traceskill "$@"
 `
+}
+
+function resolvePnpmPath() {
+  let result = spawnSync('/bin/sh', ['-lc', 'command -v pnpm'], {
+    encoding: 'utf8',
+  })
+  let pnpmPath = result.stdout.trim()
+
+  if (result.status !== 0 || !pnpmPath) {
+    throw new Error('pnpm was not found on PATH during traceskill install')
+  }
+
+  return pnpmPath
 }
 
 function shellQuote(value: string) {

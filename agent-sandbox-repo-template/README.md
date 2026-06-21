@@ -28,6 +28,15 @@ pnpm traceskill:install
 pnpm traceskill serve
 ```
 
+If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+
+```bash
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  source ~/.zshrc
+fi
+```
+
 `traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 
 For shorter commands, define a shell alias for command-line Codex:
