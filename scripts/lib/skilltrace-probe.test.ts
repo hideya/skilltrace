@@ -70,20 +70,21 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses lowercase fs_usage absolute paths case-insensitively', () => {
-    let root = '/Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo/.skills'
+    let targetRoot = '/tmp/SkillTraceTest/agent-sandbox-repo'
+    let root = path.join(targetRoot, '.skills')
+    let lowercasePath =
+      '/tmp/skilltracetest/agent-sandbox-repo/.skills/type-fix/SKILL.md'
     let line = [
       '06:58:28.416967 open F=19',
-      '/users/hideya/desktop/ws/pt/skill-trace/agent-sandbox-repo/.skills/type-fix/SKILL.md',
+      lowercasePath,
       '0.000031 cat.123',
     ].join(' ')
 
-    expect(parseOpenSnoopPath(line, [root])).toBe(
-      '/users/hideya/desktop/ws/pt/skill-trace/agent-sandbox-repo/.skills/type-fix/SKILL.md',
-    )
+    expect(parseOpenSnoopPath(line, [root])).toBe(lowercasePath)
   })
 
   test('parses relative fs_usage paths from the target root', () => {
-    let targetRoot = '/Users/hideya/Desktop/WS/PT/skill-trace/agent-sandbox-repo'
+    let targetRoot = '/tmp/skilltrace-test/agent-sandbox-repo'
     let root = path.join(targetRoot, '.skills')
     let line =
       '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 cat.48931538'
