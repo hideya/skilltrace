@@ -59,6 +59,14 @@ The examples below assume SkillTrace is running at:
 http://localhost:5173
 ```
 
+For shorter commands, define a shell alias for command-line Codex:
+
+```bash
+alias codex='/Applications/Codex.app/Contents/Resources/codex'
+```
+
+To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
+
 ## Reset The Sandbox
 
 From the main SkillTrace repo:
@@ -80,14 +88,13 @@ agent-sandbox-repo/src/profile.ts
 Register the local SkillTrace MCP server with Codex. This registration is generic and does not name the target repo:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- traceskill mcp
+codex mcp add skilltrace -- traceskill mcp
 ```
 
 Then confirm it is registered:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp get skilltrace
+codex mcp get skilltrace
 ```
 
 The command should show:
@@ -126,7 +133,7 @@ Then inspect the printed probe log.
 Then start command-line Codex from the same sandbox repo:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex
+codex
 ```
 
 In Codex, run:
@@ -254,7 +261,7 @@ Then refresh the run detail page. The consistency panel can compare the passive 
 Remove the MCP server registration when you are done:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
+codex mcp remove skilltrace
 ```
 
 Reset the sandbox before the next experiment:

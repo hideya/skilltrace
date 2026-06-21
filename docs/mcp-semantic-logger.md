@@ -51,18 +51,25 @@ An MCP client should launch this command as a stdio server.
 
 ## Codex MCP Registration
 
+For shorter commands, define a shell alias for command-line Codex:
+
+```bash
+alias codex='/Applications/Codex.app/Contents/Resources/codex'
+```
+
+To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
+
 For Codex, register the SkillTrace MCP server with:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- traceskill mcp
+codex mcp add skilltrace -- traceskill mcp
 ```
 
 Then confirm the server is registered:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp list
-/Applications/Codex.app/Contents/Resources/codex mcp get skilltrace
+codex mcp list
+codex mcp get skilltrace
 ```
 
 Open a new Codex session after registration so the tool list is refreshed.
@@ -72,7 +79,7 @@ When `traceskill start` is active, `traceskill mcp` resolves the daemon's active
 To remove the SkillTrace MCP server later:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
+codex mcp remove skilltrace
 ```
 
 When `SKILLTRACE_RUN_STEM` is set, the MCP server generates one run ID at startup:

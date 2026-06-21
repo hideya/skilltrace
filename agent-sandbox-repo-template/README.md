@@ -30,11 +30,16 @@ pnpm traceskill serve
 
 `traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
 
+For shorter commands, define a shell alias for command-line Codex:
+
+```bash
+alias codex='/Applications/Codex.app/Contents/Resources/codex'
+```
+
 Register the SkillTrace MCP server:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp add skilltrace \
-  -- traceskill mcp
+codex mcp add skilltrace -- traceskill mcp
 ```
 
 Then start the passive trace session from this sandbox repository:
@@ -49,7 +54,7 @@ The command prints a probe log path. If passive events do not appear, restart wi
 To remove the SkillTrace MCP server later:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex mcp remove skilltrace
+codex mcp remove skilltrace
 ```
 
 `traceskill start` prints the generated run ID. It looks like:
@@ -61,7 +66,7 @@ agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
 Then start command-line Codex from this repository:
 
 ```bash
-/Applications/Codex.app/Contents/Resources/codex
+codex
 ```
 
 ## Test Prompt
