@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   buildMcpSkillLogEvent,
+  buildMcpSkillTraceContextEvent,
   mcpRunId,
   skillTraceServerUrl,
   timestampId,
@@ -40,6 +41,29 @@ describe('skilltrace MCP helpers', () => {
     )
 
     expect(event.run_id).toBe('run_explicit')
+  })
+
+  test('builds a run context event from MCP input', () => {
+    let event = buildMcpSkillTraceContextEvent(
+      {
+        agent: 'codex',
+        model: 'gpt-5-codex',
+        client: 'Codex CLI',
+        cwd: '/tmp/repo',
+        task_summary: 'Repair TypeScript errors.',
+        data: {
+          mode: 'dogfood',
+        },
+      },
+      { runId: 'run_fixture_001' },
+    )
+
+    expect(event.run_id).toBe('run_fixture_001')
+    expect(event.event_type).toBe('run_context_declared')
+    expect(event.summary).toBe('Repair TypeScript errors.')
+    expect(event.data.agent).toBe('codex')
+    expect(event.data.model).toBe('gpt-5-codex')
+    expect(event.data.mode).toBe('dogfood')
   })
 
   test('requires a run ID', () => {

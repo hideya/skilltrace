@@ -100,6 +100,7 @@ export async function listRunSummaries() {
     return {
       run,
       result: summarizeConsistency(checkTraceConsistency(runEvents)),
+      context: latestRunContext(runEvents),
       event_count: runEvents.length,
       last_event_at: lastEvent?.timestamp ?? null,
       last_event_type: lastEvent?.event_type ?? null,
@@ -117,6 +118,7 @@ export async function getRunTimeline(publicId: string) {
   return {
     run,
     events,
+    context: latestRunContext(events),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
     consistency: checkTraceConsistency(events),
@@ -162,6 +164,19 @@ function summarizeConsistency(results: ConsistencySummaryResult[]) {
     return 'incomplete'
   }
   return 'pass'
+}
+
+function latestRunContext(events: any[]) {
+  let contextEvents = events.filter((event) =>
+    event.event_type === 'run_context_declared'
+  )
+  if (contextEvents.length === 0) return null
+
+  let latest = contextEvents.toSorted((a, b) =>
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )[0]
+
+  return latest.payload?.data ?? {}
 }
 
 type ConsistencySummaryResult = {

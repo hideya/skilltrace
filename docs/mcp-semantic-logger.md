@@ -109,6 +109,22 @@ pnpm skilltrace:mcp
 
 ## Tool Input
 
+The `skill_trace_context` tool records declared run metadata. Ask the agent to
+call it at the beginning of a traced run when the MCP tool is available:
+
+```json
+{
+  "agent": "codex",
+  "model": "declared model name",
+  "client": "Codex CLI",
+  "cwd": "/path/to/repo",
+  "task_summary": "Repair TypeScript errors in the sandbox repo.",
+  "notes": "Model name is self-declared metadata."
+}
+```
+
+It creates a `run_context_declared` semantic event.
+
 The `skill_log_event` tool accepts:
 
 ```json

@@ -75,6 +75,8 @@ export default function Page({ loaderData }: PageProps) {
         <Metric label="Semantic" value={timeline.semantic_events.length} />
       </section>
 
+      <RunContextPanel context={timeline.context} />
+
       <ConsistencyPanel results={timeline.consistency} />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
@@ -94,6 +96,55 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </section>
     </main>
+  )
+}
+
+function RunContextPanel({ context }: RunContextPanelProps) {
+  let rows = [
+    ['Agent', context?.agent],
+    ['Model', context?.model],
+    ['Client', context?.client],
+    ['Working directory', context?.cwd],
+    ['Task', context?.task_summary],
+    ['Notes', context?.notes],
+  ].filter(([_, value]) => value)
+  let extra = extraContext(context)
+
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Run context</h2>
+          <p className="text-sm text-base-content/60">
+            Declared execution metadata
+          </p>
+        </div>
+      </div>
+
+      {rows.length > 0 || Object.keys(extra).length > 0 ? (
+        <div className="space-y-4">
+          {rows.length > 0 ? (
+            <dl className="grid gap-2 text-sm">
+              {rows.map(([label, value]) => (
+                <div
+                  className="grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]"
+                  key={label}
+                >
+                  <dt className="text-base-content/50">{label}</dt>
+                  <dd className="min-w-0 break-words">{String(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+
+          {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
+        </div>
+      ) : (
+        <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
+          No run context declared.
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -385,6 +436,13 @@ function fileNameForEvent(event: any) {
   return filePath.split(/[\\/]/).filter(Boolean).at(-1) || null
 }
 
+function extraContext(context?: Record<string, any> | null) {
+  if (!context) return {}
+
+  let { agent, model, client, cwd, task_summary, notes, ...extra } = context
+  return extra
+}
+
 function formatDate(value?: Date | string | null) {
   if (!value) return '—'
   return new Date(value).toLocaleString()
@@ -403,6 +461,10 @@ type MetricProps = {
 
 type ConsistencyPanelProps = {
   results: any[]
+}
+
+type RunContextPanelProps = {
+  context?: Record<string, any> | null
 }
 
 type ConsistencyBadgeProps = {

@@ -164,6 +164,10 @@ In Codex, run:
 
 Confirm that `skilltrace` is enabled before starting the repair task. The passive probe is already running at this point.
 
+When the task starts, ask Codex to call `skill_trace_context` before applying
+the skill so the run records declared agent, model, client, working directory,
+and task summary metadata.
+
 The probe discovers the target repo from the command-line Codex session. The sandbox template includes:
 
 ```text

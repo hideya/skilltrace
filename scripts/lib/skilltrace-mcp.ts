@@ -14,6 +14,17 @@ export const skillLogEventInputSchema = {
   data: z.record(z.string(), z.unknown()).optional(),
 }
 
+export const skillTraceContextInputSchema = {
+  run_id: z.string().trim().optional(),
+  agent: z.string().trim().optional(),
+  model: z.string().trim().optional(),
+  client: z.string().trim().optional(),
+  cwd: z.string().trim().optional(),
+  task_summary: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
+}
+
 export function buildMcpSkillLogEvent(
   input: SkillLogEventInput,
   env: SkillTraceMcpEnv,
@@ -34,6 +45,32 @@ export function buildMcpSkillLogEvent(
     confidence: input.confidence,
     relatedArtifacts: input.related_artifacts,
     data: input.data,
+  })
+}
+
+export function buildMcpSkillTraceContextEvent(
+  input: SkillTraceContextInput,
+  env: SkillTraceMcpEnv,
+) {
+  let runId = input.run_id || mcpRunId(env)
+  if (!runId) {
+    throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
+  }
+
+  return buildSkillLogEvent({
+    runId,
+    eventType: 'run_context_declared',
+    summary: input.task_summary || 'Declared run context.',
+    confidence: 'medium',
+    data: {
+      agent: input.agent,
+      model: input.model,
+      client: input.client,
+      cwd: input.cwd,
+      task_summary: input.task_summary,
+      notes: input.notes,
+      ...(input.data ?? {}),
+    },
   })
 }
 
@@ -68,6 +105,17 @@ export type SkillLogEventInput = {
   summary?: string
   confidence?: string
   related_artifacts?: string[]
+  data?: Record<string, unknown>
+}
+
+export type SkillTraceContextInput = {
+  run_id?: string
+  agent?: string
+  model?: string
+  client?: string
+  cwd?: string
+  task_summary?: string
+  notes?: string
   data?: Record<string, unknown>
 }
 

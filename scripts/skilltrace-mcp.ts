@@ -2,10 +2,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   buildMcpSkillLogEvent,
+  buildMcpSkillTraceContextEvent,
   mcpRunId,
   skillLogEventInputSchema,
+  skillTraceContextInputSchema,
   skillTraceServerUrl,
   type SkillLogEventInput,
+  type SkillTraceContextInput,
 } from './lib/skilltrace-mcp'
 import { readActiveSession, sessionFilePath } from './lib/skilltrace-session'
 
@@ -65,6 +68,49 @@ server.registerTool(
     }
   },
 )
+
+server.registerTool(
+  'skill_trace_context',
+  {
+    title: 'SkillTrace run context',
+    description:
+      'Declare run metadata such as agent, model, client, working directory, and task summary.',
+    inputSchema: skillTraceContextInputSchema,
+  },
+  async (input) => {
+    let runId = await resolveRunId()
+    let event = buildMcpSkillTraceContextEvent(
+      input as SkillTraceContextInput,
+      { runId },
+    )
+    let result = await postSkillLogEvent(SERVER_URL, event)
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify(
+            {
+              ok: true,
+              run_id: event.run_id,
+              event_type: event.event_type,
+              event_id: result.event?.id,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    }
+  },
+)
+
+async function resolveRunId() {
+  if (MCP_RUN_ID) return MCP_RUN_ID
+
+  let session = await resolveActiveSession(SERVER_URL)
+  return session?.run_id
+}
 
 async function postSkillLogEvent(serverUrl: string, event: any) {
   let response = await fetch(new URL('/api/skill-log-events', serverUrl), {
