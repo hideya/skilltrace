@@ -99,6 +99,7 @@ export async function listRunSummaries() {
 
     return {
       run,
+      result: summarizeConsistency(checkTraceConsistency(runEvents)),
       event_count: runEvents.length,
       last_event_at: lastEvent?.timestamp ?? null,
       last_event_type: lastEvent?.event_type ?? null,
@@ -152,4 +153,17 @@ function groupEventsByRun(events: any[]) {
 
 function unique(values: string[]) {
   return [...new Set(values)]
+}
+
+function summarizeConsistency(results: ConsistencySummaryResult[]) {
+  if (results.length === 0) return 'unknown'
+  if (results.some((result) => result.status === 'warning')) return 'warning'
+  if (results.some((result) => result.status === 'incomplete')) {
+    return 'incomplete'
+  }
+  return 'pass'
+}
+
+type ConsistencySummaryResult = {
+  status: 'pass' | 'warning' | 'incomplete'
 }

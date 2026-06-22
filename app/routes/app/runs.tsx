@@ -37,6 +37,7 @@ export default function Page({ loaderData }: PageProps) {
                 <tr>
                   <th>Run</th>
                   <th>Status</th>
+                  <th>Result</th>
                   <th>Events</th>
                   <th>Sources</th>
                   <th>Last event</th>
@@ -84,6 +85,9 @@ function RunRow({ summary }: RunRowProps) {
           {run.status}
         </span>
       </td>
+      <td>
+        <ResultBadge result={summary.result} />
+      </td>
       <td>{summary.event_count}</td>
       <td>
         <SourceList sources={summary.sources} />
@@ -107,6 +111,19 @@ function RunRow({ summary }: RunRowProps) {
       </td>
     </tr>
   )
+}
+
+function ResultBadge({ result }: ResultBadgeProps) {
+  let className =
+    result === 'pass'
+      ? 'badge-success'
+      : result === 'warning'
+        ? 'badge-warning'
+        : result === 'incomplete'
+          ? 'badge-info'
+          : 'badge-ghost'
+
+  return <span className={`badge ${className}`}>{result}</span>
 }
 
 function SourceList({ sources }: SourceListProps) {
@@ -138,6 +155,10 @@ type PageProps = {
 
 type RunRowProps = {
   summary: any
+}
+
+type ResultBadgeProps = {
+  result: 'pass' | 'warning' | 'incomplete' | 'unknown'
 }
 
 type SourceListProps = {
