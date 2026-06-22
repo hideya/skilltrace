@@ -125,6 +125,11 @@ export function loadTargetConfig(targetRoot: string) {
 
 function killProcess(pid: number) {
   try {
+    process.kill(-pid, 'SIGTERM')
+    return
+  } catch {}
+
+  try {
     process.kill(pid, 'SIGTERM')
   } catch {}
 }

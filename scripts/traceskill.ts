@@ -167,13 +167,22 @@ async function daemonStop(args: string[]) {
     return
   }
 
+  await endServerSession(server)
   if (processAlive(state.pid)) {
-    process.kill(state.pid, 'SIGTERM')
+    killProcessGroup(state.pid, 'SIGTERM')
+    await waitForExit(state.pid)
+  }
+  if (processAlive(state.pid)) {
+    killProcessGroup(state.pid, 'SIGKILL')
     await waitForExit(state.pid)
   }
 
   removeDaemonState()
-  console.log('Stopped SkillTrace daemon.')
+  if (await isServerAlive(server)) {
+    console.log('SkillTrace daemon state was removed, but a server is still responding.')
+  } else {
+    console.log('Stopped SkillTrace daemon.')
+  }
 }
 
 async function daemonStatus(args: string[]) {
@@ -282,6 +291,12 @@ async function isServerAlive(server: string) {
   return (await getHealth(server))?.ok === true
 }
 
+async function endServerSession(server: string) {
+  try {
+    await postJson(server, '/api/sessions/end', {})
+  } catch {}
+}
+
 async function waitForDaemon(server: string) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     if (await isServerAlive(server)) return true
@@ -357,6 +372,16 @@ function processAlive(pid?: number) {
   }
 }
 
+function killProcessGroup(pid: number, signal: NodeJS.Signals) {
+  try {
+    process.kill(-pid, signal)
+  } catch {
+    try {
+      process.kill(pid, signal)
+    } catch {}
+  }
+}
+
 function probeStatus(pid?: number) {
   if (!pid) return 'not running'
 
@@ -391,7 +416,7 @@ function startProbeWorker(options: ProbeWorkerOptions) {
     'pnpm',
     args,
     {
-      detached: false,
+      detached: true,
       stdio: ['ignore', logFd, logFd],
       env: process.env,
     },
