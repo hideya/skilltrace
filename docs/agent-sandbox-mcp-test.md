@@ -57,6 +57,19 @@ Start the local SkillTrace daemon in another terminal:
 pnpm traceskill serve
 ```
 
+For experimental background operation, use:
+
+```bash
+traceskill daemon start
+traceskill daemon status
+traceskill daemon logs
+traceskill daemon stop
+```
+
+The foreground `serve` command is still the default dogfooding path. The daemon
+mode writes state to `~/.skilltrace/daemon.json` and server logs to
+`~/.skilltrace/logs/daemon.log`.
+
 `traceskill start` launches the passive probe worker from your terminal, so the
 sudo prompt happens there instead of inside the web server process.
 

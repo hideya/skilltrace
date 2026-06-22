@@ -100,6 +100,19 @@ codex
 traceskill end
 ```
 
+`pnpm traceskill serve` runs the local server in the foreground. For early
+daemon dogfooding, there is also an explicit experimental background mode:
+
+```bash
+traceskill daemon start
+traceskill daemon status
+traceskill daemon logs
+traceskill daemon stop
+```
+
+Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
+written to `~/.skilltrace/logs/daemon.log`.
+
 `pnpm traceskill:install` creates a local `traceskill` wrapper in
 `~/.local/bin`. The wrapper preserves the repo directory you run it from, so the
 trace target is normally just the current working directory.
@@ -113,7 +126,7 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
 fi
 ```
 
-The local daemon serves the web UI, owns one active trace session globally,
+The local server serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.
 
 See `docs/architecture-decisions.md` for the decisions and complications found

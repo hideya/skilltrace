@@ -1,10 +1,14 @@
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import { spawn, spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 
 const DEFAULT_SERVER = 'http://localhost:5173'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
+const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
+const DAEMON_STATE_PATH = path.join(DAEMON_DIR, 'daemon.json')
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
@@ -17,6 +21,8 @@ async function main() {
     await status(args)
   } else if (command === 'serve') {
     run(['pnpm', 'dev'])
+  } else if (command === 'daemon') {
+    await daemon(args)
   } else if (command === 'mcp') {
     run(['pnpm', 'skilltrace:mcp'])
   } else {
@@ -78,6 +84,122 @@ async function status(args: string[]) {
   }
 }
 
+async function daemon(args: string[]) {
+  let [command, ...rest] = args
+
+  if (command === 'start') {
+    await daemonStart(rest)
+  } else if (command === 'stop') {
+    await daemonStop(rest)
+  } else if (command === 'status') {
+    await daemonStatus(rest)
+  } else if (command === 'logs') {
+    daemonLogs(rest)
+  } else {
+    usage(command ? `Unknown daemon command: ${command}` : 'Missing daemon command')
+  }
+}
+
+async function daemonStart(args: string[]) {
+  let options = parseArgs(args)
+  let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let status = await getDaemonStatus(server)
+
+  if (status.alive) {
+    if (status.state) {
+      console.log('SkillTrace daemon is already running.')
+    } else {
+      console.log('A SkillTrace server is already responding.')
+    }
+    printDaemonStatus(status)
+    return
+  }
+
+  fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
+  let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
+  let child = spawn('pnpm', ['dev'], {
+    cwd: PROJECT_ROOT,
+    detached: true,
+    stdio: ['ignore', logFd, logFd],
+    env: {
+      ...process.env,
+      SKILLTRACE_DAEMON: '1',
+    },
+  })
+
+  child.unref()
+  fs.closeSync(logFd)
+
+  if (typeof child.pid !== 'number') {
+    throw new Error('Failed to start SkillTrace daemon')
+  }
+
+  let state = {
+    pid: child.pid,
+    server,
+    log_path: DAEMON_LOG_PATH,
+    started_at: new Date().toISOString(),
+  }
+
+  writeDaemonState(state)
+
+  console.log('Started experimental SkillTrace daemon.')
+  console.log(`  pid: ${state.pid}`)
+  console.log(`  server: ${state.server}`)
+  console.log(`  log: ${state.log_path}`)
+
+  if (await waitForDaemon(server)) {
+    console.log('  health: ok')
+  } else {
+    console.log('  health: not ready yet')
+    console.log('  check: traceskill daemon logs')
+  }
+}
+
+async function daemonStop(args: string[]) {
+  let options = parseArgs(args)
+  let state = readDaemonState()
+  let server = options.server || state?.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+
+  if (!state) {
+    console.log('No SkillTrace daemon state found.')
+    if (await isServerAlive(server)) console.log(`A server is responding at ${server}.`)
+    return
+  }
+
+  if (processAlive(state.pid)) {
+    process.kill(state.pid, 'SIGTERM')
+    await waitForExit(state.pid)
+  }
+
+  removeDaemonState()
+  console.log('Stopped SkillTrace daemon.')
+}
+
+async function daemonStatus(args: string[]) {
+  let options = parseArgs(args)
+  let state = readDaemonState()
+  let server = options.server || state?.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let status = await getDaemonStatus(server)
+
+  printDaemonStatus(status)
+}
+
+function daemonLogs(args: string[]) {
+  let options = parseArgs(args)
+  let lines = options.lines || 80
+  let logPath = readDaemonState()?.log_path || DAEMON_LOG_PATH
+
+  if (!fs.existsSync(logPath)) {
+    console.log(`No SkillTrace daemon log found at ${logPath}`)
+    return
+  }
+
+  let content = fs.readFileSync(logPath, 'utf8')
+  let tail = content.split('\n').slice(-lines).join('\n')
+  if (tail.trim()) console.log(tail)
+}
+
 function defaultTargetRoot() {
   return (
     process.env.SKILLTRACE_TARGET_ROOT ||
@@ -99,6 +221,8 @@ function parseArgs(args: string[]) {
       options.server = args[++index]
     } else if (arg === '--debug-probe') {
       options.debugProbe = true
+    } else if (arg === '--lines') {
+      options.lines = Number(args[++index])
     } else {
       usage(`Unknown option: ${arg}`)
     }
@@ -133,6 +257,51 @@ async function jsonResponse(response: Response) {
   return await response.json()
 }
 
+async function getDaemonStatus(server: string) {
+  let state = readDaemonState()
+  let health = await getHealth(server)
+
+  return {
+    state,
+    server,
+    alive: health?.ok === true,
+    health,
+    pid_status: state?.pid ? probeStatus(state.pid) : 'unknown',
+  }
+}
+
+async function getHealth(server: string) {
+  try {
+    return await getJson(server, '/api/health')
+  } catch {
+    return null
+  }
+}
+
+async function isServerAlive(server: string) {
+  return (await getHealth(server))?.ok === true
+}
+
+async function waitForDaemon(server: string) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (await isServerAlive(server)) return true
+    await sleep(500)
+  }
+
+  return false
+}
+
+async function waitForExit(pid: number) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (!processAlive(pid)) return
+    await sleep(250)
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 function printSession(label: string, server: string, session: any) {
   console.log(label)
   console.log(`  run: ${session.run_id}`)
@@ -144,6 +313,30 @@ function printSession(label: string, server: string, session: any) {
   console.log(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
 }
 
+function printDaemonStatus(status: any) {
+  if (status.alive && status.state && processAlive(status.state.pid)) {
+    console.log('SkillTrace daemon is healthy.')
+  } else if (status.alive) {
+    console.log('SkillTrace server is healthy.')
+  } else {
+    console.log('SkillTrace daemon is not responding.')
+  }
+
+  console.log(`  server: ${status.server}`)
+  if (status.state) {
+    console.log(`  pid: ${status.pid_status}`)
+    console.log(`  started: ${status.state.started_at}`)
+    console.log(`  log: ${status.state.log_path}`)
+  } else {
+    console.log('  pid: no daemon state')
+    console.log(`  log: ${DAEMON_LOG_PATH}`)
+  }
+
+  if (status.health?.session) {
+    printSession('Active SkillTrace session', status.server, status.health.session)
+  }
+}
+
 function run(command: string[]) {
   let result = spawnSync(command[0], command.slice(1), {
     stdio: 'inherit',
@@ -153,15 +346,22 @@ function run(command: string[]) {
   process.exit(result.status ?? 1)
 }
 
-function probeStatus(pid?: number) {
-  if (!pid) return 'not running'
+function processAlive(pid?: number) {
+  if (!pid) return false
 
   try {
     process.kill(pid, 0)
-    return `${pid} running`
+    return true
   } catch {
-    return `${pid} not running`
+    return false
   }
+}
+
+function probeStatus(pid?: number) {
+  if (!pid) return 'not running'
+
+  if (processAlive(pid)) return `${pid} running`
+  return `${pid} not running`
 }
 
 function startProbeWorker(options: ProbeWorkerOptions) {
@@ -217,10 +417,30 @@ function primeSudo() {
   }
 }
 
+function readDaemonState() {
+  if (!fs.existsSync(DAEMON_STATE_PATH)) return null
+
+  try {
+    return JSON.parse(fs.readFileSync(DAEMON_STATE_PATH, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function writeDaemonState(state: DaemonState) {
+  fs.mkdirSync(path.dirname(DAEMON_STATE_PATH), { recursive: true })
+  fs.writeFileSync(DAEMON_STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
+}
+
+function removeDaemonState() {
+  if (fs.existsSync(DAEMON_STATE_PATH)) fs.rmSync(DAEMON_STATE_PATH)
+}
+
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: pnpm traceskill <serve|start|status|end|stop|mcp>')
   console.error('       pnpm traceskill start [--target <repo>] [--server <url>]')
+  console.error('       pnpm traceskill daemon <start|status|stop|logs>')
   process.exit(1)
 }
 
@@ -230,6 +450,7 @@ type Options = {
   target?: string
   server?: string
   debugProbe?: boolean
+  lines?: number
 }
 
 type ProbeWorkerOptions = {
@@ -237,4 +458,11 @@ type ProbeWorkerOptions = {
   targetRoot: string
   server: string
   debug?: boolean
+}
+
+type DaemonState = {
+  pid: number
+  server: string
+  log_path: string
+  started_at: string
 }
