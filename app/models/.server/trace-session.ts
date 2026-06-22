@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
+import { spawnSync } from 'child_process'
 import { Run } from './run'
 
 const DEFAULT_SKILL_ROOTS = ['.skills']
@@ -124,6 +125,8 @@ export function loadTargetConfig(targetRoot: string) {
 }
 
 function killProcess(pid: number) {
+  killProcessTree(pid, 'SIGTERM')
+
   try {
     process.kill(-pid, 'SIGTERM')
     return
@@ -132,6 +135,29 @@ function killProcess(pid: number) {
   try {
     process.kill(pid, 'SIGTERM')
   } catch {}
+}
+
+function killProcessTree(pid: number, signal: NodeJS.Signals) {
+  for (let childPid of childPids(pid)) {
+    killProcessTree(childPid, signal)
+  }
+
+  try {
+    process.kill(pid, signal)
+  } catch {}
+}
+
+function childPids(pid: number) {
+  let result = spawnSync('pgrep', ['-P', String(pid)], {
+    encoding: 'utf8',
+  })
+
+  if (result.status !== 0) return []
+
+  return result.stdout
+    .split('\n')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value > 0)
 }
 
 function safeName(value: string) {

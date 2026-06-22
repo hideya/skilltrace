@@ -170,10 +170,12 @@ async function daemonStop(args: string[]) {
   await endServerSession(server)
   if (processAlive(state.pid)) {
     killProcessGroup(state.pid, 'SIGTERM')
+    killProcessTree(state.pid, 'SIGTERM')
     await waitForExit(state.pid)
   }
   if (processAlive(state.pid)) {
     killProcessGroup(state.pid, 'SIGKILL')
+    killProcessTree(state.pid, 'SIGKILL')
     await waitForExit(state.pid)
   }
 
@@ -382,6 +384,29 @@ function killProcessGroup(pid: number, signal: NodeJS.Signals) {
   }
 }
 
+function killProcessTree(pid: number, signal: NodeJS.Signals) {
+  for (let childPid of childPids(pid)) {
+    killProcessTree(childPid, signal)
+  }
+
+  try {
+    process.kill(pid, signal)
+  } catch {}
+}
+
+function childPids(pid: number) {
+  let result = spawnSync('pgrep', ['-P', String(pid)], {
+    encoding: 'utf8',
+  })
+
+  if (result.status !== 0) return []
+
+  return result.stdout
+    .split('\n')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value > 0)
+}
+
 function probeStatus(pid?: number) {
   if (!pid) return 'not running'
 
@@ -416,7 +441,7 @@ function startProbeWorker(options: ProbeWorkerOptions) {
     'pnpm',
     args,
     {
-      detached: true,
+      detached: false,
       stdio: ['ignore', logFd, logFd],
       env: process.env,
     },
