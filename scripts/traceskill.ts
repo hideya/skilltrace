@@ -3,6 +3,11 @@ import fs from 'fs'
 import os from 'os'
 import { spawn, spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
+import {
+  ejectInstructions,
+  injectInstructions,
+  instructionInjectionStatus,
+} from './lib/instruction-injection'
 
 const DEFAULT_SERVER = 'http://localhost:5173'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -40,6 +45,16 @@ async function start(args: string[]) {
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
   })
+  let injection = options.injectInstructions
+    ? injectInstructions(targetRoot, result.session.run_id)
+    : null
+  if (injection) {
+    printInjectionResult('Instruction injection', injection)
+    await postSessionEvent(server, result.session.run_id, 'instruction_injection_started', {
+      ...injection,
+      target_root: targetRoot,
+    })
+  }
   let worker = startProbeWorker({
     runId: result.session.run_id,
     targetRoot,
@@ -63,6 +78,8 @@ async function start(args: string[]) {
 async function end(args: string[]) {
   let options = parseArgs(args)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  await cleanupActiveInjection(server)
+
   let result = await postJson(server, '/api/sessions/end', {})
 
   if (result.session) {
@@ -167,6 +184,7 @@ async function daemonStop(args: string[]) {
     return
   }
 
+  await cleanupActiveInjection(server)
   await endServerSession(server)
   if (processAlive(state.pid)) {
     killProcessGroup(state.pid, 'SIGTERM')
@@ -232,6 +250,8 @@ function parseArgs(args: string[]) {
       options.server = args[++index]
     } else if (arg === '--debug-probe') {
       options.debugProbe = true
+    } else if (arg === '--inject-instructions') {
+      options.injectInstructions = true
     } else if (arg === '--lines') {
       options.lines = Number(args[++index])
     } else {
@@ -257,6 +277,24 @@ async function postJson(server: string, pathname: string, body: any) {
   })
 
   return await jsonResponse(response)
+}
+
+async function postSessionEvent(
+  server: string,
+  runId: string,
+  eventType: string,
+  payload: Record<string, unknown>,
+) {
+  try {
+    await postJson(server, '/api/sessions/event', {
+      run_id: runId,
+      event_type: eventType,
+      payload,
+    })
+  } catch (error) {
+    let message = error instanceof Error ? error.message : String(error)
+    console.warn(`Warning: failed to record ${eventType}: ${message}`)
+  }
 }
 
 async function jsonResponse(response: Response) {
@@ -299,6 +337,26 @@ async function endServerSession(server: string) {
   } catch {}
 }
 
+async function cleanupActiveInjection(server: string) {
+  let active
+  try {
+    active = await getJson(server, '/api/sessions/status')
+  } catch {
+    return
+  }
+
+  if (!active.session) return
+
+  let injection = ejectInstructions(active.session.target_root, active.session.run_id)
+  if (!injection) return
+
+  printInjectionResult('Instruction injection cleanup', injection)
+  await postSessionEvent(server, active.session.run_id, 'instruction_injection_finished', {
+    ...injection,
+    target_root: active.session.target_root,
+  })
+}
+
 async function waitForDaemon(server: string) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     if (await isServerAlive(server)) return true
@@ -323,6 +381,7 @@ function printSession(label: string, server: string, session: any) {
   console.log(label)
   console.log(`  run: ${session.run_id}`)
   console.log(`  repo: ${session.target_root}`)
+  console.log(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
   console.log(`  probe: ${probeStatus(session.probe_pid)}`)
   if (session.probe_log_path) {
     console.log(`  probe log: ${session.probe_log_path}`)
@@ -460,6 +519,28 @@ function startProbeWorker(options: ProbeWorkerOptions) {
   }
 }
 
+function printInjectionResult(label: string, result: any) {
+  console.log(label)
+  console.log(`  status: ${result.status}`)
+  console.log(`  AGENTS.md: ${result.agents_path}`)
+  console.log(`  instrumentation: ${result.instrumentation_path}`)
+  if ('inserted_agents_instruction' in result) {
+    console.log(`  inserted instruction: ${result.inserted_agents_instruction ? 'yes' : 'no'}`)
+  }
+  if ('created_instrumentation' in result) {
+    console.log(`  created instrumentation: ${result.created_instrumentation ? 'yes' : 'no'}`)
+  }
+  if ('removed_agents_instruction' in result) {
+    console.log(`  removed instruction: ${result.removed_agents_instruction ? 'yes' : 'no'}`)
+  }
+  if ('removed_instrumentation' in result) {
+    console.log(`  removed instrumentation: ${result.removed_instrumentation ? 'yes' : 'no'}`)
+  }
+  for (let warning of result.warnings ?? []) {
+    console.warn(`  warning: ${warning}`)
+  }
+}
+
 function primeSudo() {
   let sudo = spawnSync('sudo', ['-v'], { stdio: 'inherit' })
   if (sudo.status !== 0) {
@@ -489,7 +570,7 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: pnpm traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       pnpm traceskill start [--target <repo>] [--server <url>]')
+  console.error('       pnpm traceskill start [--target <repo>] [--server <url>] [--inject-instructions]')
   console.error('       pnpm traceskill daemon <start|status|stop|logs>')
   process.exit(1)
 }
@@ -500,6 +581,7 @@ type Options = {
   target?: string
   server?: string
   debugProbe?: boolean
+  injectInstructions?: boolean
   lines?: number
 }
 

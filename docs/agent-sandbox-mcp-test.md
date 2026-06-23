@@ -132,8 +132,13 @@ Start the passive trace session from the sandbox repo:
 
 ```bash
 cd agent-sandbox-repo
-traceskill start
+traceskill start --inject-instructions
 ```
+
+This creates `.skilltrace/instrumentation.md` if needed, inserts one
+SkillTrace instruction at the top of `AGENTS.md`, and records
+`.skilltrace/injection.json` so `traceskill stop` can clean up the exact
+injected changes.
 
 This starts a background `fs_usage` probe worker and prints the run URL.
 It also prints a probe log path under:
@@ -145,7 +150,7 @@ data/local/traceskill-probe-<run_id>.log
 If passive events do not appear, restart with:
 
 ```bash
-traceskill start --debug-probe
+traceskill start --inject-instructions --debug-probe
 ```
 
 Then inspect the printed probe log.
@@ -188,13 +193,14 @@ Ask Codex:
 Please fix the TypeScript errors in this repo.
 ```
 
-The sandbox `AGENTS.md` asks the agent to read:
+The injected `AGENTS.md` line asks the agent to read:
 
 ```text
 .skilltrace/instrumentation.md
 ```
 
-for reusable SkillTrace MCP tracing policy, then:
+for reusable SkillTrace MCP tracing policy. The sandbox `AGENTS.md` asks the
+agent to read:
 
 ```text
 .skills/type-fix/SKILL.md
@@ -316,7 +322,7 @@ skill file:
 Then run the normal local flow from the target repo:
 
 ```bash
-traceskill start
+traceskill start --inject-instructions
 codex
 traceskill stop
 ```
@@ -324,6 +330,11 @@ traceskill stop
 This keeps the repository's normal task instructions separate from the
 SkillTrace tracing policy, which makes it easier to compare behavior across
 different real repos.
+
+The injection is manifest-backed. On stop, SkillTrace removes only the exact
+inserted instruction block, and removes `.skilltrace/instrumentation.md` only
+when SkillTrace created it and it has not changed. Existing files, existing
+instructions, or edits made during the run are preserved with warnings.
 
 ## Optional Passive Event Check
 

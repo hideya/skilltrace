@@ -100,6 +100,22 @@ codex
 traceskill end
 ```
 
+For opt-in plug-and-play tracing instructions, start a session with:
+
+```bash
+traceskill start --inject-instructions
+```
+
+This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template
+when needed, prepends a single tracing instruction to `AGENTS.md`, and records a
+manifest at `.skilltrace/injection.json`. `traceskill stop` removes only the
+exact inserted instruction and only removes the instrumentation file if
+SkillTrace created it and it was not changed.
+
+The injection is experimental and intentionally opt-in. If existing files or
+unexpected edits are detected, SkillTrace prints warnings and records them in
+the run timeline.
+
 `pnpm traceskill serve` runs the local server in the foreground. For early
 daemon dogfooding, there is also an explicit experimental background mode:
 

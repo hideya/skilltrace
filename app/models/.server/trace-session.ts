@@ -53,6 +53,17 @@ export async function attachTraceSessionProbe(input: AttachProbeInput) {
   return session
 }
 
+export async function appendTraceSessionEvent(input: SessionEventInput) {
+  let session = state.session
+  if (!session || session.run_id !== input.run_id) return undefined
+
+  let run = await Run.findBy({ public_id: session.run_id })
+  if (!run) return undefined
+
+  await appendSessionEvent(run.id, input.event_type, session, input.payload ?? {})
+  return session
+}
+
 export async function stopTraceSession(input: StopTraceSessionInput = {}) {
   let session = state.session
 
@@ -216,6 +227,12 @@ type AttachProbeInput = {
   run_id: string
   probe_pid: number
   probe_log_path?: string
+}
+
+type SessionEventInput = {
+  run_id: string
+  event_type: string
+  payload?: Record<string, unknown>
 }
 
 type ResolveTraceSessionInput = {

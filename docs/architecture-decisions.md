@@ -89,6 +89,12 @@ The current pattern is:
 2. place generic tracing policy in `.skilltrace/instrumentation.md`
 3. keep task-specific skill metadata in the relevant `SKILL.md`
 
+For lower-friction real-repo trials, `traceskill start --inject-instructions`
+can apply the first two pieces automatically for the current trace session.
+The mutation is manifest-backed in `.skilltrace/injection.json`, and
+`traceskill stop` removes only the exact inserted instruction block and only
+removes the instrumentation file when SkillTrace created it and it is unchanged.
+
 Reasons:
 
 - makes tracing portable to real repositories

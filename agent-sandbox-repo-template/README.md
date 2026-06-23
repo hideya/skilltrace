@@ -54,10 +54,12 @@ codex mcp add skilltrace -- traceskill mcp
 Then start the passive trace session from this sandbox repository:
 
 ```bash
-traceskill start
+traceskill start --inject-instructions
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.
+It also temporarily injects `.skilltrace/instrumentation.md` and the matching
+`AGENTS.md` instruction for the current trace session.
 The command prints a probe log path. If passive events do not appear, restart with `--debug-probe` and inspect that log.
 
 To remove the SkillTrace MCP server later:
@@ -66,7 +68,7 @@ To remove the SkillTrace MCP server later:
 codex mcp remove skilltrace
 ```
 
-`traceskill start` prints the generated run ID. It looks like:
+`traceskill start --inject-instructions` prints the generated run ID. It looks like:
 
 ```text
 agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
@@ -86,9 +88,9 @@ Ask the agent:
 Please fix the TypeScript errors in this repo.
 ```
 
-The sandbox `AGENTS.md` asks the agent to read `.skills/type-fix/SKILL.md` before fixing TypeScript or syntax errors.
-It also points the agent to `.skilltrace/instrumentation.md`, which contains
-the reusable SkillTrace MCP tracing policy.
+The injected `AGENTS.md` line asks the agent to read
+`.skilltrace/instrumentation.md`, and the sandbox `AGENTS.md` asks the agent to
+read `.skills/type-fix/SKILL.md` before fixing TypeScript or syntax errors.
 
 ## Expected Result
 
@@ -116,5 +118,5 @@ reference-read, and finished declarations. The consistency panel should report
 When you are done, stop the active trace session:
 
 ```bash
-traceskill end
+traceskill stop
 ```
