@@ -146,11 +146,7 @@ function ReflectionPretty({ value }: ReflectionPrettyProps) {
   return (
     <div className="space-y-4">
       {entries.map(([key, item]) => (
-        <ReflectionSection
-          item={item}
-          key={key}
-          name={reflectionLabel(key)}
-        />
+        <ReflectionSection item={item} key={key} name={reflectionLabel(key)} />
       ))}
     </div>
   )
@@ -349,29 +345,34 @@ function Timeline({ events }: TimelineProps) {
 
 function TimelineItem({ event }: TimelineItemProps) {
   let name = fileNameForEvent(event)
+  let isSemantic = isSemanticEvent(event)
 
   return (
     <details className="group rounded-box border border-base-300 bg-base-100">
       <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 marker:hidden">
         <div className="min-w-0">
           <div className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate font-semibold">{event.event_type}</span>
+            <span className={`truncate ${eventTitleClass(event)}`}>
+              {event.event_type}
+            </span>
             {name ? (
               <span className="truncate font-mono text-xs text-base-content/60">
                 {name}
               </span>
             ) : null}
           </div>
-          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-            <span className={`badge badge-sm ${sourceBadgeClass(event)}`}>
-              {event.source}
-            </span>
-            {event.skill_name ? (
-              <span className="badge badge-sm badge-outline">
-                skill: {event.skill_name}
+          {isSemantic ? (
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+              <span className={`badge badge-sm ${sourceBadgeClass(event)}`}>
+                {event.source}
               </span>
-            ) : null}
-          </div>
+              {event.skill_name ? (
+                <span className="badge badge-outline badge-sm">
+                  skill: {event.skill_name}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <span className="font-mono text-xs text-base-content/50">
           {formatTime(event.timestamp)}
@@ -456,6 +457,11 @@ function eventDotClass(event: any) {
   return 'bg-base-content'
 }
 
+function eventTitleClass(event: any) {
+  if (isSemanticEvent(event)) return 'font-semibold'
+  return 'font-normal'
+}
+
 function fileNameForEvent(event: any) {
   let filePath =
     event.payload?.path ||
@@ -487,11 +493,7 @@ function reflectionLabel(key: string) {
     next_steps: 'Next steps',
   }
 
-  return labels[key] ?? key
-    .split('_')
-    .filter(Boolean)
-    .map(capitalize)
-    .join(' ')
+  return labels[key] ?? key.split('_').filter(Boolean).map(capitalize).join(' ')
 }
 
 function hasValue(value: any) {
