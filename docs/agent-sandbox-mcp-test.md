@@ -194,7 +194,8 @@ The sandbox `AGENTS.md` asks the agent to read:
 .skills/type-fix/SKILL.md
 ```
 
-That skill asks the agent to call `skill_log_event` when the skill starts and when it finishes.
+That skill asks the agent to call `skill_log_event` when the skill starts, when
+it reads the checklist reference, and when it finishes.
 
 ## Expected Result
 
@@ -204,6 +205,8 @@ In the sandbox Codex session, the agent should:
 - read `.skills/type-fix/SKILL.md`
 - call `skill_log_event` with `event_type: skill_use_started`
 - inspect or run `pnpm tsc`
+- read `.skills/type-fix/references/checklist.md`
+- call `skill_log_event` with `event_type: skill_reference_read`
 - fix `src/profile.ts`
 - call `skill_log_event` with `event_type: skill_use_finished`
 
@@ -231,7 +234,9 @@ It should also show passive events from:
 passive_file_harness
 ```
 
-The semantic declarations panel should show the started and finished events. The passive skill access panel should show the `.skills/type-fix/SKILL.md` read.
+The timeline should show the semantic started, reference-read, and finished
+events. It should also show passive file access for `.skills/type-fix/SKILL.md`
+and `.skills/type-fix/references/checklist.md`.
 
 The consistency panel should show:
 

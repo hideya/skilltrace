@@ -101,7 +101,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
           </p>
         </div>
         {reflection ? (
-          <div className="join">
+          <div className="join gap-2">
             {reflectionModes.map((option) => (
               <button
                 aria-pressed={mode === option}

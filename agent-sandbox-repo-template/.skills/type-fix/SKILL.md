@@ -22,9 +22,36 @@ If the `skill_log_event` MCP tool is available, call it before applying this ski
   "skill_path": ".skills/type-fix/SKILL.md",
   "summary": "Using the type-fix skill to repair TypeScript errors.",
   "confidence": "medium",
+  "related_artifacts": [
+    ".skills/type-fix/references/checklist.md"
+  ],
   "data": {
     "why_applicable": "The user asked to fix TypeScript or syntax errors.",
     "expected_steps": "run type check, inspect diagnostics, make minimal fixes, rerun type check"
+  }
+}
+```
+
+When you read a required or recommended supporting reference for this skill,
+call `skill_log_event` after reading it with the event type
+`skill_reference_read`. Use `skill_name` and `skill_path` for the parent skill,
+and put the reference file path in `related_artifacts` and
+`data.reference_path`. For this fixture, report the checklist reference read:
+
+```json
+{
+  "event_type": "skill_reference_read",
+  "skill_name": "type-fix",
+  "skill_version": "0.1.0",
+  "skill_path": ".skills/type-fix/SKILL.md",
+  "summary": "Read the type-fix checklist reference.",
+  "confidence": "medium",
+  "related_artifacts": [
+    ".skills/type-fix/references/checklist.md"
+  ],
+  "data": {
+    "reference_path": ".skills/type-fix/references/checklist.md",
+    "reference_role": "required checklist"
   }
 }
 ```
@@ -41,6 +68,9 @@ After applying this skill, call `skill_log_event` again:
   "confidence": "medium",
   "data": {
     "steps_applied": "record the concrete steps taken",
+    "references_used": [
+      ".skills/type-fix/references/checklist.md"
+    ],
     "uncertainties": "record anything not verified"
   }
 }

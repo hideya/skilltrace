@@ -190,6 +190,33 @@ The `skill_log_event` tool accepts:
 }
 ```
 
+Use `event_type: "skill_reference_read"` when an agent intentionally reads a
+required or recommended supporting reference for a skill. This is the semantic
+counterpart to passive file-access observation: passive tracing records that a
+file was accessed, while this event records that the agent understood the file
+as skill support material.
+
+```json
+{
+  "event_type": "skill_reference_read",
+  "skill_name": "type-fix",
+  "skill_version": "0.1.0",
+  "skill_path": ".skills/type-fix/SKILL.md",
+  "summary": "Read the type-fix checklist reference.",
+  "confidence": "medium",
+  "related_artifacts": [
+    ".skills/type-fix/references/checklist.md"
+  ],
+  "data": {
+    "reference_path": ".skills/type-fix/references/checklist.md",
+    "reference_role": "required checklist"
+  }
+}
+```
+
+Do not emit separate skill lifecycle events for supporting reference files
+unless they are standalone skills with their own `SKILL.md`.
+
 `run_id` is optional if `SKILLTRACE_RUN_ID` or `SKILLTRACE_RUN_STEM` is set:
 
 ```json
@@ -218,7 +245,7 @@ http://localhost:5173/app/runs/<run_id>
 The event should appear in:
 
 - Timeline
-- Semantic declarations
+- Expandable timeline details
 - Consistency checks
 
 ## Notes
