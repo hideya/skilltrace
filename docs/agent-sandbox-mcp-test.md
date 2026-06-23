@@ -191,17 +191,25 @@ Please fix the TypeScript errors in this repo.
 The sandbox `AGENTS.md` asks the agent to read:
 
 ```text
+.skilltrace/instrumentation.md
+```
+
+for reusable SkillTrace MCP tracing policy, then:
+
+```text
 .skills/type-fix/SKILL.md
 ```
 
-That skill asks the agent to call `skill_log_event` when the skill starts, when
-it reads the checklist reference, and when it finishes.
+The instrumentation overlay asks the agent to call `skill_trace_context`,
+`skill_log_event`, and `skill_trace_reflection`. The type-fix skill supplies the
+task-specific metadata and required checklist reference.
 
 ## Expected Result
 
 In the sandbox Codex session, the agent should:
 
 - notice the TypeScript repair task
+- read `.skilltrace/instrumentation.md`
 - read `.skills/type-fix/SKILL.md`
 - call `skill_log_event` with `event_type: skill_use_started`
 - inspect or run `pnpm tsc`
@@ -258,6 +266,7 @@ This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the `skill_log_event` tool.
+- A reusable `.skilltrace/instrumentation.md` overlay can drive SkillTrace MCP calls.
 - The local probe worker can observe skill file reads with `fs_usage` before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
@@ -267,6 +276,7 @@ This test verifies:
 This test does not yet verify:
 
 - general compliance across many skills
+- instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Linux or Windows passive probing
 - production deployment behavior

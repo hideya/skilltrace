@@ -87,14 +87,19 @@ Please fix the TypeScript errors in this repo.
 ```
 
 The sandbox `AGENTS.md` asks the agent to read `.skills/type-fix/SKILL.md` before fixing TypeScript or syntax errors.
+It also points the agent to `.skilltrace/instrumentation.md`, which contains
+the reusable SkillTrace MCP tracing policy.
 
 ## Expected Result
 
 The agent should:
 
+- read `.skilltrace/instrumentation.md`
 - read `.skills/type-fix/SKILL.md`
 - call `skill_log_event` with `skill_use_started`
 - run or inspect `pnpm tsc`
+- read `.skills/type-fix/references/checklist.md`
+- call `skill_log_event` with `skill_reference_read`
 - fix `src/profile.ts`
 - call `skill_log_event` with `skill_use_finished`
 
@@ -104,7 +109,9 @@ Then open the SkillTrace run page:
 http://localhost:5173/app/runs/<generated_run_id>
 ```
 
-The timeline should include the passive skill read and semantic started/finished declarations. The consistency panel should report `Observed and declared`.
+The timeline should include passive skill/reference reads and semantic started,
+reference-read, and finished declarations. The consistency panel should report
+`Observed and declared`.
 
 When you are done, stop the active trace session:
 
