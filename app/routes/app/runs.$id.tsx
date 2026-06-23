@@ -86,16 +86,6 @@ export default function Page({ loaderData }: PageProps) {
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <RunReflectionPanel reflection={timeline.reflection} />
-          <EventPanel
-            title="Passive skill access"
-            empty="No passive events recorded."
-            events={timeline.passive_events}
-          />
-          <EventPanel
-            title="Semantic declarations"
-            empty="No semantic events recorded."
-            events={timeline.semantic_events}
-          />
         </aside>
       </section>
     </main>
@@ -405,31 +395,6 @@ function Timeline({ events }: TimelineProps) {
   )
 }
 
-function EventPanel({ title, empty, events }: EventPanelProps) {
-  return (
-    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold">{title}</h2>
-        <p className="text-sm text-base-content/60">
-          {events.length} event{events.length === 1 ? '' : 's'}
-        </p>
-      </div>
-
-      {events.length > 0 ? (
-        <div className="space-y-3">
-          {events.map((event) => (
-            <EventCard event={event} compact key={event.id} />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
-          {empty}
-        </div>
-      )}
-    </section>
-  )
-}
-
 function EventCard({ event, compact = false }: EventCardProps) {
   return (
     <article className="rounded-box border border-base-300 bg-base-100 p-4">
@@ -639,12 +604,6 @@ type TimelineProps = {
 }
 
 type TimelineFilter = (typeof timelineFilters)[number]['value']
-
-type EventPanelProps = {
-  title: string
-  empty: string
-  events: any[]
-}
 
 type EventCardProps = {
   event: any
