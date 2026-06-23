@@ -60,7 +60,7 @@ An MCP client should launch this command as a stdio server.
 
 ## Codex MCP Registration
 
-For shorter commands, define a shell alias for command-line Codex:
+If you have installed the Codex app but not the Codex CLI, define a shell alias to access the bundled CLI version:
 
 ```bash
 alias codex='/Applications/Codex.app/Contents/Resources/codex'

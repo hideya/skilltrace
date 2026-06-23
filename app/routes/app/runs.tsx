@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, Link, redirect } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
@@ -32,7 +32,23 @@ export async function action({ request }) {
 export default function Page({ loaderData }: PageProps) {
   let { summaries } = loaderData
   let [isEditing, setIsEditing] = useState(false)
+  let [expandedKeys, setExpandedKeys] = useState<string[]>([])
   let groups = groupSummaries(summaries)
+
+  useEffect(() => {
+    setExpandedKeys(readExpandedRunGroups())
+  }, [])
+
+  function handleGroupToggle(key: string, isOpen: boolean) {
+    setExpandedKeys((current) => {
+      let next = isOpen
+        ? [...new Set([...current, key])]
+        : current.filter((item) => item !== key)
+
+      saveExpandedRunGroups(next)
+      return next
+    })
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
@@ -86,7 +102,13 @@ export default function Page({ loaderData }: PageProps) {
           ) : null}
 
           {groups.map((group) => (
-            <RunGroup group={group} isEditing={isEditing} key={group.key} />
+            <RunGroup
+              group={group}
+              isEditing={isEditing}
+              isOpen={isEditing || expandedKeys.includes(group.key)}
+              key={group.key}
+              onToggle={handleGroupToggle}
+            />
           ))}
         </section>
       ) : (
@@ -98,11 +120,14 @@ export default function Page({ loaderData }: PageProps) {
   )
 }
 
-function RunGroup({ group, isEditing }: RunGroupProps) {
+function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
   return (
     <details
       className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
-      open={isEditing}
+      onToggle={(event) => {
+        if (!isEditing) onToggle(group.key, event.currentTarget.open)
+      }}
+      open={isOpen}
     >
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-200 px-4 py-3">
         <div className="min-w-0">
@@ -251,6 +276,27 @@ function pathHashFromRunId(publicId: string) {
   return match?.[1]
 }
 
+function readExpandedRunGroups() {
+  if (typeof window === 'undefined') return []
+
+  let value = window.sessionStorage.getItem(EXPANDED_RUN_GROUPS_KEY)
+  if (!value) return []
+
+  try {
+    let parsed = JSON.parse(value)
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
+function saveExpandedRunGroups(keys: string[]) {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem(EXPANDED_RUN_GROUPS_KEY, JSON.stringify(keys))
+}
+
 function ResultBadge({ result }: ResultBadgeProps) {
   let className =
     result === 'pass'
@@ -317,6 +363,8 @@ type RunRowProps = {
 type RunGroupProps = {
   group: RunGroup
   isEditing: boolean
+  isOpen: boolean
+  onToggle: (key: string, isOpen: boolean) => void
 }
 
 type RunGroup = {
@@ -342,3 +390,5 @@ type ClientCellProps = {
 type SourceListProps = {
   sources: string[]
 }
+
+const EXPANDED_RUN_GROUPS_KEY = 'skilltrace.expandedRunGroups'
