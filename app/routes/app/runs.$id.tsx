@@ -12,6 +12,8 @@ const timelineFilters = [
   { value: 'all', label: 'All' },
 ] as const
 
+const reflectionModes = ['pretty', 'raw'] as const
+
 export async function loader({ params }) {
   // Remote/auth mode reference:
   // requireUser(context)
@@ -79,12 +81,11 @@ export default function Page({ loaderData }: PageProps) {
 
       <ConsistencyPanel results={timeline.consistency} />
 
-      <RunReflectionPanel reflection={timeline.reflection} />
-
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
 
-        <div className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <RunReflectionPanel reflection={timeline.reflection} />
           <EventPanel
             title="Passive skill access"
             empty="No passive events recorded."
@@ -95,20 +96,14 @@ export default function Page({ loaderData }: PageProps) {
             empty="No semantic events recorded."
             events={timeline.semantic_events}
           />
-        </div>
+        </aside>
       </section>
     </main>
   )
 }
 
 function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
-  let rows = [
-    ['Outcome', reflection?.task_outcome],
-    ['Summary', reflection?.summary],
-  ].filter(([_, value]) => value)
-  let extra = reflection ? { ...reflection } : {}
-  delete extra.task_outcome
-  delete extra.summary
+  let [mode, setMode] = useState<ReflectionMode>('pretty')
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -119,26 +114,31 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
             Declared post-run diagnostic summary
           </p>
         </div>
+        {reflection ? (
+          <div className="join">
+            {reflectionModes.map((option) => (
+              <button
+                aria-pressed={mode === option}
+                className={`btn join-item btn-xs ${
+                  mode === option ? 'btn-primary' : 'btn-outline'
+                }`}
+                key={option}
+                onClick={() => setMode(option)}
+                type="button"
+              >
+                {capitalize(option)}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {reflection ? (
-        <div className="space-y-4">
-          {rows.length > 0 ? (
-            <dl className="grid gap-2 text-sm">
-              {rows.map(([label, value]) => (
-                <div
-                  className="grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]"
-                  key={label}
-                >
-                  <dt className="text-base-content/50">{label}</dt>
-                  <dd className="min-w-0 break-words">{String(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-
-          {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
-        </div>
+        mode === 'pretty' ? (
+          <ReflectionPretty value={reflection} />
+        ) : (
+          <JsonBlock value={reflection} />
+        )
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
           No run reflection declared.
@@ -146,6 +146,70 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
       )}
     </section>
   )
+}
+
+function ReflectionPretty({ value }: ReflectionPrettyProps) {
+  let entries = Object.entries(value).filter(([_, item]) => hasValue(item))
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
+        Empty reflection.
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {entries.map(([key, item]) => (
+        <ReflectionSection
+          item={item}
+          key={key}
+          name={reflectionLabel(key)}
+        />
+      ))}
+    </div>
+  )
+}
+
+function ReflectionSection({ name, item }: ReflectionSectionProps) {
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-base-content/70">{name}</h3>
+      <ReflectionValue item={item} />
+    </section>
+  )
+}
+
+function ReflectionValue({ item }: ReflectionValueProps) {
+  if (Array.isArray(item)) {
+    return (
+      <ul className="list-disc space-y-1 pl-5 text-sm">
+        {item.map((entry, index) => (
+          <li className="break-words" key={index}>
+            <ReflectionValue item={entry} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  if (item && typeof item === 'object') {
+    return (
+      <div className="space-y-3 rounded-box bg-base-200 p-3">
+        {Object.entries(item).map(([key, value]) => (
+          <div className="space-y-1" key={key}>
+            <h4 className="text-xs font-semibold text-base-content/60">
+              {reflectionLabel(key)}
+            </h4>
+            <ReflectionValue item={value} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return <p className="text-sm leading-relaxed break-words">{String(item)}</p>
 }
 
 function RunContextPanel({ context }: RunContextPanelProps) {
@@ -492,6 +556,37 @@ function extraContext(context?: Record<string, any> | null) {
   return extra
 }
 
+function reflectionLabel(key: string) {
+  let labels: Record<string, string> = {
+    task_outcome: 'Task outcome',
+    summary: 'Summary',
+    skills_used: 'Skills used',
+    skills_skipped: 'Skills skipped',
+    decision_notes: 'Decision notes',
+    instrumentation_notes: 'Instrumentation notes',
+    uncertainty: 'Uncertainty',
+    next_steps: 'Next steps',
+  }
+
+  return labels[key] ?? key
+    .split('_')
+    .filter(Boolean)
+    .map(capitalize)
+    .join(' ')
+}
+
+function hasValue(value: any) {
+  if (value === null || value === undefined || value === '') return false
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'object') return Object.keys(value).length > 0
+  return true
+}
+
+function capitalize(value: string) {
+  if (!value) return value
+  return `${value[0].toUpperCase()}${value.slice(1)}`
+}
+
 function formatDate(value?: Date | string | null) {
   if (!value) return '—'
   return new Date(value).toLocaleString()
@@ -519,6 +614,21 @@ type RunContextPanelProps = {
 type RunReflectionPanelProps = {
   reflection?: Record<string, any> | null
 }
+
+type ReflectionPrettyProps = {
+  value: Record<string, any>
+}
+
+type ReflectionSectionProps = {
+  name: string
+  item: any
+}
+
+type ReflectionValueProps = {
+  item: any
+}
+
+type ReflectionMode = (typeof reflectionModes)[number]
 
 type ConsistencyBadgeProps = {
   status: 'pass' | 'warning' | 'incomplete'

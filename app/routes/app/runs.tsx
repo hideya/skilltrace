@@ -127,6 +127,7 @@ function RunGroup({ group, isEditing }: RunGroupProps) {
               <th>Status</th>
               <th>Result</th>
               <th>Model</th>
+              <th>Client</th>
               <th>Events</th>
               <th>Sources</th>
               <th>Last event</th>
@@ -187,6 +188,9 @@ function RunRow({ summary, isEditing }: RunRowProps) {
       </td>
       <td className="text-center">
         <ModelCell context={summary.context} />
+      </td>
+      <td className="text-center">
+        <ClientCell context={summary.context} />
       </td>
       <td className="text-right">{summary.event_count}</td>
       <td>
@@ -270,6 +274,15 @@ function ModelCell({ context }: ModelCellProps) {
   return <span className="font-mono text-xs">{model}</span>
 }
 
+function ClientCell({ context }: ClientCellProps) {
+  let client = context?.client
+  if (!client || typeof client !== 'string') {
+    return <span className="text-base-content/50">—</span>
+  }
+
+  return <span className="text-xs">{client}</span>
+}
+
 function SourceList({ sources }: SourceListProps) {
   if (sources.length === 0) {
     return <span className="text-base-content/50">None</span>
@@ -320,6 +333,10 @@ type ResultBadgeProps = {
 }
 
 type ModelCellProps = {
+  context?: Record<string, any> | null
+}
+
+type ClientCellProps = {
   context?: Record<string, any> | null
 }
 
