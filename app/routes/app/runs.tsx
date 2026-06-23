@@ -66,7 +66,8 @@ export default function Page({ loaderData }: PageProps) {
             id="delete-runs-form"
             method="post"
             onSubmit={(event) => {
-              if (!confirm('Delete selected finished runs?')) event.preventDefault()
+              if (!confirm('Delete selected finished runs?'))
+                event.preventDefault()
             }}
           >
             <input name="intent" type="hidden" value="delete" />
@@ -85,11 +86,7 @@ export default function Page({ loaderData }: PageProps) {
           ) : null}
 
           {groups.map((group) => (
-            <RunGroup
-              group={group}
-              isEditing={isEditing}
-              key={group.key}
-            />
+            <RunGroup group={group} isEditing={isEditing} key={group.key} />
           ))}
         </section>
       ) : (
@@ -131,7 +128,7 @@ function RunGroup({ group, isEditing }: RunGroupProps) {
               <th>Events</th>
               <th>Sources</th>
               <th>Last event</th>
-              <th>Attempt</th>
+              {/* <th>Attempt</th> */}
             </tr>
           </thead>
           <tbody>
@@ -206,13 +203,13 @@ function RunRow({ summary, isEditing }: RunRowProps) {
           </div>
         </div>
       </td>
-      <td>
+      {/* <td>
         <Form action={`/app/runs/${run.public_id}`} method="post">
           <button className="btn btn-outline btn-xs" type="submit">
             Start new attempt
           </button>
         </Form>
-      </td>
+      </td> */}
     </tr>
   )
 }
@@ -223,8 +220,10 @@ function groupSummaries(summaries: any[]) {
   for (let summary of summaries) {
     let run = summary.run
     let targetRoot = run.bag?.target_root || run.description || 'unknown target'
-    let targetName = run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
-    let pathHash = run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
+    let targetName =
+      run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
+    let pathHash =
+      run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
     let key = `${targetName}-${pathHash}`
     let group = groups.get(key)
 
@@ -247,7 +246,7 @@ function groupSummaries(summaries: any[]) {
 
 function pathHashFromRunId(publicId: string) {
   let match = publicId.match(
-    /-([A-Za-z0-9_-]{6})-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/
+    /-([A-Za-z0-9_-]{6})-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/,
   )
   return match?.[1]
 }
