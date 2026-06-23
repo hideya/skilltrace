@@ -126,7 +126,7 @@ function RunGroup({ group, isEditing }: RunGroupProps) {
               <th>Model</th>
               <th>Client</th>
               <th>Events</th>
-              <th>Sources</th>
+              {/* <th>Sources</th> */}
               {/* <th>Last event</th> */}
               {/* <th>Attempt</th> */}
             </tr>
@@ -190,9 +190,9 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         <ClientCell context={summary.context} />
       </td>
       <td className="text-right">{summary.event_count}</td>
-      <td>
+      {/* <td>
         <SourceList sources={summary.sources} />
-      </td>
+      </td> */}
       {/* <td>
         <div className="space-y-1">
           <div className="font-medium">
