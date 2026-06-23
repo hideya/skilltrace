@@ -127,7 +127,7 @@ function RunGroup({ group, isEditing }: RunGroupProps) {
               <th>Client</th>
               <th>Events</th>
               <th>Sources</th>
-              <th>Last event</th>
+              {/* <th>Last event</th> */}
               {/* <th>Attempt</th> */}
             </tr>
           </thead>
@@ -193,7 +193,7 @@ function RunRow({ summary, isEditing }: RunRowProps) {
       <td>
         <SourceList sources={summary.sources} />
       </td>
-      <td>
+      {/* <td>
         <div className="space-y-1">
           <div className="font-medium">
             {summary.last_event_type || 'No events'}
@@ -202,7 +202,7 @@ function RunRow({ summary, isEditing }: RunRowProps) {
             {formatDate(summary.last_event_at)}
           </div>
         </div>
-      </td>
+      </td> */}
       {/* <td>
         <Form action={`/app/runs/${run.public_id}`} method="post">
           <button className="btn btn-outline btn-xs" type="submit">
