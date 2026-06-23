@@ -112,14 +112,29 @@ pnpm skilltrace:mcp
 The `skill_trace_context` tool records declared run metadata. Ask the agent to
 call it at the beginning of a traced run when the MCP tool is available:
 
+It accepts:
+
+- `run_id` optional when an active session, `SKILLTRACE_RUN_ID`, or `SKILLTRACE_RUN_STEM` is available
+- `agent` such as `codex`, `claude-code`, or `custom-agent`
+- `model` if known, otherwise `unknown`
+- `client` such as `Codex CLI`, `Codex Desktop`, or `Custom MCP client`
+- `cwd` for the working directory of the target task
+- `task_summary` as a short description of the user request
+- `notes` for uncertainty about model/client identity or other context
+- `data` for extra structured metadata
+
 ```json
 {
+  "run_id": "run_mcp_fixture_001",
   "agent": "codex",
   "model": "declared model name",
   "client": "Codex CLI",
   "cwd": "/path/to/repo",
   "task_summary": "Repair TypeScript errors in the sandbox repo.",
-  "notes": "Model name is self-declared metadata."
+  "notes": "Model name is self-declared metadata.",
+  "data": {
+    "mode": "dogfood"
+  }
 }
 ```
 

@@ -8,6 +8,10 @@ Use this skill when the user asks to fix TypeScript, syntax, or source errors in
 
 ## Instrumentation
 
+Context instrumentation is expected to happen before this skill is read. If the
+`skill_trace_context` MCP tool is available and no run context has been declared
+yet, call it before applying this skill.
+
 If the `skill_log_event` MCP tool is available, call it before applying this skill:
 
 ```json
