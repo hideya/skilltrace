@@ -3,14 +3,16 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { spawnSync } from 'child_process'
 import { Run } from './run'
+import { TraceEvent } from './trace-event'
 
 const DEFAULT_SKILL_ROOTS = ['.skills']
+const SESSION_SOURCE = 'skilltrace_session'
 
 export async function startTraceSession(input: StartTraceSessionInput) {
   let targetRoot = path.resolve(input.target_root)
   let config = loadTargetConfig(targetRoot)
 
-  await stopTraceSession()
+  await stopTraceSession({ reason: 'replaced' })
 
   let runId = buildSessionId(targetRoot, input.now ?? new Date())
   let session: TraceSession = {
@@ -24,7 +26,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
 
   state.session = session
 
-  await Run.create({
+  let run = await Run.create({
     public_id: runId,
     name: runId,
     description: targetRoot,
@@ -34,6 +36,9 @@ export async function startTraceSession(input: StartTraceSessionInput) {
       path_hash: session.path_hash,
       skill_roots: config.skillRoots,
     },
+  })
+  await appendSessionEvent(run.id, 'trace_session_started', session, {
+    reason: 'started',
   })
 
   return session
@@ -48,7 +53,7 @@ export async function attachTraceSessionProbe(input: AttachProbeInput) {
   return session
 }
 
-export async function stopTraceSession() {
+export async function stopTraceSession(input: StopTraceSessionInput = {}) {
   let session = state.session
 
   if (session?.probe_pid) killProcess(session.probe_pid)
@@ -57,6 +62,9 @@ export async function stopTraceSession() {
   if (session) {
     let run = await Run.findBy({ public_id: session.run_id })
     if (run) {
+      await appendSessionEvent(run.id, 'trace_session_finished', session, {
+        reason: input.reason ?? 'ended',
+      })
       await Run.update(run.id, {
         status: 'finished',
         finished_at: new Date(),
@@ -65,6 +73,29 @@ export async function stopTraceSession() {
   }
 
   return session
+}
+
+async function appendSessionEvent(
+  runId: number,
+  eventType: string,
+  session: TraceSession,
+  payload: Record<string, unknown>,
+) {
+  await TraceEvent.create({
+    run_id: runId,
+    source: SESSION_SOURCE,
+    event_type: eventType,
+    payload: {
+      ...payload,
+      run_id: session.run_id,
+      target_root: session.target_root,
+      target_name: session.target_name,
+      path_hash: session.path_hash,
+      skill_roots: session.skill_roots,
+      probe_pid: session.probe_pid,
+      probe_log_path: session.probe_log_path,
+    },
+  })
 }
 
 export function getTraceSession() {
@@ -175,6 +206,10 @@ type TraceSessionState = {
 type StartTraceSessionInput = {
   target_root: string
   now?: Date
+}
+
+type StopTraceSessionInput = {
+  reason?: 'ended' | 'replaced'
 }
 
 type AttachProbeInput = {

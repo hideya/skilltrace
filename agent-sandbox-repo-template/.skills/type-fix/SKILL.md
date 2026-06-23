@@ -52,7 +52,7 @@ If the MCP tool is unavailable, continue normally and mention that SkillTrace in
 
 1. Run `pnpm tsc`.
 2. Read the diagnostics carefully.
-3. Check `references/checklist.md`.
+3. Check `.skills/type-fix/references/checklist.md`.
 4. Fix the smallest number of source lines needed.
 5. Run `pnpm tsc` again.
 6. Report the files changed and final verification result.
