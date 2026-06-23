@@ -70,7 +70,7 @@ function RunRow({ summary }: RunRowProps) {
     <tr>
       <td>
         <Link
-          className="link link-hover font-medium"
+          className="link font-medium link-hover"
           to={`/app/runs/${run.public_id}`}
         >
           {label}
@@ -81,18 +81,16 @@ function RunRow({ summary }: RunRowProps) {
           </div>
         ) : null}
       </td>
-      <td>
-        <span className="badge badge-neutral badge-outline">
-          {run.status}
-        </span>
+      <td className="text-center">
+        <span className="badge badge-outline badge-neutral">{run.status}</span>
       </td>
-      <td>
+      <td className="text-center">
         <ResultBadge result={summary.result} />
       </td>
-      <td>
+      <td className="text-center">
         <ModelCell context={summary.context} />
       </td>
-      <td>{summary.event_count}</td>
+      <td className="text-right">{summary.event_count}</td>
       <td>
         <SourceList sources={summary.sources} />
       </td>
@@ -108,7 +106,7 @@ function RunRow({ summary }: RunRowProps) {
       </td>
       <td>
         <Form action={`/app/runs/${run.public_id}`} method="post">
-          <button className="btn btn-xs btn-outline" type="submit">
+          <button className="btn btn-outline btn-xs" type="submit">
             Start new attempt
           </button>
         </Form>
