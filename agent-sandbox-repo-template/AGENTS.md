@@ -36,7 +36,7 @@ When asked to fix TypeScript, syntax, or source errors:
        }
      ],
      "uncertainties": ["list anything not verified"],
-     "trace_quality_notes": ["note whether passive and semantic events appear aligned"],
+     "instrumentation_notes": ["note which SkillTrace MCP calls you attempted and whether any failed or were unavailable"],
      "recommended_skill_changes": ["suggest skill or instrumentation improvements, if any"],
      "summary": "one-sentence reflection summary"
    }

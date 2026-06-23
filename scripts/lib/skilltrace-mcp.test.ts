@@ -80,7 +80,7 @@ describe('skilltrace MCP helpers', () => {
           },
         ],
         uncertainties: ['model identity was self-declared'],
-        trace_quality_notes: ['passive and semantic events appear aligned'],
+        instrumentation_notes: ['called context, started, finished, and reflection tools'],
         recommended_skill_changes: ['clarify checklist path'],
         summary: 'Completed task with aligned trace events.',
       },
@@ -92,6 +92,9 @@ describe('skilltrace MCP helpers', () => {
     expect(event.summary).toBe('Completed task with aligned trace events.')
     expect(event.data.task_outcome).toBe('completed')
     expect(event.data.skills_used).toEqual(['type-fix'])
+    expect(event.data.instrumentation_notes).toEqual([
+      'called context, started, finished, and reflection tools',
+    ])
     expect(event.data.steps_skipped_or_delayed).toEqual([
       {
         step: 'read checklist before editing',

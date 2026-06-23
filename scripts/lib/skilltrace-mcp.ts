@@ -32,7 +32,7 @@ export const skillTraceReflectionInputSchema = {
   steps_followed: z.array(z.string()).optional(),
   steps_skipped_or_delayed: z.array(z.record(z.string(), z.unknown())).optional(),
   uncertainties: z.array(z.string()).optional(),
-  trace_quality_notes: z.array(z.string()).optional(),
+  instrumentation_notes: z.array(z.string()).optional(),
   recommended_skill_changes: z.array(z.string()).optional(),
   summary: z.string().trim().optional(),
   data: z.record(z.string(), z.unknown()).optional(),
@@ -108,7 +108,7 @@ export function buildMcpSkillTraceReflectionEvent(
       steps_followed: input.steps_followed ?? [],
       steps_skipped_or_delayed: input.steps_skipped_or_delayed ?? [],
       uncertainties: input.uncertainties ?? [],
-      trace_quality_notes: input.trace_quality_notes ?? [],
+      instrumentation_notes: input.instrumentation_notes ?? [],
       recommended_skill_changes: input.recommended_skill_changes ?? [],
       ...(input.data ?? {}),
     },
@@ -167,7 +167,7 @@ export type SkillTraceReflectionInput = {
   steps_followed?: string[]
   steps_skipped_or_delayed?: Record<string, unknown>[]
   uncertainties?: string[]
-  trace_quality_notes?: string[]
+  instrumentation_notes?: string[]
   recommended_skill_changes?: string[]
   summary?: string
   data?: Record<string, unknown>
