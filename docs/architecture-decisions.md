@@ -79,6 +79,28 @@ In testing, Codex via VS Code could see the sandbox skill instructions, and `/mc
 
 For now, SkillTrace MCP dogfooding should use command-line Codex.
 
+## Pluggable Instrumentation Overlay
+
+SkillTrace tracing instructions should be reusable outside the sandbox.
+
+The current pattern is:
+
+1. add one opt-in line near the top of `AGENTS.md`
+2. place generic tracing policy in `.skilltrace/instrumentation.md`
+3. keep task-specific skill metadata in the relevant `SKILL.md`
+
+Reasons:
+
+- makes tracing portable to real repositories
+- avoids copying a long MCP protocol block into every skill
+- keeps task skills focused on domain behavior
+- lets SkillTrace compare passive file access with semantic declarations without
+  making every reference file look like a separate skill
+
+The overlay is tracing policy, not a task skill. Agents should not emit
+`skill_use_started` or `skill_use_finished` for `.skilltrace/instrumentation.md`
+itself.
+
 ## Sandbox Template
 
 `agent-sandbox-repo` is generated from `agent-sandbox-repo-template`.

@@ -281,6 +281,50 @@ This test does not yet verify:
 - Linux or Windows passive probing
 - production deployment behavior
 
+## Trying A Real Repository
+
+After the sandbox passes, a real repository can opt into the same tracing shape
+with two small additions.
+
+First, add a tracing-policy line near the top of the repo's `AGENTS.md`:
+
+```md
+Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
+```
+
+Second, copy or adapt `.skilltrace/instrumentation.md` from the sandbox
+template. Keep it generic: it should describe when to call SkillTrace MCP tools,
+but it should not contain task-specific repair, review, or implementation
+instructions.
+
+For any repo-local skill you want to probe, add a small metadata section to the
+skill file:
+
+```md
+## SkillTrace Metadata
+
+- `skill_name`: `example-skill`
+- `skill_version`: `0.1.0`
+- `skill_path`: `.skills/example-skill/SKILL.md`
+- start summary: `Using example-skill for the current task.`
+- finish summary: `Finished example-skill guided work.`
+- required references:
+  - path: `.skills/example-skill/references/checklist.md`
+  - role: `required checklist`
+```
+
+Then run the normal local flow from the target repo:
+
+```bash
+traceskill start
+codex
+traceskill stop
+```
+
+This keeps the repository's normal task instructions separate from the
+SkillTrace tracing policy, which makes it easier to compare behavior across
+different real repos.
+
 ## Optional Passive Event Check
 
 If the passive probe misses the read and you want to force the same run into the pass state, run the read harness manually using the generated run ID:

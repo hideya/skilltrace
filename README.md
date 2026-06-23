@@ -147,8 +147,8 @@ Local LLM environment
 SkillTrace local daemon
   ├─ Web UI
   │    ├─ run timeline
-  │    ├─ skill access view
-  │    ├─ semantic log view
+  │    ├─ run context view
+  │    ├─ run reflection view
   │    └─ mismatch detection
   │
   ├─ Local HTTP API
@@ -179,42 +179,53 @@ observability around it.
 
 ---
 
-## Debug instrumentation
+## Pluggable Instrumentation
 
-A skill may include debug instrumentation in `SKILL.md`, or the same instructions may be injected through an external instrumentation overlay.
-
-Example:
+SkillTrace now uses a pluggable instrumentation overlay for MCP tracing. A repo
+can opt in with a small instruction near the top of `AGENTS.md`:
 
 ```md
-## Debug instrumentation
-
-When instrumentation is enabled:
-
-Before applying this skill, call the `skill_log_event` MCP tool with:
-- event_type: "skill_use_started"
-- skill_name
-- skill_version
-- why_applicable
-- assumptions
-- expected_steps
-- risk_flags
-
-After applying this skill, call the `skill_log_event` MCP tool with:
-- event_type: "skill_use_finished"
-- skill_name
-- skill_version
-- steps_applied
-- deviations_from_skill
-- uncertainties
-- artifacts_created
-- recommended_followup
-
-If instrumentation is unavailable, continue the task normally and report that instrumentation was unavailable.
+Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
 ```
 
-This does not attempt to capture hidden chain-of-thought.
+The overlay is tracing policy, not a task skill. It tells the agent how to emit
+SkillTrace MCP events while leaving task-specific skills focused on their own
+applicability, references, and procedure.
 
-It asks the model to emit explicit, inspectable declarations that can be compared with passive traces.
+The current overlay pattern is:
+
+- call `skill_trace_context` once near the beginning of the run
+- emit `skill_use_started` before applying a task skill
+- emit `skill_reference_read` after reading required or recommended skill references
+- emit `skill_use_finished` after completing skill-guided work
+- emit `skill_trace_reflection` at the end of the task
+
+Task skills provide metadata the overlay can use:
+
+```md
+## SkillTrace Metadata
+
+- `skill_name`: `type-fix`
+- `skill_version`: `0.1.0`
+- `skill_path`: `.skills/type-fix/SKILL.md`
+- start summary: `Using the type-fix skill to repair TypeScript errors.`
+- finish summary: `Finished repairing TypeScript errors.`
+- required references:
+  - path: `.skills/type-fix/references/checklist.md`
+  - role: `required checklist`
+```
+
+This design makes instrumentation portable to real repositories without putting
+debugging protocol inside every skill file. It also helps compare passive
+evidence with semantic self-report:
+
+- passive trace: the file was accessed
+- semantic trace: the agent understood the file as a skill or skill reference
+
+SkillTrace does not attempt to capture hidden chain-of-thought. It asks the
+model to emit explicit, inspectable declarations that can be compared with
+passive traces. If instrumentation is unavailable, the agent should continue the
+task normally and report which tracing calls could not be made.
 
 ---
 
@@ -250,6 +261,27 @@ It asks the model to emit explicit, inspectable declarations that can be compare
     ]
   },
   "related_artifacts": [],
+  "confidence": "medium"
+}
+```
+
+Reference files use a separate semantic event so they do not look like
+standalone skill lifecycle events:
+
+```json
+{
+  "run_id": "run_2026_001",
+  "event_type": "skill_reference_read",
+  "skill_name": "type-fix",
+  "skill_path": ".skills/type-fix/SKILL.md",
+  "summary": "Read the type-fix checklist reference.",
+  "related_artifacts": [
+    ".skills/type-fix/references/checklist.md"
+  ],
+  "data": {
+    "reference_path": ".skills/type-fix/references/checklist.md",
+    "reference_role": "required checklist"
+  },
   "confidence": "medium"
 }
 ```
@@ -325,11 +357,11 @@ The file access tracking harness is enabled, but no semantic logging is requeste
 
 ### Condition C: Passive monitoring + inline debug instrumentation
 
-Debug instrumentation is added inside `SKILL.md`.
+Debug instrumentation is added directly inside `SKILL.md`.
 
 ### Condition D: Passive monitoring + external instrumentation overlay
 
-The skill file remains unchanged, but instrumentation instructions are injected externally.
+The skill file keeps only task-specific metadata, while `.skilltrace/instrumentation.md` provides the reusable tracing policy.
 
 ### Condition E: Strong debug protocol
 

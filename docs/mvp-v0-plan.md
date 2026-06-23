@@ -26,10 +26,11 @@ Build a local SkillTrace server and web app that can answer these questions for 
 - Run ID correlation shared across event sources.
 - Passive event receiver for local file access harness events.
 - Semantic logging endpoint aligned with a future `skill_log_event` MCP tool.
+- Pluggable `.skilltrace/instrumentation.md` overlay for real-repo trials.
 - Trace event store for runs and chronological events.
 - Consistency checker for passive activation and declared use.
 - Run timeline UI.
-- Skill access and semantic log views.
+- Run context and run reflection views.
 - Instrumentation comparison support for early experiments.
 
 ## Initial Data Model
@@ -87,8 +88,11 @@ Passive mechanical events:
 
 Active semantic events:
 
+- `run_context_declared`
 - `skill_use_started`
+- `skill_reference_read`
 - `skill_use_finished`
+- `run_reflection_declared`
 - `assumption_declared`
 - `risk_declared`
 - `deviation_declared`
@@ -124,7 +128,7 @@ Receives model-declared skill use events and should match the future MCP tool co
 Minimum behavior:
 
 - require `run_id`
-- accept `skill_use_started` and `skill_use_finished`
+- accept `run_context_declared`, `skill_use_started`, `skill_reference_read`, `skill_use_finished`, and `run_reflection_declared`
 - accept summary, confidence, skill metadata, related artifacts, and structured data
 - create the run if it does not already exist
 - append the event as a semantic trace
@@ -136,6 +140,8 @@ Loads a single run with:
 - chronological events
 - passive skill access events
 - semantic skill declarations
+- declared run context
+- declared run reflection
 - consistency check results
 
 ## Initial UI
@@ -145,10 +151,12 @@ Use the existing React Router v7, daisyUI v5, and Tailwind CSS v4 setup.
 Required views:
 
 - Run list showing recent runs and status.
-- Run timeline showing all events in chronological order.
+- Run list grouping attempts from the same target repository.
+- Run list result, model, and client columns for comparing runs.
+- Run timeline showing all events in chronological order as compact expandable rows.
 - Consistency summary showing pass, warning, or incomplete states.
-- Passive skill access panel showing skill path, file hash, timestamp, and run.
-- Semantic declarations panel showing why applicable, assumptions, risk flags, applied steps, deviations, uncertainties, and recommended follow-up.
+- Run context panel showing declared model, client, working directory, and task summary.
+- Run reflection side panel showing a readable post-run diagnostic summary with a raw JSON toggle.
 
 The UI should be operational and scannable rather than decorative.
 
@@ -160,8 +168,32 @@ Implement simple per-run checks first.
 - Read but not declared: skill file was read, but no `skill_use_started` event exists.
 - Declared but not observed: semantic use was declared, but no matching passive skill file read exists.
 - Started but not finished: `skill_use_started` exists, but no `skill_use_finished` event exists.
+- Reference observed and declared: a supporting reference file was passively read and `skill_reference_read` was emitted.
 
 The checker should produce human-readable messages for the UI. It should not try to infer hidden reasoning or determine actual skill influence.
+
+## Pluggable Instrumentation Overlay
+
+For real-repo trials, prefer a reusable overlay instead of embedding all tracing
+instructions in every task skill.
+
+Add one opt-in line near the top of `AGENTS.md`:
+
+```md
+Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
+```
+
+Then add `.skilltrace/instrumentation.md` with the generic tracing policy:
+
+- call `skill_trace_context` once near the beginning
+- emit `skill_use_started` before applying a task skill
+- emit `skill_reference_read` after reading required or recommended references
+- emit `skill_use_finished` after skill-guided work
+- emit `skill_trace_reflection` at the end
+
+Task skills should provide small `SkillTrace Metadata` sections with their name,
+version, path, summaries, applicability reason, expected steps, and required
+references. The overlay is tracing policy; task skills remain domain-specific.
 
 ## First Experiment
 

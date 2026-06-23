@@ -146,7 +146,19 @@ The guiding principle is:
 
 ## 7. Debug Instrumentation
 
-To obtain active semantic traces, each `SKILL.md` may include a debug instrumentation section, or the same instructions may be provided through an external instrumentation overlay.
+To obtain active semantic traces, each `SKILL.md` may include a debug
+instrumentation section, or the same instructions may be provided through an
+external instrumentation overlay. The current prototype favors a pluggable
+overlay:
+
+```md
+Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
+```
+
+In this pattern, `.skilltrace/instrumentation.md` contains generic tracing
+policy, while each task skill keeps only task-specific metadata such as skill
+name, version, path, summaries, applicability reason, expected steps, and
+required references.
 
 Example:
 
@@ -227,8 +239,8 @@ SkillTrace server
   │
   └─ Web app
        ├─ run timeline
-       ├─ skill access view
-       ├─ semantic log view
+       ├─ run context view
+       ├─ run reflection view
        ├─ mismatch detection
        └─ later: LLM-assisted log analysis
 ```
@@ -422,8 +434,11 @@ Initial passive event types:
 
 Initial semantic event types:
 
+- `run_context_declared`
 - `skill_use_started`
+- `skill_reference_read`
 - `skill_use_finished`
+- `run_reflection_declared`
 - `assumption_declared`
 - `risk_declared`
 - `deviation_declared`
