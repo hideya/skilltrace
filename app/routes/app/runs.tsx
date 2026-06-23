@@ -121,10 +121,10 @@ function RunGroup({ group, isEditing }: RunGroupProps) {
             <tr>
               {isEditing ? <th>Select</th> : null}
               <th>Run</th>
-              <th>Status</th>
-              <th>Result</th>
-              <th>Model</th>
-              <th>Client</th>
+              <th className="text-center">Status</th>
+              <th className="text-center">Result</th>
+              <th className="text-center">Model</th>
+              <th className="text-center">Client</th>
               <th>Events</th>
               {/* <th>Sources</th> */}
               {/* <th>Last event</th> */}

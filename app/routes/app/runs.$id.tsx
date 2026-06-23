@@ -1,3 +1,4 @@
+import { ChevronLeftIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, redirect } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
@@ -35,13 +36,20 @@ export default function Page({ loaderData }: PageProps) {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
       <header className="space-y-4">
-        <Link className="link text-sm link-hover" to="/app/runs">
-          Back to runs
-        </Link>
-
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-2">
-            <p className="badge rounded-full badge-outline">Run timeline</p>
+            <div className="flex flex-row items-center gap-2">
+              <Link
+                className="link rounded-full bg-primary text-white link-hover"
+                to="/app/runs"
+              >
+                <ChevronLeftIcon className="size-10" />
+              </Link>
+              <div className="badge rounded-full badge-outline">
+                Run timeline
+              </div>
+            </div>
+
             <h1 className="text-4xl font-bold text-balance break-words">
               {title}
             </h1>
@@ -49,24 +57,18 @@ export default function Page({ loaderData }: PageProps) {
               <p className="text-base-content/70">{run.description}</p>
             ) : null}
           </div>
-
-          <div className="rounded-box border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
-              Events
-            </p>
-            <p className="text-3xl font-bold">{timeline.events.length}</p>
-          </div>
         </div>
 
-        <Form method="post">
+        {/* <Form method="post">
           <button className="btn btn-outline" type="submit">
             Start new attempt
           </button>
-        </Form>
+        </Form> */}
       </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <Metric label="Status" value={run.status} />
+        <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
       </section>
