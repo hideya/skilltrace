@@ -3,12 +3,15 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   buildMcpSkillLogEvent,
   buildMcpSkillTraceContextEvent,
+  buildMcpSkillTraceReflectionEvent,
   mcpRunId,
   skillLogEventInputSchema,
   skillTraceContextInputSchema,
+  skillTraceReflectionInputSchema,
   skillTraceServerUrl,
   type SkillLogEventInput,
   type SkillTraceContextInput,
+  type SkillTraceReflectionInput,
 } from './lib/skilltrace-mcp'
 import { readActiveSession, sessionFilePath } from './lib/skilltrace-session'
 
@@ -81,6 +84,42 @@ server.registerTool(
     let runId = await resolveRunId()
     let event = buildMcpSkillTraceContextEvent(
       input as SkillTraceContextInput,
+      { runId },
+    )
+    let result = await postSkillLogEvent(SERVER_URL, event)
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify(
+            {
+              ok: true,
+              run_id: event.run_id,
+              event_type: event.event_type,
+              event_id: result.event?.id,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    }
+  },
+)
+
+server.registerTool(
+  'skill_trace_reflection',
+  {
+    title: 'SkillTrace run reflection',
+    description:
+      'Declare a concise post-run diagnostic summary of skill usage, skipped or delayed steps, uncertainties, and possible skill improvements.',
+    inputSchema: skillTraceReflectionInputSchema,
+  },
+  async (input) => {
+    let runId = await resolveRunId()
+    let event = buildMcpSkillTraceReflectionEvent(
+      input as SkillTraceReflectionInput,
       { runId },
     )
     let result = await postSkillLogEvent(SERVER_URL, event)

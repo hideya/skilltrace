@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   buildMcpSkillLogEvent,
   buildMcpSkillTraceContextEvent,
+  buildMcpSkillTraceReflectionEvent,
   mcpRunId,
   skillTraceServerUrl,
   timestampId,
@@ -64,6 +65,39 @@ describe('skilltrace MCP helpers', () => {
     expect(event.data.agent).toBe('codex')
     expect(event.data.model).toBe('gpt-5-codex')
     expect(event.data.mode).toBe('dogfood')
+  })
+
+  test('builds a run reflection event from MCP input', () => {
+    let event = buildMcpSkillTraceReflectionEvent(
+      {
+        task_outcome: 'completed',
+        skills_used: ['type-fix'],
+        steps_followed: ['declared context', 'fixed source issues'],
+        steps_skipped_or_delayed: [
+          {
+            step: 'read checklist before editing',
+            reason: 'read after initial diagnostics',
+          },
+        ],
+        uncertainties: ['model identity was self-declared'],
+        trace_quality_notes: ['passive and semantic events appear aligned'],
+        recommended_skill_changes: ['clarify checklist path'],
+        summary: 'Completed task with aligned trace events.',
+      },
+      { runId: 'run_fixture_001' },
+    )
+
+    expect(event.run_id).toBe('run_fixture_001')
+    expect(event.event_type).toBe('run_reflection_declared')
+    expect(event.summary).toBe('Completed task with aligned trace events.')
+    expect(event.data.task_outcome).toBe('completed')
+    expect(event.data.skills_used).toEqual(['type-fix'])
+    expect(event.data.steps_skipped_or_delayed).toEqual([
+      {
+        step: 'read checklist before editing',
+        reason: 'read after initial diagnostics',
+      },
+    ])
   })
 
   test('requires a run ID', () => {

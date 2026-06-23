@@ -46,6 +46,10 @@ After applying this skill, call `skill_log_event` again:
 }
 ```
 
+After `skill_use_finished`, call `skill_trace_reflection` if it is available.
+Use it to summarize skill usage, skipped or delayed steps, uncertainties, trace
+quality, and possible skill improvements. Do not include hidden chain-of-thought.
+
 If the MCP tool is unavailable, continue normally and mention that SkillTrace instrumentation was unavailable.
 
 ## Procedure

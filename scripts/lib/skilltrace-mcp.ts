@@ -25,6 +25,19 @@ export const skillTraceContextInputSchema = {
   data: z.record(z.string(), z.unknown()).optional(),
 }
 
+export const skillTraceReflectionInputSchema = {
+  run_id: z.string().trim().optional(),
+  task_outcome: z.string().trim().optional(),
+  skills_used: z.array(z.string()).optional(),
+  steps_followed: z.array(z.string()).optional(),
+  steps_skipped_or_delayed: z.array(z.record(z.string(), z.unknown())).optional(),
+  uncertainties: z.array(z.string()).optional(),
+  trace_quality_notes: z.array(z.string()).optional(),
+  recommended_skill_changes: z.array(z.string()).optional(),
+  summary: z.string().trim().optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
+}
+
 export function buildMcpSkillLogEvent(
   input: SkillLogEventInput,
   env: SkillTraceMcpEnv,
@@ -74,6 +87,34 @@ export function buildMcpSkillTraceContextEvent(
   })
 }
 
+export function buildMcpSkillTraceReflectionEvent(
+  input: SkillTraceReflectionInput,
+  env: SkillTraceMcpEnv,
+) {
+  let runId = input.run_id || mcpRunId(env)
+  if (!runId) {
+    throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
+  }
+
+  return buildSkillLogEvent({
+    runId,
+    eventType: 'run_reflection_declared',
+    summary: input.summary || 'Declared run reflection.',
+    confidence: 'medium',
+    data: {
+      summary: input.summary,
+      task_outcome: input.task_outcome,
+      skills_used: input.skills_used ?? [],
+      steps_followed: input.steps_followed ?? [],
+      steps_skipped_or_delayed: input.steps_skipped_or_delayed ?? [],
+      uncertainties: input.uncertainties ?? [],
+      trace_quality_notes: input.trace_quality_notes ?? [],
+      recommended_skill_changes: input.recommended_skill_changes ?? [],
+      ...(input.data ?? {}),
+    },
+  })
+}
+
 export function skillTraceServerUrl(env: SkillTraceMcpEnv) {
   return env.server || 'http://localhost:5173'
 }
@@ -116,6 +157,19 @@ export type SkillTraceContextInput = {
   cwd?: string
   task_summary?: string
   notes?: string
+  data?: Record<string, unknown>
+}
+
+export type SkillTraceReflectionInput = {
+  run_id?: string
+  task_outcome?: string
+  skills_used?: string[]
+  steps_followed?: string[]
+  steps_skipped_or_delayed?: Record<string, unknown>[]
+  uncertainties?: string[]
+  trace_quality_notes?: string[]
+  recommended_skill_changes?: string[]
+  summary?: string
   data?: Record<string, unknown>
 }
 

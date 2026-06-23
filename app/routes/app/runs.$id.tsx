@@ -79,6 +79,8 @@ export default function Page({ loaderData }: PageProps) {
 
       <ConsistencyPanel results={timeline.consistency} />
 
+      <RunReflectionPanel reflection={timeline.reflection} />
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
 
@@ -96,6 +98,53 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </section>
     </main>
+  )
+}
+
+function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
+  let rows = [
+    ['Outcome', reflection?.task_outcome],
+    ['Summary', reflection?.summary],
+  ].filter(([_, value]) => value)
+  let extra = reflection ? { ...reflection } : {}
+  delete extra.task_outcome
+  delete extra.summary
+
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Run reflection</h2>
+          <p className="text-sm text-base-content/60">
+            Declared post-run diagnostic summary
+          </p>
+        </div>
+      </div>
+
+      {reflection ? (
+        <div className="space-y-4">
+          {rows.length > 0 ? (
+            <dl className="grid gap-2 text-sm">
+              {rows.map(([label, value]) => (
+                <div
+                  className="grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]"
+                  key={label}
+                >
+                  <dt className="text-base-content/50">{label}</dt>
+                  <dd className="min-w-0 break-words">{String(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+
+          {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
+        </div>
+      ) : (
+        <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
+          No run reflection declared.
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -465,6 +514,10 @@ type ConsistencyPanelProps = {
 
 type RunContextPanelProps = {
   context?: Record<string, any> | null
+}
+
+type RunReflectionPanelProps = {
+  reflection?: Record<string, any> | null
 }
 
 type ConsistencyBadgeProps = {

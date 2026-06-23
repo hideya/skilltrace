@@ -139,6 +139,37 @@ It accepts:
 
 It creates a `run_context_declared` semantic event.
 
+The `skill_trace_reflection` tool records a concise post-run diagnostic summary.
+Ask the agent to call it after completing the task and after emitting
+`skill_use_finished`:
+
+```json
+{
+  "task_outcome": "completed",
+  "skills_used": ["type-fix"],
+  "steps_followed": [
+    "declared run context",
+    "read the type-fix skill",
+    "ran pnpm tsc",
+    "fixed source issues",
+    "reran pnpm tsc"
+  ],
+  "steps_skipped_or_delayed": [
+    {
+      "step": "read checklist before editing",
+      "reason": "read after initial diagnostics"
+    }
+  ],
+  "uncertainties": ["model identity was self-declared"],
+  "trace_quality_notes": ["passive and semantic skill events appear aligned"],
+  "recommended_skill_changes": [],
+  "summary": "Completed the type fix task and recorded trace alignment."
+}
+```
+
+It creates a `run_reflection_declared` semantic event. Reflections should be
+concise diagnostic summaries, not hidden chain-of-thought.
+
 The `skill_log_event` tool accepts:
 
 ```json

@@ -23,6 +23,25 @@ When asked to fix TypeScript, syntax, or source errors:
 2. Read `.skills/type-fix/SKILL.md`.
 3. Follow its instrumentation instructions if the `skill_log_event` MCP tool is available.
 4. Make the smallest code changes needed to pass `pnpm tsc`.
-5. Do not modify files outside this repository.
+5. After calling `skill_log_event` with `skill_use_finished`, if the `skill_trace_reflection` MCP tool is available, call it with a concise post-run diagnostic summary:
+   ```json
+   {
+     "task_outcome": "completed",
+     "skills_used": ["type-fix"],
+     "steps_followed": ["list the concrete user-visible steps taken"],
+     "steps_skipped_or_delayed": [
+       {
+         "step": "name any skipped or delayed skill step",
+         "reason": "brief user-visible reason"
+       }
+     ],
+     "uncertainties": ["list anything not verified"],
+     "trace_quality_notes": ["note whether passive and semantic events appear aligned"],
+     "recommended_skill_changes": ["suggest skill or instrumentation improvements, if any"],
+     "summary": "one-sentence reflection summary"
+   }
+   ```
+   Do not include hidden chain-of-thought; report only concise, user-visible diagnostic summaries.
+6. Do not modify files outside this repository.
 
 Use the existing source files as the task input for testing the SkillTrace trace loop.
