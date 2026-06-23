@@ -133,6 +133,20 @@ export async function clearRunEvents(publicId: string) {
   return run
 }
 
+export async function deleteRunRecords(publicIds: string[]) {
+  let deleted: any[] = []
+
+  for (let publicId of unique(publicIds)) {
+    let run = await Run.findBy({ public_id: publicId })
+    if (!run || run.status === 'active') continue
+
+    await db.delete(trace_events).where(eq(trace_events.run_id, run.id))
+    deleted.push(await Run.delete(run.id))
+  }
+
+  return deleted
+}
+
 export type PassiveEventInput = z.infer<typeof passiveEventSchema>
 export type SemanticEventInput = z.infer<typeof semanticEventSchema>
 

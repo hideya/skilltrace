@@ -1,6 +1,8 @@
-import { Form, Link } from 'react-router'
+import { useState } from 'react'
+import { Form, Link, redirect } from 'react-router'
 import { appName } from '~/config/app-name'
-import { listRunSummaries } from '~/models/.server/trace'
+import { payloadFromRequest } from '~/lib/data/payload'
+import { deleteRunRecords, listRunSummaries } from '~/models/.server/trace'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
@@ -13,45 +15,82 @@ export async function loader() {
   return { summaries }
 }
 
+export async function action({ request }) {
+  let payload = await payloadFromRequest(request)
+  if (payload.intent !== 'delete') return redirect('/app/runs')
+
+  let ids = Array.isArray(payload.run_ids)
+    ? payload.run_ids
+    : payload.run_ids
+      ? [payload.run_ids]
+      : []
+
+  await deleteRunRecords(ids.filter((id) => typeof id === 'string'))
+  return redirect('/app/runs')
+}
+
 export default function Page({ loaderData }: PageProps) {
   let { summaries } = loaderData
+  let [isEditing, setIsEditing] = useState(false)
+  let groups = groupSummaries(summaries)
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-      <header className="space-y-3">
-        <p className="badge rounded-full badge-outline">{appName}</p>
-        <div className="space-y-1">
-          <h1 className="text-4xl font-bold text-balance">Runs</h1>
-          <p className="text-base-content/70">
-            {summaries.length} observed run
-            {summaries.length === 1 ? '' : 's'}
-          </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-3">
+          <p className="badge rounded-full badge-outline">{appName}</p>
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold text-balance">Runs</h1>
+            <p className="text-base-content/70">
+              {summaries.length} observed run
+              {summaries.length === 1 ? '' : 's'} in {groups.length} group
+              {groups.length === 1 ? '' : 's'}
+            </p>
+          </div>
         </div>
+
+        {summaries.length > 0 ? (
+          <button
+            className={`btn btn-sm ${isEditing ? 'btn-neutral' : 'btn-outline'}`}
+            onClick={() => setIsEditing(!isEditing)}
+            type="button"
+          >
+            {isEditing ? 'Done' : 'Edit'}
+          </button>
+        ) : null}
       </header>
 
       {summaries.length > 0 ? (
-        <section className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Run</th>
-                  <th>Status</th>
-                  <th>Result</th>
-                  <th>Model</th>
-                  <th>Events</th>
-                  <th>Sources</th>
-                  <th>Last event</th>
-                  <th>Attempt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaries.map((summary) => (
-                  <RunRow key={summary.run.id} summary={summary} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <section className="space-y-4">
+          <Form
+            id="delete-runs-form"
+            method="post"
+            onSubmit={(event) => {
+              if (!confirm('Delete selected finished runs?')) event.preventDefault()
+            }}
+          >
+            <input name="intent" type="hidden" value="delete" />
+          </Form>
+
+          {isEditing ? (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                className="btn btn-sm btn-error"
+                form="delete-runs-form"
+                type="submit"
+              >
+                Delete selected
+              </button>
+            </div>
+          ) : null}
+
+          {groups.map((group) => (
+            <RunGroup
+              group={group}
+              isEditing={isEditing}
+              key={group.key}
+            />
+          ))}
         </section>
       ) : (
         <section className="rounded-box border border-dashed border-base-300 bg-base-100 p-8 text-center text-base-content/60">
@@ -62,12 +101,71 @@ export default function Page({ loaderData }: PageProps) {
   )
 }
 
-function RunRow({ summary }: RunRowProps) {
+function RunGroup({ group, isEditing }: RunGroupProps) {
+  return (
+    <details
+      className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
+      open={isEditing}
+    >
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-200 px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="font-semibold break-words">{group.label}</h2>
+          <p className="text-xs text-base-content/60">
+            {group.summaries.length} run
+            {group.summaries.length === 1 ? '' : 's'} · {group.targetRoot}
+          </p>
+        </div>
+        <span className="badge badge-outline">{group.latestStatus}</span>
+      </summary>
+
+      <div className="overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              {isEditing ? <th>Select</th> : null}
+              <th>Run</th>
+              <th>Status</th>
+              <th>Result</th>
+              <th>Model</th>
+              <th>Events</th>
+              <th>Sources</th>
+              <th>Last event</th>
+              <th>Attempt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {group.summaries.map((summary) => (
+              <RunRow
+                isEditing={isEditing}
+                key={summary.run.id}
+                summary={summary}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )
+}
+
+function RunRow({ summary, isEditing }: RunRowProps) {
   let run = summary.run
   let label = run.name || run.public_id
 
   return (
     <tr>
+      {isEditing ? (
+        <td>
+          <input
+            className="checkbox checkbox-sm"
+            disabled={run.status === 'active'}
+            form="delete-runs-form"
+            name="run_ids"
+            type="checkbox"
+            value={run.public_id}
+          />
+        </td>
+      ) : null}
       <td>
         <Link
           className="link font-medium link-hover"
@@ -113,6 +211,41 @@ function RunRow({ summary }: RunRowProps) {
       </td>
     </tr>
   )
+}
+
+function groupSummaries(summaries: any[]) {
+  let groups = new Map<string, RunGroup>()
+
+  for (let summary of summaries) {
+    let run = summary.run
+    let targetRoot = run.bag?.target_root || run.description || 'unknown target'
+    let targetName = run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
+    let pathHash = run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
+    let key = `${targetName}-${pathHash}`
+    let group = groups.get(key)
+
+    if (!group) {
+      group = {
+        key,
+        label: key,
+        targetRoot,
+        latestStatus: run.status,
+        summaries: [],
+      }
+      groups.set(key, group)
+    }
+
+    group.summaries.push(summary)
+  }
+
+  return [...groups.values()]
+}
+
+function pathHashFromRunId(publicId: string) {
+  let match = publicId.match(
+    /-([A-Za-z0-9_-]{6})-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/
+  )
+  return match?.[1]
 }
 
 function ResultBadge({ result }: ResultBadgeProps) {
@@ -166,6 +299,20 @@ type PageProps = {
 
 type RunRowProps = {
   summary: any
+  isEditing: boolean
+}
+
+type RunGroupProps = {
+  group: RunGroup
+  isEditing: boolean
+}
+
+type RunGroup = {
+  key: string
+  label: string
+  targetRoot: string
+  latestStatus: string
+  summaries: any[]
 }
 
 type ResultBadgeProps = {
