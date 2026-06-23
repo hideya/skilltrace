@@ -74,7 +74,7 @@ server.registerTool(
   {
     title: 'SkillTrace run context',
     description:
-      'Declare run metadata such as agent, model, client, working directory, and task summary.',
+      'Declare run metadata such as model, client, working directory, and task summary.',
     inputSchema: skillTraceContextInputSchema,
   },
   async (input) => {

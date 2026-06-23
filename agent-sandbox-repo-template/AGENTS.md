@@ -13,12 +13,11 @@ When asked to fix TypeScript, syntax, or source errors:
 1. If the `skill_trace_context` MCP tool is available, call it before reading or applying any skill:
    ```json
    {
-     "agent": "codex",
-     "model": "unknown if not available",
-     "client": "Codex CLI, Codex Desktop, or unknown",
+     "model": "your best guess at the LLM model name; append '(uncertain)' if not directly known",
+     "client": "your best guess at the client or runtime surface; append '(uncertain)' if not directly known",
      "cwd": "absolute path to this sandbox repository",
      "task_summary": "One-sentence summary of the current user request.",
-     "notes": "Mention any uncertainty about the agent, model, or client."
+     "notes": "Briefly explain any uncertainty about model or client identity."
    }
    ```
 2. Read `.skills/type-fix/SKILL.md`.
