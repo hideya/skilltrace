@@ -86,14 +86,22 @@ async function start(args: string[]) {
       target_root: targetRoot,
     })
   }
-  let worker = !useSharedProbe && probe.supported
-    ? startProbeWorker({
+  let worker: ProbeWorker | null = null
+  let workerFailure: string | undefined
+  let canStartRunProbe = !useSharedProbe && probe.supported && !sharedProbe.blocksRunProbe
+  if (canStartRunProbe) {
+    let candidate = startProbeWorker({
       runId: result.session.run_id,
       targetRoot,
       server,
       debug: options.debugProbe,
     })
-    : null
+    if (await waitForProbeStartup(candidate.pid)) {
+      worker = candidate
+    } else {
+      workerFailure = `probe worker exited during startup; check ${candidate.logPath}`
+    }
+  }
 
   if (useSharedProbe && sharedProbe.state?.shared_probe_pid) {
     await postJson(server, '/api/sessions/probe', {
@@ -115,10 +123,11 @@ async function start(args: string[]) {
       probe_kind: 'run',
     })
   } else {
-    printPassiveProbeWarning(probe)
+    let reason = workerFailure ?? sharedProbe.reason ?? probe.reason
+    printProbeUnavailableWarning(reason)
     await postSessionEvent(server, result.session.run_id, 'trace_probe_unavailable', {
       platform: probe.platform,
-      reason: probe.reason,
+      reason,
       target_root: targetRoot,
     })
   }
@@ -196,7 +205,7 @@ async function daemonStart(args: string[]) {
     return
   }
 
-  let sharedProbe = prepareSharedProbe(options)
+  let sharedProbe = prepareSharedProbe(options, server)
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
   let child = spawn(serveCommand(), serveArgs(), {
@@ -216,11 +225,17 @@ async function daemonStart(args: string[]) {
     throw new Error('Failed to start SkillTrace daemon')
   }
 
-  if (sharedProbe.requested && process.platform === 'darwin') {
-    sharedProbe.worker = startSharedProbeWorker({
+  if (sharedProbe.requested && process.platform === 'darwin' && !sharedProbe.warning) {
+    let candidate = startSharedProbeWorker({
       server,
       debug: options.debugProbe,
     })
+    if (await waitForProbeStartup(candidate.pid)) {
+      sharedProbe.worker = candidate
+    } else {
+      sharedProbe.warning = `shared probe exited during startup; check ${candidate.logPath}`
+      sharedProbe.blocksRunProbe = true
+    }
   }
 
   let state = {
@@ -236,6 +251,7 @@ async function daemonStart(args: string[]) {
     shared_probe_log_path: sharedProbe.worker?.logPath,
     shared_probe_platform: sharedProbe.worker ? process.platform : undefined,
     shared_probe_warning: sharedProbe.warning,
+    shared_probe_blocks_run_probe: sharedProbe.blocksRunProbe,
   }
 
   writeDaemonState(state)
@@ -473,6 +489,11 @@ async function waitForExit(pid: number) {
     if (!processAlive(pid)) return
     await sleep(250)
   }
+}
+
+async function waitForProbeStartup(pid: number) {
+  await sleep(750)
+  return processAlive(pid)
 }
 
 function sleep(ms: number) {
@@ -828,10 +849,23 @@ function passiveProbeSupport() {
   }
 }
 
-function prepareSharedProbe(options: Options): PreparedSharedProbe {
+function prepareSharedProbe(options: Options, server: string): PreparedSharedProbe {
   if (!options.sharedProbe) {
     return {
       requested: false,
+    }
+  }
+
+  let existing = readDaemonState()
+  if (
+    existing?.shared_probe_pid &&
+    existing.server !== server &&
+    processAlive(existing.shared_probe_pid)
+  ) {
+    return {
+      requested: true,
+      warning: `another shared probe is already running for ${existing.server}`,
+      blocksRunProbe: true,
     }
   }
 
@@ -880,6 +914,7 @@ function sharedProbeStatus(server: string): SharedProbeStatus {
       available: false,
       state,
       reason: state.shared_probe_warning,
+      blocksRunProbe: state.shared_probe_blocks_run_probe,
     }
   }
 
@@ -911,6 +946,10 @@ function withPassiveProbeWarning(instrumentation: any, probe: PassiveProbeSuppor
 function printPassiveProbeWarning(probe: PassiveProbeSupport) {
   if (probe.supported) return
   console.warn(`Warning: ${probe.reason}`)
+}
+
+function printProbeUnavailableWarning(reason?: string) {
+  console.warn(`Warning: ${reason ?? 'passive probe is unavailable'}`)
 }
 
 function commandExists(command: string) {
@@ -997,6 +1036,11 @@ type ProbeWorkerOptions = {
   debug?: boolean
 }
 
+type ProbeWorker = {
+  pid: number
+  logPath: string
+}
+
 type SharedProbeWorkerOptions = {
   server: string
   debug?: boolean
@@ -1015,6 +1059,7 @@ type DaemonState = {
   shared_probe_log_path?: string
   shared_probe_platform?: NodeJS.Platform
   shared_probe_warning?: string
+  shared_probe_blocks_run_probe?: boolean
 }
 
 type PassiveProbeSupport = {
@@ -1026,6 +1071,7 @@ type PassiveProbeSupport = {
 type PreparedSharedProbe = {
   requested: boolean
   warning?: string
+  blocksRunProbe?: boolean
   worker?: {
     pid: number
     logPath: string
@@ -1037,4 +1083,5 @@ type SharedProbeStatus = {
   available: boolean
   state?: DaemonState
   reason?: string
+  blocksRunProbe?: boolean
 }

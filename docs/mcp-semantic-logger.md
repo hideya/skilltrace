@@ -82,6 +82,9 @@ active run to the daemon-owned probe. If the shared probe is unavailable,
 SkillTrace records a warning and falls back to the normal per-run probe when it
 can.
 
+Do not run dev and packaged macOS shared-probe daemons at the same time. The
+underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
+
 Use plain `traceskill-dev start` for passive-only trials where you do not want
 SkillTrace to inject MCP tracing instructions into the target repo.
 

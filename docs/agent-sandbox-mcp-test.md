@@ -86,6 +86,10 @@ shared worker. If the shared worker is unavailable, `traceskill-dev start`
 records a warning and falls back to the normal per-run probe. Linux keeps the
 normal per-run `inotifywait` path because it does not need sudo.
 
+Do not run dev and packaged macOS shared-probe daemons at the same time. The
+underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
+Stop one daemon before switching to the other command surface.
+
 The foreground `serve` command is still the default dogfooding path. The daemon
 mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`.

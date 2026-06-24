@@ -147,7 +147,7 @@ function handleProbeOutput(
   backend: ProbeBackend,
   parsePath: (line: string) => string | undefined,
 ) {
-  let deduper = new ProbeDeduper()
+  let deduper = new ProbeDeduper(Number.POSITIVE_INFINITY)
   let buffer = ''
   if (!probe.stdout || !probe.stderr) {
     throw new Error(`TraceSkill ${backend} did not expose stdout/stderr`)

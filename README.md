@@ -176,6 +176,10 @@ visible warning and falls back to the normal per-run probe. Linux keeps the
 current per-run `inotifywait` probe because it is scoped, lightweight, and does
 not need sudo.
 
+macOS allows only one active `fs_usage`/ktrace-style probe at a time in this
+workflow. Stop the dev daemon before trying the packaged daemon with
+`--shared-probe`, and vice versa.
+
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
 

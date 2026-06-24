@@ -216,12 +216,21 @@ Reasons:
 Failure behavior:
 
 - daemon status shows the shared probe PID and log when it is configured
+- macOS permits only one active `fs_usage`/ktrace-style probe in this workflow,
+  so dev and packaged shared-probe daemons should not be run at the same time
+- if another shared probe is already running for a different server, daemon
+  startup records the conflict instead of starting a second shared worker
 - if the shared worker is unavailable or crashed, `traceskill start` records
   `trace_probe_shared_unavailable`
 - when possible, `traceskill start` falls back to the existing per-run probe
+- if the conflict means a per-run macOS probe would also fail, SkillTrace keeps
+  the run semantic-only and records a visible warning
 - shared probes are marked as `probe_kind: shared` on the active session so
   `traceskill stop` does not kill the daemon-owned worker
 - `traceskill daemon stop` owns cleanup of the shared worker
+- passive probe workers dedupe by run and file for the whole worker lifetime so
+  the probe's own file hashing does not create a feedback loop of repeated
+  passive events
 
 This keeps the new path opt-in while preserving the simpler per-run probe as
 the default.
