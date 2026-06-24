@@ -109,15 +109,43 @@ Packaging complications found:
 - A local-only fallback `COOKIE_SECRET` is set for packaged local mode because
   the v0 local UI does not require login, but the scaffolded auth modules still
   validate cookie configuration at import time.
-- Run-list detail links intentionally use document navigation. This avoids
-  depending on a stale hydrated client or route-discovery manifest in a browser
-  tab that stayed open across a package rebuild and reinstall. Refreshing
-  already-open UI tabs after reinstalling or restarting packaged SkillTrace is
-  still recommended.
 
 This packaging shape is intentionally a developer preview, not a fully
 standalone binary. It still requires Node/npm and macOS for passive probing, but
 it removes the need for friends to clone and initialize this repository.
+
+## Packaged UI Navigation
+
+Packaged server routes can be healthy while an already-open browser tab still
+has stale hydrated client code or an old route-discovery manifest.
+
+Observed symptom:
+
+- direct run detail URLs return `200`
+- route discovery or `.data` requests return `200`
+- the development server works
+- clicking a run on the packaged runs page does not navigate correctly until
+  the tab is refreshed
+
+Decision:
+
+- run-list detail links are plain anchors, not React Router `Link` components
+- the `href` remains `/app/runs/<run-id>`
+- the browser performs full document navigation for run details
+
+Reasons:
+
+- this local diagnostic UI does not need SPA navigation between the list and a
+  detail page
+- document navigation is easier to reason about across package rebuilds and
+  reinstalls
+- avoiding custom client manifest/cache handling keeps the packaged server
+  simpler
+
+Operational note:
+
+- after reinstalling or restarting packaged SkillTrace, refresh any already-open
+  UI tabs if navigation feels stale
 
 ## One Active Session
 

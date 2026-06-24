@@ -115,8 +115,10 @@ for checkout development commands such as `pnpm traceskill` and
 `traceskill-dev`.
 
 After reinstalling or restarting packaged SkillTrace, refresh any already-open
-UI tabs if navigation feels stale. Run detail links use document navigation to
-avoid relying on old client-side route manifests after a package rebuild.
+UI tabs if navigation feels stale. A direct URL such as `/app/runs/<run-id>` can
+work even when an old browser tab still has stale hydrated client code or route
+manifests. Run detail links use document navigation so the run list does not
+depend on client-side route discovery after a package rebuild.
 
 After publishing, the intended install shape is:
 
