@@ -90,10 +90,14 @@ describe('instruction injection', () => {
     let dir = tempRoot()
 
     let missing = assessInstrumentation(dir)
+    let pending = assessInstrumentation(dir, true)
 
     expect(missing.status).toBe('not_configured')
     expect(missing.warnings.length).toBeGreaterThan(0)
     expect(missing.passive_config_file_exists).toBe(false)
+    expect(pending.status).toBe('pending_injection')
+    expect(pending.warnings).toEqual([])
+    expect(pending.pending_warnings.length).toBeGreaterThan(0)
 
     injectInstructions(dir, 'run_003')
 

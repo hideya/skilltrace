@@ -221,7 +221,11 @@ export function assessInstrumentation(targetRoot: string, injectRequested = fals
     warnings.push('.skilltrace.json is missing.')
   }
 
-  let status = warnings.length === 0 ? 'ready' : 'not_configured'
+  let status = warnings.length === 0
+    ? 'ready'
+    : injectRequested
+      ? 'pending_injection'
+      : 'not_configured'
 
   return {
     inject_requested: injectRequested,
@@ -231,7 +235,8 @@ export function assessInstrumentation(targetRoot: string, injectRequested = fals
     passive_config_file_exists: passiveConfigFileExists,
     injection_manifest_exists: injectionManifestExists,
     status,
-    warnings,
+    warnings: injectRequested ? [] : warnings,
+    pending_warnings: injectRequested ? warnings : [],
   }
 }
 

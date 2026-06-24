@@ -413,6 +413,7 @@ function EventCard({ event }: EventCardProps) {
 
 function SkillMeta({ event }: SkillMetaProps) {
   let rows = [
+    ['Reference', referencePathForEvent(event)],
     ['Version', event.skill_version],
     ['Path', event.skill_path],
     ['Hash', event.skill_file_hash],
@@ -482,6 +483,7 @@ function eventWarning(event: any) {
   }
 
   let status = event.payload?.instrumentation?.status
+  if (status === 'pending_injection') return null
   if (status && status !== 'ready') {
     return `Instrumentation status: ${status}`
   }
@@ -491,6 +493,7 @@ function eventWarning(event: any) {
 
 function fileNameForEvent(event: any) {
   let filePath =
+    referencePathForEvent(event) ||
     event.payload?.path ||
     event.payload?.file_path ||
     event.skill_path ||
@@ -499,6 +502,17 @@ function fileNameForEvent(event: any) {
   if (!filePath || typeof filePath !== 'string') return null
 
   return filePath.split(/[\\/]/).filter(Boolean).at(-1) || null
+}
+
+function referencePathForEvent(event: any) {
+  if (event.event_type !== 'skill_reference_read') return null
+
+  let referencePath =
+    event.payload?.data?.reference_path ||
+    event.payload?.reference_path
+
+  if (!referencePath || typeof referencePath !== 'string') return null
+  return referencePath
 }
 
 function extraContext(context?: Record<string, any> | null) {
