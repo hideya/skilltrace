@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Form, redirect } from 'react-router'
+import { Form, redirect, useRevalidator } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { deleteRunRecords, listRunSummaries } from '~/models/.server/trace'
@@ -34,6 +34,8 @@ export default function Page({ loaderData }: PageProps) {
   let [isEditing, setIsEditing] = useState(false)
   let [expandedKeys, setExpandedKeys] = useState<string[]>([])
   let groups = groupSummaries(summaries)
+  let hasRunningRun = summaries.some((summary) => summary.result === 'running')
+  useAutoRefresh(hasRunningRun)
 
   useEffect(() => {
     setExpandedKeys(readExpandedRunGroups())
@@ -316,6 +318,23 @@ function ClientCell({ context }: ClientCellProps) {
   return <span className="text-xs">{client}</span>
 }
 
+function useAutoRefresh(enabled: boolean) {
+  let revalidator = useRevalidator()
+
+  useEffect(() => {
+    if (!enabled) return
+
+    let refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      if (revalidator.state !== 'idle') return
+      revalidator.revalidate()
+    }
+    let interval = window.setInterval(refresh, RUN_REFRESH_MS)
+
+    return () => window.clearInterval(interval)
+  }, [enabled, revalidator])
+}
+
 type PageProps = {
   loaderData: {
     summaries: any[]
@@ -357,3 +376,4 @@ type ClientCellProps = {
 }
 
 const EXPANDED_RUN_GROUPS_KEY = 'skilltrace.expandedRunGroups'
+const RUN_REFRESH_MS = 3000

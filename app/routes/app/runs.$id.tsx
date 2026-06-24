@@ -1,6 +1,6 @@
 import { ChevronLeftIcon } from 'lucide-react'
-import { useState } from 'react'
-import { Form, Link, redirect } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Form, Link, redirect, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 
@@ -32,6 +32,7 @@ export default function Page({ loaderData }: PageProps) {
   let { timeline } = loaderData
   let run = timeline.run
   let title = run.name || run.public_id
+  useAutoRefresh(run.status === 'active')
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
@@ -559,6 +560,23 @@ function formatTime(value?: Date | string | null) {
   return new Date(value).toLocaleTimeString()
 }
 
+function useAutoRefresh(enabled: boolean) {
+  let revalidator = useRevalidator()
+
+  useEffect(() => {
+    if (!enabled) return
+
+    let refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      if (revalidator.state !== 'idle') return
+      revalidator.revalidate()
+    }
+    let interval = window.setInterval(refresh, RUN_REFRESH_MS)
+
+    return () => window.clearInterval(interval)
+  }, [enabled, revalidator])
+}
+
 type PageProps = {
   loaderData: {
     timeline: any
@@ -620,3 +638,5 @@ type SkillMetaProps = {
 type JsonBlockProps = {
   value: Record<string, any> | null
 }
+
+const RUN_REFRESH_MS = 3000

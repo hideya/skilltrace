@@ -256,6 +256,10 @@ after `traceskill stop` records `trace_session_finished`. If an unstopped run is
 superseded by a newer `trace_session_started` event, the Result column shows
 `Incomplete` to make the missing cleanup visible.
 
+The runs list and active run detail pages poll lightly while a run is `Running`
+so newly received daemon events appear without a manual refresh. Finished and
+idle views do not continue polling.
+
 The diagnostics page is intentionally not a manager. It does not start or stop
 processes or edit Codex configuration. It is a quick way to catch common setup
 mistakes, such as running the package UI while Codex is still registered to
