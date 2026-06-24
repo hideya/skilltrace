@@ -30,20 +30,26 @@ describe('instruction injection', () => {
     expect(injected.status).toBe('ok')
     expect(injected.inserted_agents_instruction).toBe(true)
     expect(injected.created_instrumentation).toBe(true)
+    expect(injected.created_passive_config).toBe(true)
     expect(instructionInjectionStatus(dir)).toBe('active')
     expect(fs.readFileSync(agentsPath, 'utf8')).toContain(
       'Before starting any task',
     )
     expect(fs.existsSync(path.join(dir, '.skilltrace/instrumentation.md'))).toBe(true)
+    expect(fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8')).toContain(
+      '"skill_roots"',
+    )
 
     let ejected = ejectInstructions(dir, 'run_001')
 
     expect(ejected?.status).toBe('ok')
     expect(ejected?.removed_agents_instruction).toBe(true)
     expect(ejected?.removed_instrumentation).toBe(true)
+    expect(ejected?.removed_passive_config).toBe(true)
     expect(instructionInjectionStatus(dir)).toBe('inactive')
     expect(fs.readFileSync(agentsPath, 'utf8')).toBe('# Agent Guidelines\n')
     expect(fs.existsSync(path.join(dir, '.skilltrace'))).toBe(false)
+    expect(fs.existsSync(path.join(dir, '.skilltrace.json'))).toBe(false)
   })
 
   test('preserves pre-existing instrumentation and warns', () => {
@@ -63,6 +69,23 @@ describe('instruction injection', () => {
     expect(fs.readFileSync(instrumentationPath, 'utf8')).toBe('user policy\n')
   })
 
+  test('preserves pre-existing passive config and warns', () => {
+    let dir = tempRoot()
+    let configPath = path.join(dir, '.skilltrace.json')
+    fs.writeFileSync(configPath, '{ "skill_roots": ["custom-skills"] }\n')
+
+    let injected = injectInstructions(dir, 'run_config')
+    let ejected = ejectInstructions(dir, 'run_config')
+
+    expect(injected.status).toBe('warning')
+    expect(injected.created_passive_config).toBe(false)
+    expect(injected.warnings.join('\n')).toContain('.skilltrace.json already exists')
+    expect(ejected?.removed_passive_config).toBe(false)
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(
+      '{ "skill_roots": ["custom-skills"] }\n',
+    )
+  })
+
   test('reports instrumentation readiness', () => {
     let dir = tempRoot()
 
@@ -70,6 +93,7 @@ describe('instruction injection', () => {
 
     expect(missing.status).toBe('not_configured')
     expect(missing.warnings.length).toBeGreaterThan(0)
+    expect(missing.passive_config_file_exists).toBe(false)
 
     injectInstructions(dir, 'run_003')
 
@@ -77,6 +101,7 @@ describe('instruction injection', () => {
 
     expect(ready.status).toBe('ready')
     expect(ready.inject_requested).toBe(true)
+    expect(ready.passive_config_file_exists).toBe(true)
     expect(ready.warnings).toEqual([])
   })
 

@@ -132,8 +132,8 @@ cd agent-sandbox-repo
 traceskill-dev start --inject-instructions
 ```
 
-This creates `.skilltrace/instrumentation.md` if needed, inserts one
-SkillTrace instruction at the top of `AGENTS.md`, and records
+This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
+inserts one SkillTrace instruction at the top of `AGENTS.md`, and records
 `.skilltrace/injection.json` so `traceskill-dev stop` can clean up the exact
 injected changes.
 
@@ -179,7 +179,8 @@ When the task starts, ask Codex to call `skill_trace_context` before applying
 the skill so the run records declared agent, model, client, working directory,
 and task summary metadata.
 
-The probe discovers the target repo from the command-line Codex session. The sandbox template includes:
+The probe discovers the target repo from the command-line Codex session.
+`traceskill-dev start --inject-instructions` creates the passive probe config:
 
 ```text
 .skilltrace.json
@@ -192,6 +193,9 @@ with:
   "skill_roots": [".skills"]
 }
 ```
+
+If `.skilltrace.json` already exists, SkillTrace preserves it and records a
+warning instead of overwriting the repo's custom skill roots.
 
 Ask Codex:
 
@@ -307,8 +311,9 @@ traceskill-dev stop
 ```
 
 This temporarily adds a tracing-policy line near the top of `AGENTS.md`, writes
-`.skilltrace/instrumentation.md` when needed, and removes only SkillTrace's
-unchanged injected files on `stop`.
+`.skilltrace/instrumentation.md` and a minimal `.skilltrace.json` passive probe
+config when needed, and removes only SkillTrace's unchanged injected files on
+`stop`.
 
 For a permanent repo-local setup, add the same tracing-policy line manually:
 
@@ -342,9 +347,10 @@ SkillTrace tracing policy, which makes it easier to compare behavior across
 different real repos.
 
 The injection is manifest-backed. On stop, SkillTrace removes only the exact
-inserted instruction block, and removes `.skilltrace/instrumentation.md` only
-when SkillTrace created it and it has not changed. Existing files, existing
-instructions, or edits made during the run are preserved with warnings.
+inserted instruction block, and removes `.skilltrace/instrumentation.md` and
+`.skilltrace.json` only when SkillTrace created them and they have not changed.
+Existing files, existing instructions, or edits made during the run are
+preserved with warnings.
 
 ## Optional Passive Event Check
 
@@ -395,7 +401,7 @@ sudo -v
 
 then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill-dev start --inject-instructions` was run before Codex started.
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` and `.skills`, and that `traceskill-dev start --inject-instructions` was run before Codex started.
 Run `traceskill-dev status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.
 
 If the sandbox starts already fixed, run:

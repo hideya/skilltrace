@@ -12,12 +12,17 @@ const INJECTION_BLOCK =
   'Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.\n\n'
 const INJECTION_MANIFEST_PATH = '.skilltrace/injection.json'
 const INSTRUMENTATION_PATH = '.skilltrace/instrumentation.md'
+const PASSIVE_CONFIG_PATH = '.skilltrace.json'
+const PASSIVE_CONFIG = {
+  skill_roots: ['.skills'],
+}
 
 export function injectInstructions(targetRoot: string, runId: string) {
   let warnings: string[] = []
   let skilltraceDir = path.join(targetRoot, '.skilltrace')
   let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
   let instrumentationPath = path.join(targetRoot, INSTRUMENTATION_PATH)
+  let passiveConfigPath = path.join(targetRoot, PASSIVE_CONFIG_PATH)
   let agentsPath = path.join(targetRoot, 'AGENTS.md')
   let template = fs.readFileSync(INSTRUMENTATION_TEMPLATE_PATH, 'utf8')
 
@@ -28,8 +33,10 @@ export function injectInstructions(targetRoot: string, runId: string) {
       manifestPath,
       agentsPath,
       instrumentationPath,
+      passiveConfigPath,
       insertedAgentsInstruction: false,
       createdInstrumentation: false,
+      createdPassiveConfig: false,
       warnings,
     })
   }
@@ -42,6 +49,14 @@ export function injectInstructions(targetRoot: string, runId: string) {
   } else {
     fs.writeFileSync(instrumentationPath, template)
     createdInstrumentation = true
+  }
+
+  let createdPassiveConfig = false
+  if (fs.existsSync(passiveConfigPath)) {
+    warnings.push('.skilltrace.json already exists; preserving existing file.')
+  } else {
+    fs.writeFileSync(passiveConfigPath, `${JSON.stringify(PASSIVE_CONFIG, null, 2)}\n`)
+    createdPassiveConfig = true
   }
 
   let agentsBefore = fs.existsSync(agentsPath)
@@ -64,10 +79,13 @@ export function injectInstructions(targetRoot: string, runId: string) {
     instruction_block: INJECTION_BLOCK,
     agents_path: 'AGENTS.md',
     instrumentation_path: INSTRUMENTATION_PATH,
+    passive_config_path: PASSIVE_CONFIG_PATH,
     inserted_agents_instruction: insertedAgentsInstruction,
     created_instrumentation: createdInstrumentation,
+    created_passive_config: createdPassiveConfig,
     agents_hash_after: hashFileIfExists(agentsPath),
     instrumentation_hash_after: hashFileIfExists(instrumentationPath),
+    passive_config_hash_after: hashFileIfExists(passiveConfigPath),
   }
 
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
@@ -77,8 +95,10 @@ export function injectInstructions(targetRoot: string, runId: string) {
     manifestPath,
     agentsPath,
     instrumentationPath,
+    passiveConfigPath,
     insertedAgentsInstruction,
     createdInstrumentation,
+    createdPassiveConfig,
     warnings,
   })
 }
@@ -91,8 +111,12 @@ export function ejectInstructions(targetRoot: string, runId: string) {
   let manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as InjectionManifest
   let agentsPath = path.join(targetRoot, manifest.agents_path)
   let instrumentationPath = path.join(targetRoot, manifest.instrumentation_path)
+  let passiveConfigPath = manifest.passive_config_path
+    ? path.join(targetRoot, manifest.passive_config_path)
+    : path.join(targetRoot, PASSIVE_CONFIG_PATH)
   let removedAgentsInstruction = false
   let removedInstrumentation = false
+  let removedPassiveConfig = false
 
   if (manifest.run_id !== runId) {
     warnings.push(`Injection manifest belongs to ${manifest.run_id}; cleaning during ${runId}.`)
@@ -129,6 +153,20 @@ export function ejectInstructions(targetRoot: string, runId: string) {
     }
   }
 
+  if (manifest.created_passive_config) {
+    if (!fs.existsSync(passiveConfigPath)) {
+      warnings.push('.skilltrace.json is missing; nothing to remove.')
+    } else if (
+      manifest.passive_config_hash_after &&
+      hashFileIfExists(passiveConfigPath) !== manifest.passive_config_hash_after
+    ) {
+      warnings.push('.skilltrace.json changed after injection; preserving it.')
+    } else {
+      fs.rmSync(passiveConfigPath)
+      removedPassiveConfig = true
+    }
+  }
+
   fs.rmSync(manifestPath)
   removeEmptyDir(path.dirname(manifestPath))
 
@@ -137,8 +175,10 @@ export function ejectInstructions(targetRoot: string, runId: string) {
     manifest_path: manifestPath,
     agents_path: agentsPath,
     instrumentation_path: instrumentationPath,
+    passive_config_path: passiveConfigPath,
     removed_agents_instruction: removedAgentsInstruction,
     removed_instrumentation: removedInstrumentation,
+    removed_passive_config: removedPassiveConfig,
     warnings,
   }
 }
@@ -161,11 +201,13 @@ export function instructionInjectionStatus(targetRoot?: string) {
 export function assessInstrumentation(targetRoot: string, injectRequested = false) {
   let agentsPath = path.join(targetRoot, 'AGENTS.md')
   let instrumentationPath = path.join(targetRoot, INSTRUMENTATION_PATH)
+  let passiveConfigPath = path.join(targetRoot, PASSIVE_CONFIG_PATH)
   let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
   let agentsFileExists = fs.existsSync(agentsPath)
   let agentsText = agentsFileExists ? fs.readFileSync(agentsPath, 'utf8') : ''
   let agentsInstructionPresent = agentsText.includes(INJECTION_BLOCK.trim())
   let instrumentationFileExists = fs.existsSync(instrumentationPath)
+  let passiveConfigFileExists = fs.existsSync(passiveConfigPath)
   let injectionManifestExists = fs.existsSync(manifestPath)
   let warnings: string[] = []
 
@@ -178,6 +220,9 @@ export function assessInstrumentation(targetRoot: string, injectRequested = fals
   if (!instrumentationFileExists) {
     warnings.push('.skilltrace/instrumentation.md is missing.')
   }
+  if (!passiveConfigFileExists) {
+    warnings.push('.skilltrace.json is missing.')
+  }
 
   let status = warnings.length === 0 ? 'ready' : 'not_configured'
 
@@ -186,6 +231,7 @@ export function assessInstrumentation(targetRoot: string, injectRequested = fals
     agents_file_exists: agentsFileExists,
     agents_instruction_present: agentsInstructionPresent,
     instrumentation_file_exists: instrumentationFileExists,
+    passive_config_file_exists: passiveConfigFileExists,
     injection_manifest_exists: injectionManifestExists,
     status,
     warnings,
@@ -198,8 +244,10 @@ function injectionResult(input: InjectionResultInput) {
     manifest_path: input.manifestPath,
     agents_path: input.agentsPath,
     instrumentation_path: input.instrumentationPath,
+    passive_config_path: input.passiveConfigPath,
     inserted_agents_instruction: input.insertedAgentsInstruction,
     created_instrumentation: input.createdInstrumentation,
+    created_passive_config: input.createdPassiveConfig,
     warnings: input.warnings,
   }
 }
@@ -224,8 +272,10 @@ type InjectionResultInput = {
   manifestPath: string
   agentsPath: string
   instrumentationPath: string
+  passiveConfigPath: string
   insertedAgentsInstruction: boolean
   createdInstrumentation: boolean
+  createdPassiveConfig: boolean
   warnings: string[]
 }
 
@@ -237,8 +287,11 @@ type InjectionManifest = {
   instruction_block: string
   agents_path: string
   instrumentation_path: string
+  passive_config_path?: string
   inserted_agents_instruction: boolean
   created_instrumentation: boolean
+  created_passive_config?: boolean
   agents_hash_after?: string
   instrumentation_hash_after?: string
+  passive_config_hash_after?: string
 }

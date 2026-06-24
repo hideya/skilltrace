@@ -122,8 +122,10 @@ pnpm skilltrace:mcp
 
 For real-repo trials, prefer putting generic SkillTrace MCP instructions in a
 repo-local `.skilltrace/instrumentation.md` overlay and pointing to it from
-`AGENTS.md`. Task skills should provide only task-specific metadata, such as
-skill name, version, path, summaries, and required references.
+`AGENTS.md`. Passive probing also needs `.skilltrace.json` to declare skill
+roots, usually `{"skill_roots":[".skills"]}`. Task skills should provide only
+task-specific metadata, such as skill name, version, path, summaries, and
+required references.
 
 The `skill_trace_context` tool records declared run metadata. Ask the agent to
 call it at the beginning of a traced run when the MCP tool is available:

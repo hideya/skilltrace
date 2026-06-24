@@ -168,13 +168,17 @@ The current pattern is:
 
 1. add one opt-in line near the top of `AGENTS.md`
 2. place generic tracing policy in `.skilltrace/instrumentation.md`
-3. keep task-specific skill metadata in the relevant `SKILL.md`
+3. declare passive skill roots in `.skilltrace.json`
+4. keep task-specific skill metadata in the relevant `SKILL.md`
 
 For lower-friction real-repo trials, `traceskill start --inject-instructions`
-can apply the first two pieces automatically for the current trace session.
-The mutation is manifest-backed in `.skilltrace/injection.json`, and
-`traceskill stop` removes only the exact inserted instruction block and only
-removes the instrumentation file when SkillTrace created it and it is unchanged.
+can apply the reusable SkillTrace pieces automatically for the current trace
+session. It writes `.skilltrace/instrumentation.md`, creates a minimal
+`.skilltrace.json` with `skill_roots: ['.skills']` when needed, and prepends the
+single `AGENTS.md` instruction. The mutation is manifest-backed in
+`.skilltrace/injection.json`, and `traceskill stop` removes only the exact
+inserted instruction block and only removes generated files when SkillTrace
+created them and they are unchanged.
 
 Reasons:
 

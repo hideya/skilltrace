@@ -14,6 +14,7 @@ import {
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', 'loader.mjs')
+const RUNTIME_ENV_IMPORT_PATH = path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
 const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
@@ -468,7 +469,13 @@ function runServe() {
     process.exit(result.status ?? 1)
   }
 
-  runScript('scripts/traceskill-serve.js')
+  let result = spawnSync(process.execPath, packagedServeArgs(), {
+    cwd: PROJECT_ROOT,
+    stdio: 'inherit',
+    env: process.env,
+  })
+
+  process.exit(result.status ?? 1)
 }
 
 function serveCommand() {
@@ -478,7 +485,13 @@ function serveCommand() {
 
 function serveArgs() {
   if (DEV_MODE) return ['dev']
+  return packagedServeArgs()
+}
+
+function packagedServeArgs() {
   return [
+    '--import',
+    RUNTIME_ENV_IMPORT_PATH,
     '--import',
     TSX_LOADER_PATH,
     path.join(PROJECT_ROOT, 'scripts/traceskill-serve.js'),

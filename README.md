@@ -120,11 +120,12 @@ For opt-in plug-and-play tracing instructions, start a session with:
 traceskill start --inject-instructions
 ```
 
-This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template
-when needed, prepends a single tracing instruction to `AGENTS.md`, and records a
+This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template,
+creates `.skilltrace.json` with a default `.skills` passive probe root when
+needed, prepends a single tracing instruction to `AGENTS.md`, and records a
 manifest at `.skilltrace/injection.json`. `traceskill stop` removes only the
-exact inserted instruction and only removes the instrumentation file if
-SkillTrace created it and it was not changed.
+exact inserted instruction and only removes generated files if SkillTrace
+created them and they were not changed.
 
 The injection is experimental and intentionally opt-in. If existing files or
 unexpected edits are detected, SkillTrace prints warnings and records them in
@@ -241,6 +242,18 @@ The current overlay pattern is:
 - emit `skill_reference_read` after reading required or recommended skill references
 - emit `skill_use_finished` after completing skill-guided work
 - emit `skill_trace_reflection` at the end of the task
+
+For passive probing, the repo also needs `.skilltrace.json` to declare skill
+roots. The opt-in injection flow creates this minimal config when it is missing:
+
+```json
+{
+  "skill_roots": [".skills"]
+}
+```
+
+Existing `.skilltrace.json` files are preserved with a warning so real repos can
+keep custom skill roots.
 
 Task skills provide metadata the overlay can use:
 

@@ -185,10 +185,11 @@ codex
 traceskill stop
 ```
 
-This temporarily inserts the `AGENTS.md` instruction and creates
-`.skilltrace/instrumentation.md` from SkillTrace's bundled template when needed.
-The injected changes are manifest-backed and removed by `traceskill stop` when
-they are still unchanged.
+This temporarily inserts the `AGENTS.md` instruction, creates
+`.skilltrace/instrumentation.md` from SkillTrace's bundled template when needed,
+and creates a minimal `.skilltrace.json` passive probe config when needed. The
+injected changes are manifest-backed and removed by `traceskill stop` when they
+are still unchanged.
 
 Add one opt-in line near the top of `AGENTS.md`:
 
@@ -203,6 +204,14 @@ Then add `.skilltrace/instrumentation.md` with the generic tracing policy:
 - emit `skill_reference_read` after reading required or recommended references
 - emit `skill_use_finished` after skill-guided work
 - emit `skill_trace_reflection` at the end
+
+For passive probing, add `.skilltrace.json` with the repo's skill roots:
+
+```json
+{
+  "skill_roots": [".skills"]
+}
+```
 
 Task skills should provide small `SkillTrace Metadata` sections with their name,
 version, path, summaries, applicability reason, expected steps, and required
