@@ -31,9 +31,9 @@ For the current best local prototype, prefer the local daemon flow:
 
 ```bash
 pnpm traceskill:install
-traceskill serve
+traceskill-dev serve
 cd <repo>
-traceskill start --inject-instructions
+traceskill-dev start --inject-instructions
 ```
 
 For package-style trials, create and install a local tarball instead:
@@ -44,10 +44,10 @@ npm install -g ./skilltrace-0.0.0.tgz
 traceskill daemon start
 ```
 
-Use plain `traceskill start` for passive-only trials where you do not want
+Use plain `traceskill-dev start` for passive-only trials where you do not want
 SkillTrace to inject MCP tracing instructions into the target repo.
 
-If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
+If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -57,7 +57,7 @@ fi
 ```
 
 That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
-`traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
+`traceskill-dev start` launches the passive probe worker and prompts for sudo from your terminal.
 
 ## Start Command
 
@@ -82,7 +82,7 @@ To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
 For Codex, register the SkillTrace MCP server with:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- traceskill-dev mcp
 ```
 
 Then confirm the server is registered:
@@ -94,7 +94,7 @@ codex mcp get skilltrace
 
 Open a new Codex session after registration so the tool list is refreshed.
 
-When `traceskill start` is active, `traceskill mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
+When `traceskill-dev start` is active, `traceskill-dev mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
 
 To remove the SkillTrace MCP server later:
 

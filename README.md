@@ -148,11 +148,13 @@ written to `~/.skilltrace/logs/daemon.log`.
 
 When installed as an npm package, `traceskill` is available from npm's global
 bin location. From this checkout, `pnpm traceskill:install` is still available
-as a development helper; it creates a local `traceskill` wrapper in
-`~/.skilltrace/bin`. The wrapper preserves the repo directory you run it from,
-so the trace target is normally just the current working directory.
+as a development helper; it creates a local `traceskill-dev` wrapper in
+`~/.skilltrace/bin`. The development wrapper defaults to
+`http://localhost:5777` so it can coexist with the package command on
+`http://localhost:7555`. The wrapper preserves the repo directory you run it
+from, so the trace target is normally just the current working directory.
 
-If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
+If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -161,8 +163,8 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-`pnpm traceskill:uninstall` removes generated wrappers from both the current
-`~/.skilltrace/bin` location and the older `~/.local/bin` location.
+`pnpm traceskill:uninstall` removes generated development wrappers from both
+the current `~/.skilltrace/bin` location and the older `~/.local/bin` location.
 
 The local server serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.
@@ -284,14 +286,8 @@ task normally and report which tracing calls could not be made.
       "input contains a pull request diff",
       "user asks for review rather than modification"
     ],
-    "assumptions": [
-      "diff is complete",
-      "test results are unavailable"
-    ],
-    "risk_flags": [
-      "possible breaking change",
-      "insufficient test coverage"
-    ],
+    "assumptions": ["diff is complete", "test results are unavailable"],
+    "risk_flags": ["possible breaking change", "insufficient test coverage"],
     "expected_steps": [
       "check API compatibility",
       "check migration risk",
@@ -313,9 +309,7 @@ standalone skill lifecycle events:
   "skill_name": "type-fix",
   "skill_path": ".skills/type-fix/SKILL.md",
   "summary": "Read the type-fix checklist reference.",
-  "related_artifacts": [
-    ".skills/type-fix/references/checklist.md"
-  ],
+  "related_artifacts": [".skills/type-fix/references/checklist.md"],
   "data": {
     "reference_path": ".skills/type-fix/references/checklist.md",
     "reference_role": "required checklist"

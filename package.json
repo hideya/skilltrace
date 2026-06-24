@@ -2,7 +2,6 @@
   "name": "skilltrace",
   "version": "0.0.0",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "traceskill": "./bin/traceskill.js"
   },
@@ -16,9 +15,10 @@
     "routes.ts",
     "vite.config.ts"
   ],
+  "type": "module",
   "scripts": {
     "prep": "node scripts/prep.js",
-    "dev": "react-router dev --host 0.0.0.0 --port 7555",
+    "dev": "react-router dev --host 0.0.0.0 --port 5777",
     "build": "react-router build",
     "prepack": "pnpm build",
     "test": "vitest run",
@@ -30,6 +30,7 @@
     "skilltrace:probe-mcp": "tsx scripts/skilltrace-probe-mcp.ts",
     "skilltrace:probe-session": "tsx scripts/skilltrace-probe-session.ts",
     "traceskill": "tsx scripts/traceskill.ts",
+    "traceskill-dev": "SKILLTRACE_SERVER=http://localhost:5777 PORT=5777 tsx scripts/traceskill.ts",
     "traceskill:mcp": "tsx scripts/skilltrace-mcp.ts",
     "traceskill:install": "tsx scripts/install-traceskill-bin.ts install",
     "traceskill:uninstall": "tsx scripts/install-traceskill-bin.ts uninstall",

@@ -25,10 +25,10 @@ Start SkillTrace from the main project in another terminal:
 
 ```bash
 pnpm traceskill:install
-traceskill serve
+traceskill-dev serve
 ```
 
-If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
+If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -37,7 +37,7 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-`traceskill start` launches the passive probe worker and prompts for sudo from your terminal.
+`traceskill-dev start` launches the passive probe worker and prompts for sudo from your terminal.
 
 If you have installed the Codex app but not the Codex CLI, define a shell alias to access the bundled CLI version:
 
@@ -48,13 +48,13 @@ alias codex='/Applications/Codex.app/Contents/Resources/codex'
 Register the SkillTrace MCP server:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- traceskill-dev mcp
 ```
 
 Then start the passive trace session from this sandbox repository:
 
 ```bash
-traceskill start --inject-instructions
+traceskill-dev start --inject-instructions
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.
@@ -68,7 +68,7 @@ To remove the SkillTrace MCP server later:
 codex mcp remove skilltrace
 ```
 
-`traceskill start --inject-instructions` prints the generated run ID. It looks like:
+`traceskill-dev start --inject-instructions` prints the generated run ID. It looks like:
 
 ```text
 agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
@@ -108,7 +108,7 @@ The agent should:
 Then open the SkillTrace run page:
 
 ```text
-http://localhost:7555/app/runs/<generated_run_id>
+http://localhost:5777/app/runs/<generated_run_id>
 ```
 
 The timeline should include passive skill/reference reads and semantic started,
@@ -118,5 +118,5 @@ reference-read, and finished declarations. The consistency panel should report
 When you are done, stop the active trace session:
 
 ```bash
-traceskill stop
+traceskill-dev stop
 ```

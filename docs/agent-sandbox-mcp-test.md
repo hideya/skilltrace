@@ -13,15 +13,15 @@ This is the first true MCP-path experiment. It is stronger than the CLI fixture 
 
 Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
 
-The current recommended flow uses `traceskill start`. It asks the local SkillTrace daemon to create an active session, then launches a macOS `fs_usage` probe worker for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
+The current recommended checkout flow uses `traceskill-dev start`. It asks the local SkillTrace daemon to create an active session, then launches a macOS `fs_usage` probe worker for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
 
 ## Pieces
 
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local CLI: `traceskill`.
-- Local MCP server command: `traceskill mcp`.
+- Local checkout CLI: `traceskill-dev`.
+- Local checkout MCP server command: `traceskill-dev mcp`.
 - Passive probe: `sudo -n fs_usage -w -f filesys`.
 - MCP tool exposed to Codex: `skill_log_event`.
 
@@ -29,14 +29,14 @@ The current recommended flow uses `traceskill start`. It asks the local SkillTra
 
 ## Prerequisites
 
-From the main SkillTrace repo, install the local `traceskill` wrapper once:
+From the main SkillTrace repo, install the local `traceskill-dev` wrapper once:
 
 ```bash
 pnpm traceskill:install
 ```
 
-The installer writes `~/.skilltrace/bin/traceskill`. If your shell cannot find
-`traceskill`, add `~/.skilltrace/bin` to your `PATH`:
+The installer writes `~/.skilltrace/bin/traceskill-dev`. If your shell cannot
+find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -51,29 +51,29 @@ fi
 Start the local SkillTrace daemon in another terminal:
 
 ```bash
-traceskill serve
+traceskill-dev serve
 ```
 
 For experimental background operation, use:
 
 ```bash
-traceskill daemon start
-traceskill daemon status
-traceskill daemon logs
-traceskill daemon stop
+traceskill-dev daemon start
+traceskill-dev daemon status
+traceskill-dev daemon logs
+traceskill-dev daemon stop
 ```
 
 The foreground `serve` command is still the default dogfooding path. The daemon
 mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`.
 
-`traceskill start` launches the passive probe worker from your terminal, so the
+`traceskill-dev start` launches the passive probe worker from your terminal, so the
 sudo prompt happens there instead of inside the web server process.
 
 The examples below assume SkillTrace is running at:
 
 ```text
-http://localhost:7555
+http://localhost:5777
 ```
 
 If you have installed the Codex app but not the Codex CLI, define a shell alias to access the bundled CLI version:
@@ -105,7 +105,7 @@ agent-sandbox-repo/src/profile.ts
 Register the local SkillTrace MCP server with Codex. This registration is generic and does not name the target repo:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- traceskill-dev mcp
 ```
 
 Then confirm it is registered:
@@ -118,7 +118,7 @@ The command should show:
 
 - `enabled: true`
 - `transport: stdio`
-- `command: traceskill`
+- `command: traceskill-dev`
 - `args: mcp`
 
 The run ID is not configured in the MCP registration. The MCP server resolves the daemon's one active session when `skill_log_event` is called.
@@ -129,26 +129,26 @@ Start the passive trace session from the sandbox repo:
 
 ```bash
 cd agent-sandbox-repo
-traceskill start --inject-instructions
+traceskill-dev start --inject-instructions
 ```
 
 This creates `.skilltrace/instrumentation.md` if needed, inserts one
 SkillTrace instruction at the top of `AGENTS.md`, and records
-`.skilltrace/injection.json` so `traceskill stop` can clean up the exact
+`.skilltrace/injection.json` so `traceskill-dev stop` can clean up the exact
 injected changes.
 
 This starts a background `fs_usage` probe worker and prints the run URL.
 It also prints a probe log path under:
 
 ```text
-data/local/traceskill-probe-<run_id>.log
+~/.skilltrace/logs/probes/traceskill-probe-<run_id>.log
 ```
 
-If a session is already active, `traceskill start` refuses and asks you to run
-`traceskill stop` first. This avoids accidental low-value runs and keeps
+If a session is already active, `traceskill-dev start` refuses and asks you to run
+`traceskill-dev stop` first. This avoids accidental low-value runs and keeps
 manifest-backed instruction cleanup predictable.
 
-Plain `traceskill start` is still valid for passive-only trials. When
+Plain `traceskill-dev start` is still valid for passive-only trials. When
 instrumentation is not configured, the CLI prints a warning and the run detail
 timeline shows a warning badge on the `trace_session_started` row so the missing
 semantic tracing setup is visible even after the terminal output is gone.
@@ -156,7 +156,7 @@ semantic tracing setup is visible even after the terminal output is gone.
 If passive events do not appear, restart with:
 
 ```bash
-traceskill start --inject-instructions --debug-probe
+traceskill-dev start --inject-instructions --debug-probe
 ```
 
 Then inspect the printed probe log.
@@ -233,7 +233,7 @@ In the sandbox Codex session, the agent should:
 In the main SkillTrace app, open:
 
 ```text
-http://localhost:7555/app/runs
+http://localhost:7/app/runs
 ```
 
 Look for a run ID like:
@@ -301,9 +301,9 @@ with reversible instruction injection.
 The low-friction path is:
 
 ```bash
-traceskill start --inject-instructions
+traceskill-dev start --inject-instructions
 codex
-traceskill stop
+traceskill-dev stop
 ```
 
 This temporarily adds a tracing-policy line near the top of `AGENTS.md`, writes
@@ -354,7 +354,7 @@ If the passive probe misses the read and you want to force the same run into the
 pnpm skilltrace:read \
   --run <generated_run_id> \
   --skill type-fix \
-  --server http://localhost:7555 \
+  --server http://localhost:5777 \
   agent-sandbox-repo/.skills/type-fix/SKILL.md
 ```
 
@@ -378,9 +378,9 @@ pnpm sandbox:reset
 
 If no run appears, check that:
 
-- SkillTrace is running at `http://localhost:7555`.
-- The MCP server command is `traceskill mcp`.
-- You ran `traceskill start --inject-instructions` from the target repo before launching Codex.
+- SkillTrace is running at `http://localhost:5777`.
+- The MCP server command is `traceskill-dev mcp`.
+- You ran `traceskill-dev start --inject-instructions` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated path-hash timestamped ID.
@@ -395,8 +395,8 @@ sudo -v
 
 then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill start --inject-instructions` was run before Codex started.
-Run `traceskill status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill-dev start --inject-instructions` was run before Codex started.
+Run `traceskill-dev status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.
 
 If the sandbox starts already fixed, run:
 
@@ -409,15 +409,15 @@ If the consistency panel says `Declared but not observed`, the semantic MCP part
 When you are done, stop the active session:
 
 ```bash
-traceskill stop
+traceskill-dev stop
 ```
 
-`traceskill end` is also accepted as an alias.
+`traceskill-dev end` is also accepted as an alias.
 
 From any repo you can run:
 
 ```bash
-traceskill start --inject-instructions
-traceskill status
-traceskill stop
+traceskill-dev start --inject-instructions
+traceskill-dev status
+traceskill-dev stop
 ```
