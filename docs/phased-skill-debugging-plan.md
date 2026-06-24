@@ -193,9 +193,10 @@ Near-term changes:
 
 Later changes:
 
-- normalize passive, semantic, and reflected file paths before comparison
-- add consistency checks that compare passive observations with reflection file
-  lists
+- continue refining path normalization for passive, semantic, and reflected file
+  comparisons as real repositories expose edge cases
+- expand consistency checks that compare passive observations with reflection
+  file lists
 - add UI mode selection for full, passive-plus-reflection, and passive-only
   checking
 - add run comparison support so multiple attempts from the same repo stem can be

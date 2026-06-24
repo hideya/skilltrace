@@ -485,6 +485,19 @@ Possible interpretations:
 - the model deviated to another skill
 - completion logging was skipped
 
+### Reflection compared with passive evidence
+
+- final reflection lists `skills_read` and `references_read`
+- passive probe observed matching skill or reference file access
+
+Interpretation:
+
+> The agent's retrospective file list aligns with passive file evidence.
+
+If reflection lists a file that passive probing missed, SkillTrace reports
+`Reflected but not observed`. If passive probing observed a file that reflection
+omitted, SkillTrace reports `Observed but not reflected`.
+
 ---
 
 ## Initial experiment

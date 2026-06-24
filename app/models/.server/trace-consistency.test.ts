@@ -100,6 +100,99 @@ describe('checkTraceConsistency', () => {
 
     expect(results).toEqual([])
   })
+
+  test('passes reflected files that were observed passively', () => {
+    let results = checkTraceConsistency([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      passivePath(
+        '.skills/type-fix/references/checklist.md',
+        'skill_reference_read',
+      ),
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+        references_read: ['.skills/type-fix/references/checklist.md'],
+        files_believed_to_influence_work: [
+          '.skills/type-fix/SKILL.md',
+          '.skills/type-fix/references/checklist.md',
+        ],
+      }),
+    ])
+
+    expect(results).toEqual([
+      {
+        status: 'warning',
+        title: 'Read but not declared',
+        message:
+          '.skills/type-fix/SKILL.md was read, but no skill_use_started event was logged.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+      {
+        status: 'warning',
+        title: 'Read but not declared',
+        message:
+          '.skills/type-fix/references/checklist.md was read, but no skill_use_started event was logged.',
+        skill: '.skills/type-fix/references/checklist.md',
+      },
+      {
+        status: 'pass',
+        title: 'Reflected and observed',
+        message:
+          '.skills/type-fix/SKILL.md was listed in reflection and observed passively.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+      {
+        status: 'pass',
+        title: 'Reflected and observed',
+        message:
+          '.skills/type-fix/references/checklist.md was listed in reflection and observed passively.',
+        skill: '.skills/type-fix/references/checklist.md',
+      },
+    ])
+  })
+
+  test('warns when reflection mentions a file passive probing missed', () => {
+    let results = checkTraceConsistency([
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+      }),
+    ])
+
+    expect(results).toEqual([
+      {
+        status: 'warning',
+        title: 'Reflected but not observed',
+        message:
+          '.skills/type-fix/SKILL.md was listed in reflection, but no passive read was observed.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+    ])
+  })
+
+  test('warns when passive probing observed a file reflection omitted', () => {
+    let results = checkTraceConsistency([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      reflection({
+        skills_read: [],
+      }),
+    ])
+
+    expect(results).toEqual([
+      {
+        status: 'warning',
+        title: 'Read but not declared',
+        message:
+          '.skills/type-fix/SKILL.md was read, but no skill_use_started event was logged.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+      {
+        status: 'warning',
+        title: 'Observed but not reflected',
+        message:
+          '.skills/type-fix/SKILL.md was observed passively, but was not listed in reflection.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+    ])
+  })
 })
 
 function passive(skill_name: string) {
@@ -115,5 +208,27 @@ function semantic(skill_name: string, event_type: string) {
     source: 'mcp_semantic_logger',
     event_type,
     skill_name,
+  }
+}
+
+function passivePath(skill_path: string, event_type: string) {
+  return {
+    source: 'passive_file_harness',
+    event_type,
+    skill_path,
+    payload: {
+      file_path: `/repo/${skill_path}`,
+    },
+  }
+}
+
+function reflection(data: Record<string, any>) {
+  return {
+    source: 'mcp_semantic_logger',
+    event_type: 'run_reflection_declared',
+    timestamp: '2026-06-24T00:00:00Z',
+    payload: {
+      data,
+    },
   }
 }
