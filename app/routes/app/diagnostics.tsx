@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -7,16 +8,19 @@ export async function loader() {
   let state = readDaemonState()
   let server = process.env.SKILLTRACE_SERVER || defaultServerUrl()
   let session = getTraceSession() ?? null
+  let mode = process.env.SKILLTRACE_DEV === '1' ? 'dev' : 'package'
+  let mcp = readCodexMcpStatus(mode)
 
   return {
     daemon: state,
     server,
     session,
+    mcp,
     process: {
       pid: process.pid,
       platform: process.platform,
       node: process.version,
-      mode: process.env.SKILLTRACE_DEV === '1' ? 'dev' : 'package',
+      mode,
       port: process.env.PORT || new URL(server).port || '7555',
       host: process.env.HOST || '127.0.0.1',
     },
@@ -26,12 +30,13 @@ export async function loader() {
         ? processStatus(state.shared_probe_pid)
         : 'missing',
       state_matches_server: state?.server === server,
+      mcp_registration: mcp.status,
     },
   }
 }
 
 export default function Page({ loaderData }: PageProps) {
-  let { daemon, server, session, process, checks } = loaderData
+  let { daemon, server, session, process, checks, mcp } = loaderData
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
@@ -45,7 +50,7 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <Metric
           label="Server"
           tone={checks.state_matches_server ? 'success' : 'warning'}
@@ -60,6 +65,11 @@ export default function Page({ loaderData }: PageProps) {
           label="Mode"
           tone={process.mode === 'dev' ? 'warning' : 'neutral'}
           value={process.mode}
+        />
+        <Metric
+          label="Codex MCP"
+          tone={checks.mcp_registration === 'ok' ? 'success' : 'warning'}
+          value={checks.mcp_registration}
         />
       </section>
 
@@ -141,6 +151,27 @@ export default function Page({ loaderData }: PageProps) {
           ) : (
             <EmptyState>No active SkillTrace session.</EmptyState>
           )}
+        </Panel>
+
+        <Panel
+          description="Read-only check of codex mcp get skilltrace."
+          title="Codex MCP"
+        >
+          <KeyValues
+            rows={[
+              ['Status', mcp.message],
+              ['Expected', `${mcp.expected_command} mcp`],
+              ['Codex installed', mcp.codex_installed ? 'yes' : 'no'],
+              ['Registered', mcp.registered ? 'yes' : 'no'],
+              ['Command', mcp.command ?? 'unknown'],
+              ['Args', mcp.args ?? 'unknown'],
+            ]}
+          />
+          {mcp.output ? (
+            <pre className="mt-4 max-h-48 overflow-auto rounded-box bg-base-200 p-3 text-xs whitespace-pre-wrap">
+              {mcp.output}
+            </pre>
+          ) : null}
         </Panel>
       </section>
     </main>
@@ -228,6 +259,68 @@ function defaultServerUrl() {
   return `http://${displayHost}:${port}`
 }
 
+function readCodexMcpStatus(mode: string) {
+  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let result = spawnSync('codex', ['mcp', 'get', 'skilltrace'], {
+    encoding: 'utf8',
+    timeout: 3000,
+  })
+  let output = [result.stderr, result.stdout].filter(Boolean).join('\n').trim()
+
+  if (result.error) {
+    return {
+      status: 'warning',
+      message: result.error.message,
+      codex_installed: result.error.message.includes('ENOENT') ? false : true,
+      registered: false,
+      expected_command: expectedCommand,
+      command: null,
+      args: null,
+      output,
+    } satisfies CodexMcpStatus
+  }
+
+  if (result.status !== 0) {
+    return {
+      status: 'warning',
+      message: 'skilltrace MCP server is not registered',
+      codex_installed: true,
+      registered: false,
+      expected_command: expectedCommand,
+      command: null,
+      args: null,
+      output,
+    } satisfies CodexMcpStatus
+  }
+
+  let command = parseCodexMcpValue(output, 'command')
+  let args = parseCodexMcpValue(output, 'args')
+  let matches = command === expectedCommand && args === 'mcp'
+
+  return {
+    status: matches ? 'ok' : 'warning',
+    message: matches
+      ? 'skilltrace MCP registration matches this mode'
+      : 'skilltrace MCP registration does not match this mode',
+    codex_installed: true,
+    registered: true,
+    expected_command: expectedCommand,
+    command,
+    args,
+    output,
+  } satisfies CodexMcpStatus
+}
+
+function parseCodexMcpValue(output: string, key: string) {
+  let prefix = `${key}:`
+  let line = output
+    .split('\n')
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(prefix))
+
+  return line?.slice(prefix.length).trim() || null
+}
+
 function formatDate(value?: string) {
   if (!value) return 'unknown'
   return new Date(value).toLocaleString()
@@ -238,6 +331,7 @@ type PageProps = {
     daemon: DaemonState | null
     server: string
     session: TraceSession | null
+    mcp: CodexMcpStatus
     process: ProcessInfo
     checks: Checks
   }
@@ -301,4 +395,16 @@ type Checks = {
   daemon_pid: string
   shared_probe_pid: string
   state_matches_server: boolean
+  mcp_registration: string
+}
+
+type CodexMcpStatus = {
+  status: 'ok' | 'warning'
+  message: string
+  codex_installed: boolean
+  registered: boolean
+  expected_command: string
+  command: string | null
+  args: string | null
+  output: string
 }
