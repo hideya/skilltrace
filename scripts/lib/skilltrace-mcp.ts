@@ -29,6 +29,10 @@ export const skillTraceReflectionInputSchema = {
   run_id: z.string().trim().optional(),
   task_outcome: z.string().trim().optional(),
   skills_used: z.array(z.string()).optional(),
+  skills_read: z.array(z.string()).optional(),
+  references_read: z.array(z.string()).optional(),
+  files_believed_to_influence_work: z.array(z.string()).optional(),
+  file_usage_uncertainties: z.array(z.string()).optional(),
   steps_followed: z.array(z.string()).optional(),
   steps_skipped_or_delayed: z.array(z.record(z.string(), z.unknown())).optional(),
   uncertainties: z.array(z.string()).optional(),
@@ -105,6 +109,11 @@ export function buildMcpSkillTraceReflectionEvent(
       summary: input.summary,
       task_outcome: input.task_outcome,
       skills_used: input.skills_used ?? [],
+      skills_read: input.skills_read ?? [],
+      references_read: input.references_read ?? [],
+      files_believed_to_influence_work:
+        input.files_believed_to_influence_work ?? [],
+      file_usage_uncertainties: input.file_usage_uncertainties ?? [],
       steps_followed: input.steps_followed ?? [],
       steps_skipped_or_delayed: input.steps_skipped_or_delayed ?? [],
       uncertainties: input.uncertainties ?? [],
@@ -164,6 +173,10 @@ export type SkillTraceReflectionInput = {
   run_id?: string
   task_outcome?: string
   skills_used?: string[]
+  skills_read?: string[]
+  references_read?: string[]
+  files_believed_to_influence_work?: string[]
+  file_usage_uncertainties?: string[]
   steps_followed?: string[]
   steps_skipped_or_delayed?: Record<string, unknown>[]
   uncertainties?: string[]

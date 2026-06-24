@@ -238,6 +238,17 @@ Ask the agent to call it after completing the task and after emitting
 {
   "task_outcome": "completed",
   "skills_used": ["type-fix"],
+  "skills_read": [
+    ".skills/type-fix/SKILL.md"
+  ],
+  "references_read": [
+    ".skills/type-fix/references/checklist.md"
+  ],
+  "files_believed_to_influence_work": [
+    ".skills/type-fix/SKILL.md",
+    ".skills/type-fix/references/checklist.md"
+  ],
+  "file_usage_uncertainties": [],
   "steps_followed": [
     "declared run context",
     "read the type-fix skill",

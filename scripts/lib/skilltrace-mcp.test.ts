@@ -72,6 +72,13 @@ describe('skilltrace MCP helpers', () => {
       {
         task_outcome: 'completed',
         skills_used: ['type-fix'],
+        skills_read: ['.skills/type-fix/SKILL.md'],
+        references_read: ['.skills/type-fix/references/checklist.md'],
+        files_believed_to_influence_work: [
+          '.skills/type-fix/SKILL.md',
+          '.skills/type-fix/references/checklist.md',
+        ],
+        file_usage_uncertainties: [],
         steps_followed: ['declared context', 'fixed source issues'],
         steps_skipped_or_delayed: [
           {
@@ -92,6 +99,14 @@ describe('skilltrace MCP helpers', () => {
     expect(event.summary).toBe('Completed task with aligned trace events.')
     expect(event.data.task_outcome).toBe('completed')
     expect(event.data.skills_used).toEqual(['type-fix'])
+    expect(event.data.skills_read).toEqual(['.skills/type-fix/SKILL.md'])
+    expect(event.data.references_read).toEqual([
+      '.skills/type-fix/references/checklist.md',
+    ])
+    expect(event.data.files_believed_to_influence_work).toEqual([
+      '.skills/type-fix/SKILL.md',
+      '.skills/type-fix/references/checklist.md',
+    ])
     expect(event.data.instrumentation_notes).toEqual([
       'called context, started, finished, and reflection tools',
     ])

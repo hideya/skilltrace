@@ -335,6 +335,11 @@ The current overlay pattern is:
 - emit `skill_use_finished` after completing skill-guided work
 - emit `skill_trace_reflection` at the end of the task
 
+The final reflection asks for concrete file lists, including `skills_read`,
+`references_read`, and `files_believed_to_influence_work`. These lists prepare
+SkillTrace to compare passive observations with the agent's retrospective
+self-report in lower-intervention tracing modes.
+
 For passive probing, the repo also needs `.skilltrace.json` to declare skill
 roots. The default injection flow creates this minimal config when it is missing:
 

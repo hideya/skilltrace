@@ -91,6 +91,10 @@ After emitting `skill_use_finished`, call `skill_trace_reflection`:
 {
   "task_outcome": "completed",
   "skills_used": ["task skills used"],
+  "skills_read": ["exact paths to skill entrypoint files read, such as .skills/example/SKILL.md"],
+  "references_read": ["exact paths to supporting Markdown reference files read"],
+  "files_believed_to_influence_work": ["exact paths to files that materially influenced your decisions"],
+  "file_usage_uncertainties": ["brief notes about any file usage uncertainty"],
   "steps_followed": ["concrete user-visible steps taken"],
   "steps_skipped_or_delayed": [
     {
