@@ -114,6 +114,10 @@ command runs built JavaScript, not TypeScript through `tsx`; `tsx` is kept only
 for checkout development commands such as `pnpm traceskill` and
 `traceskill-dev`.
 
+After reinstalling or restarting packaged SkillTrace, refresh any already-open
+UI tabs if navigation feels stale. Run detail links use document navigation to
+avoid relying on old client-side route manifests after a package rebuild.
+
 After publishing, the intended install shape is:
 
 ```bash

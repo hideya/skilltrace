@@ -109,6 +109,11 @@ Packaging complications found:
 - A local-only fallback `COOKIE_SECRET` is set for packaged local mode because
   the v0 local UI does not require login, but the scaffolded auth modules still
   validate cookie configuration at import time.
+- Run-list detail links intentionally use document navigation. This avoids
+  depending on a stale hydrated client or route-discovery manifest in a browser
+  tab that stayed open across a package rebuild and reinstall. Refreshing
+  already-open UI tabs after reinstalling or restarting packaged SkillTrace is
+  still recommended.
 
 This packaging shape is intentionally a developer preview, not a fully
 standalone binary. It still requires Node/npm and macOS for passive probing, but

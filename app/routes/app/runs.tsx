@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Form, Link, redirect } from 'react-router'
+import { Form, redirect } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { deleteRunRecords, listRunSummaries } from '~/models/.server/trace'
@@ -64,16 +64,29 @@ export default function Page({ loaderData }: PageProps) {
             </p>
           </div>
         </div>
+        <div className="flex flex-row gap-4">
+          {isEditing ? (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                className="btn btn-sm btn-error"
+                form="delete-runs-form"
+                type="submit"
+              >
+                Delete selected
+              </button>
+            </div>
+          ) : null}
 
-        {summaries.length > 0 ? (
-          <button
-            className={`btn btn-sm ${isEditing ? 'btn-neutral' : 'btn-outline'}`}
-            onClick={() => setIsEditing(!isEditing)}
-            type="button"
-          >
-            {isEditing ? 'Done' : 'Edit'}
-          </button>
-        ) : null}
+          {summaries.length > 0 ? (
+            <button
+              className={`btn w-24 btn-sm ${isEditing ? 'btn-neutral' : 'btn-outline'}`}
+              onClick={() => setIsEditing(!isEditing)}
+              type="button"
+            >
+              {isEditing ? 'Done' : 'Edit'}
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {summaries.length > 0 ? (
@@ -88,18 +101,6 @@ export default function Page({ loaderData }: PageProps) {
           >
             <input name="intent" type="hidden" value="delete" />
           </Form>
-
-          {isEditing ? (
-            <div className="flex items-center justify-end gap-2">
-              <button
-                className="btn btn-sm btn-error"
-                form="delete-runs-form"
-                type="submit"
-              >
-                Delete selected
-              </button>
-            </div>
-          ) : null}
 
           {groups.map((group) => (
             <RunGroup
@@ -190,12 +191,12 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         </td>
       ) : null}
       <td>
-        <Link
+        <a
           className="link font-medium link-hover"
-          to={`/app/runs/${run.public_id}`}
+          href={`/app/runs/${run.public_id}`}
         >
           {label}
-        </Link>
+        </a>
         {run.description ? (
           <div className="mt-1 max-w-md truncate text-xs text-base-content/60">
             {run.description}
