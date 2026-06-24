@@ -143,6 +143,14 @@ export function ejectInstructions(targetRoot: string, runId: string) {
   }
 }
 
+export function ejectExistingInstructions(targetRoot: string) {
+  let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
+  if (!fs.existsSync(manifestPath)) return null
+
+  let manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as InjectionManifest
+  return ejectInstructions(targetRoot, manifest.run_id)
+}
+
 export function instructionInjectionStatus(targetRoot?: string) {
   if (!targetRoot) return 'unknown'
   let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)

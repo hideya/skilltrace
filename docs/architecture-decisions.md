@@ -39,7 +39,10 @@ Reasons:
 - matches the current assumption that one repo is being debugged at a time
 - makes `traceskill start` and `traceskill end` easy to understand
 
-Starting a new session should end the previous session and replace the passive probe.
+Starting a new session should refuse while another session is active. This
+avoids low-value accidental runs and keeps instruction injection cleanup easy to
+reason about. The user should run `traceskill stop` before starting another
+session.
 
 ## CLI-Owned Probe Worker
 

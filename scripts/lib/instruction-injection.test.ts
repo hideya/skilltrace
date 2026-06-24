@@ -4,6 +4,7 @@ import path from 'path'
 import { afterEach, describe, expect, test } from 'vitest'
 import {
   assessInstrumentation,
+  ejectExistingInstructions,
   ejectInstructions,
   injectInstructions,
   instructionInjectionStatus,
@@ -77,6 +78,21 @@ describe('instruction injection', () => {
     expect(ready.status).toBe('ready')
     expect(ready.inject_requested).toBe(true)
     expect(ready.warnings).toEqual([])
+  })
+
+  test('ejects existing injection using manifest run id', () => {
+    let dir = tempRoot()
+    fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# Agent Guidelines\n')
+
+    injectInstructions(dir, 'run_old')
+
+    let ejected = ejectExistingInstructions(dir)
+
+    expect(ejected?.status).toBe('ok')
+    expect(instructionInjectionStatus(dir)).toBe('inactive')
+    expect(fs.readFileSync(path.join(dir, 'AGENTS.md'), 'utf8')).toBe(
+      '# Agent Guidelines\n',
+    )
   })
 })
 

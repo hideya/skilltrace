@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import {
   assessInstrumentation,
+  ejectExistingInstructions,
   ejectInstructions,
   injectInstructions,
   instructionInjectionStatus,
@@ -41,8 +42,14 @@ async function start(args: string[]) {
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let instrumentation = assessInstrumentation(targetRoot, options.injectInstructions)
+  let active = await getJson(server, '/api/sessions/status')
+  if (active.session) {
+    printActiveSessionRefusal(server, active.session)
+    process.exit(1)
+  }
 
   primeSudo()
+  cleanupTargetInjection(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -361,6 +368,13 @@ async function cleanupActiveInjection(server: string) {
   })
 }
 
+function cleanupTargetInjection(targetRoot: string) {
+  let injection = ejectExistingInstructions(targetRoot)
+  if (!injection) return
+
+  printInjectionResult('Previous instruction injection cleanup', injection)
+}
+
 async function waitForDaemon(server: string) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     if (await isServerAlive(server)) return true
@@ -391,6 +405,16 @@ function printSession(label: string, server: string, session: any) {
     console.log(`  probe log: ${session.probe_log_path}`)
   }
   console.log(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
+}
+
+function printActiveSessionRefusal(server: string, session: any) {
+  console.error('A SkillTrace session is already active.')
+  console.error(`  run: ${session.run_id}`)
+  console.error(`  repo: ${session.target_root}`)
+  console.error(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
+  console.error(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
+  console.error('')
+  console.error('Run `traceskill stop` before starting another session.')
 }
 
 function printDaemonStatus(status: any) {

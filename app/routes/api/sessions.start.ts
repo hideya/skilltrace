@@ -2,7 +2,10 @@ import {
   badRequestError,
   methodNotAllowedError,
 } from '~/lib/.server/errors'
-import { startTraceSession } from '~/models/.server/trace-session'
+import {
+  ActiveSessionError,
+  startTraceSession,
+} from '~/models/.server/trace-session'
 
 export async function loader() {
   throw methodNotAllowedError('POST required')
@@ -27,6 +30,16 @@ export async function action({ request }) {
   } catch (error) {
     if (error instanceof Error && error.message.includes('sudo is not ready')) {
       throw badRequestError(error.message)
+    }
+    if (error instanceof ActiveSessionError) {
+      return Response.json(
+        {
+          ok: false,
+          error: 'session_already_active',
+          session: error.session,
+        },
+        { status: 409 },
+      )
     }
 
     throw error

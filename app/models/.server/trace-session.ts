@@ -12,7 +12,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
   let targetRoot = path.resolve(input.target_root)
   let config = loadTargetConfig(targetRoot)
 
-  await stopTraceSession({ reason: 'replaced' })
+  if (state.session) throw new ActiveSessionError(state.session)
 
   let runId = buildSessionId(targetRoot, input.now ?? new Date())
   let session: TraceSession = {
@@ -259,3 +259,12 @@ type SkillTraceConfigFile = {
 
 const STATE_KEY = Symbol.for('skilltrace.trace-session-state')
 const state = ((globalThis as any)[STATE_KEY] ??= {}) as TraceSessionState
+
+export class ActiveSessionError extends Error {
+  session: TraceSession
+
+  constructor(session: TraceSession) {
+    super('SkillTrace session is already active')
+    this.session = session
+  }
+}
