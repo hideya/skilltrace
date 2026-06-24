@@ -1,8 +1,8 @@
 import {
-  badRequestError,
   methodNotAllowedError,
 } from '~/lib/.server/errors'
 import { validate } from '~/lib/data/validate'
+import { jsonFromRequest } from './+/request.server'
 import {
   appendPassiveEvent,
   passiveEventSchema,
@@ -33,17 +33,4 @@ export async function action({ request }) {
       timestamp: event.timestamp,
     },
   })
-}
-
-async function jsonFromRequest(request: Request) {
-  let type = request.headers.get('content-type') ?? ''
-  if (!type.includes('application/json')) {
-    throw badRequestError('Expected application/json')
-  }
-
-  try {
-    return await request.json()
-  } catch {
-    throw badRequestError('Invalid JSON')
-  }
 }

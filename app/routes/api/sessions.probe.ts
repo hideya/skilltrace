@@ -3,6 +3,7 @@ import {
   methodNotAllowedError,
   notFoundError,
 } from '~/lib/.server/errors'
+import { jsonFromRequest } from './+/request.server'
 import { attachTraceSessionProbe } from '~/models/.server/trace-session'
 
 export async function loader() {
@@ -35,17 +36,4 @@ export async function action({ request }) {
     ok: true,
     session,
   })
-}
-
-async function jsonFromRequest(request: Request) {
-  let type = request.headers.get('content-type') ?? ''
-  if (!type.includes('application/json')) {
-    throw badRequestError('Expected application/json')
-  }
-
-  try {
-    return await request.json()
-  } catch {
-    throw badRequestError('Invalid JSON')
-  }
 }

@@ -152,9 +152,6 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
               <th className="text-center">Model</th>
               <th className="text-center">Client</th>
               <th>Events</th>
-              {/* <th>Sources</th> */}
-              {/* <th>Last event</th> */}
-              {/* <th>Attempt</th> */}
             </tr>
           </thead>
           <tbody>
@@ -216,26 +213,6 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         <ClientCell context={summary.context} />
       </td>
       <td className="text-right">{summary.event_count}</td>
-      {/* <td>
-        <SourceList sources={summary.sources} />
-      </td> */}
-      {/* <td>
-        <div className="space-y-1">
-          <div className="font-medium">
-            {summary.last_event_type || 'No events'}
-          </div>
-          <div className="text-xs text-base-content/60">
-            {formatDate(summary.last_event_at)}
-          </div>
-        </div>
-      </td> */}
-      {/* <td>
-        <Form action={`/app/runs/${run.public_id}`} method="post">
-          <button className="btn btn-outline btn-xs" type="submit">
-            Start new attempt
-          </button>
-        </Form>
-      </td> */}
     </tr>
   )
 }
@@ -329,27 +306,6 @@ function ClientCell({ context }: ClientCellProps) {
   return <span className="text-xs">{client}</span>
 }
 
-function SourceList({ sources }: SourceListProps) {
-  if (sources.length === 0) {
-    return <span className="text-base-content/50">None</span>
-  }
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {sources.map((source) => (
-        <span className="badge badge-ghost" key={source}>
-          {source}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-function formatDate(value?: Date | string | null) {
-  if (!value) return '—'
-  return new Date(value).toLocaleString()
-}
-
 type PageProps = {
   loaderData: {
     summaries: any[]
@@ -386,10 +342,6 @@ type ModelCellProps = {
 
 type ClientCellProps = {
   context?: Record<string, any> | null
-}
-
-type SourceListProps = {
-  sources: string[]
 }
 
 const EXPANDED_RUN_GROUPS_KEY = 'skilltrace.expandedRunGroups'
