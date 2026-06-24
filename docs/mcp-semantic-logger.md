@@ -31,9 +31,17 @@ For the current best local prototype, prefer the local daemon flow:
 
 ```bash
 pnpm traceskill:install
-pnpm traceskill serve
+traceskill serve
 cd <repo>
 traceskill start --inject-instructions
+```
+
+For package-style trials, create and install a local tarball instead:
+
+```bash
+npm pack
+npm install -g ./skilltrace-0.0.0.tgz
+traceskill daemon start
 ```
 
 Use plain `traceskill start` for passive-only trials where you do not want

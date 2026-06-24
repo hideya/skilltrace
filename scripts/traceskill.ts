@@ -13,6 +13,7 @@ import {
 
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', 'loader.mjs')
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
 const DAEMON_STATE_PATH = path.join(DAEMON_DIR, 'daemon.json')
@@ -27,11 +28,11 @@ async function main() {
   } else if (command === 'status') {
     await status(args)
   } else if (command === 'serve') {
-    run(['pnpm', 'dev'])
+    runScript('scripts/traceskill-serve.js')
   } else if (command === 'daemon') {
     await daemon(args)
   } else if (command === 'mcp') {
-    run(['pnpm', 'skilltrace:mcp'])
+    runScript('scripts/skilltrace-mcp.ts')
   } else {
     usage(command ? `Unknown command: ${command}` : 'Missing command')
   }
@@ -145,7 +146,11 @@ async function daemonStart(args: string[]) {
 
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
-  let child = spawn('pnpm', ['dev'], {
+  let child = spawn(process.execPath, [
+    '--import',
+    TSX_LOADER_PATH,
+    path.join(PROJECT_ROOT, 'scripts/traceskill-serve.js'),
+  ], {
     cwd: PROJECT_ROOT,
     detached: true,
     stdio: ['ignore', logFd, logFd],
@@ -441,8 +446,13 @@ function printDaemonStatus(status: any) {
   }
 }
 
-function run(command: string[]) {
-  let result = spawnSync(command[0], command.slice(1), {
+function runScript(scriptPath: string, args: string[] = []) {
+  let result = spawnSync(process.execPath, [
+    '--import',
+    TSX_LOADER_PATH,
+    path.join(PROJECT_ROOT, scriptPath),
+    ...args,
+  ], {
     stdio: 'inherit',
     env: process.env,
   })
@@ -503,18 +513,16 @@ function probeStatus(pid?: number) {
 
 function startProbeWorker(options: ProbeWorkerOptions) {
   let logPath = path.join(
-    PROJECT_ROOT,
-    'data/local',
+    DAEMON_DIR,
+    'logs/probes',
     `traceskill-probe-${options.runId}.log`,
   )
   fs.mkdirSync(path.dirname(logPath), { recursive: true })
   let logFd = fs.openSync(logPath, 'a')
   let args = [
-    '--dir',
-    PROJECT_ROOT,
-    'exec',
-    'tsx',
-    'scripts/traceskill-probe-worker.ts',
+    '--import',
+    TSX_LOADER_PATH,
+    path.join(PROJECT_ROOT, 'scripts/traceskill-probe-worker.ts'),
     '--run',
     options.runId,
     '--target',
@@ -525,7 +533,7 @@ function startProbeWorker(options: ProbeWorkerOptions) {
   if (options.debug) args.push('--debug')
 
   let child = spawn(
-    'pnpm',
+    process.execPath,
     args,
     {
       detached: false,
@@ -609,9 +617,9 @@ function removeDaemonState() {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: pnpm traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       pnpm traceskill start [--target <repo>] [--server <url>] [--inject-instructions]')
-  console.error('       pnpm traceskill daemon <start|status|stop|logs>')
+  console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--inject-instructions]')
+  console.error('       traceskill daemon <start|status|stop|logs>')
   process.exit(1)
 }
 

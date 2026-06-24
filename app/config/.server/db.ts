@@ -1,9 +1,13 @@
 import path from 'path'
 
 const dbName = 'local/dev.db'
-export const dbPath = path.join(process.cwd(), 'data', dbName)
+const dataDir = process.env.SKILLTRACE_DATA_DIR
+  ? path.resolve(process.env.SKILLTRACE_DATA_DIR)
+  : path.join(process.cwd(), 'data')
 
-const isProd = process.env.NODE_ENV === 'production'
+export const dbPath = path.join(dataDir, dbName)
+
+const isProd = process.env.NODE_ENV === 'production' && !!process.env.DB_URL
 
 export const dbCredentials = isProd
   ? { url: process.env.DB_URL!, authToken: process.env.DB_AUTH_TOKEN! }

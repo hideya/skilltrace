@@ -29,13 +29,7 @@ The current recommended flow uses `traceskill start`. It asks the local SkillTra
 
 ## Prerequisites
 
-From the main SkillTrace repo, make sure the local database exists:
-
-```bash
-pnpm db:init-local
-```
-
-Install the local `traceskill` wrapper once:
+From the main SkillTrace repo, install the local `traceskill` wrapper once:
 
 ```bash
 pnpm traceskill:install
@@ -57,7 +51,7 @@ fi
 Start the local SkillTrace daemon in another terminal:
 
 ```bash
-pnpm traceskill serve
+traceskill serve
 ```
 
 For experimental background operation, use:

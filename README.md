@@ -92,12 +92,26 @@ SkillTrace is currently local-first. The initial product shape is a local
 debugging utility:
 
 ```bash
-pnpm traceskill:install
-pnpm traceskill serve
+npm install -g ./skilltrace-0.0.0.tgz
+traceskill daemon start
 cd <repo>
 traceskill start
 codex
 traceskill stop
+```
+
+For local package trials before publishing to npm, build a tarball from this
+checkout:
+
+```bash
+npm pack
+npm install -g ./skilltrace-0.0.0.tgz
+```
+
+After publishing, the intended install shape is:
+
+```bash
+npm install -g skilltrace
 ```
 
 For opt-in plug-and-play tracing instructions, start a session with:
@@ -119,8 +133,8 @@ the run timeline.
 Only one trace session can be active at a time. If a session is already active,
 `traceskill start` refuses and asks you to run `traceskill stop` first.
 
-`pnpm traceskill serve` runs the local server in the foreground. For early
-daemon dogfooding, there is also an explicit experimental background mode:
+`traceskill serve` runs the local server in the foreground. For early daemon
+dogfooding, there is also an explicit experimental background mode:
 
 ```bash
 traceskill daemon start
@@ -132,9 +146,11 @@ traceskill daemon stop
 Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
 written to `~/.skilltrace/logs/daemon.log`.
 
-`pnpm traceskill:install` creates a local `traceskill` wrapper in
-`~/.skilltrace/bin`. The wrapper preserves the repo directory you run it from, so the
-trace target is normally just the current working directory.
+When installed as an npm package, `traceskill` is available from npm's global
+bin location. From this checkout, `pnpm traceskill:install` is still available
+as a development helper; it creates a local `traceskill` wrapper in
+`~/.skilltrace/bin`. The wrapper preserves the repo directory you run it from,
+so the trace target is normally just the current working directory.
 
 If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 

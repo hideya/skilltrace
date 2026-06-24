@@ -3,6 +3,7 @@
 .env
 node_modules/
 pnpm-lock.yaml
+*.tgz
 data/local/*
 !data/.gitkeep
 agent-sandbox-repo/

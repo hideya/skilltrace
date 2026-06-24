@@ -51,7 +51,7 @@ export default function Layout() {
       >
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            <NavLink to="/app/runs" busy={runsBusy}>
+            <NavLink to="/app/runs">
               <div className="flex gap-1 text-2xl">
                 <img src="/logo.svg" className="w-7 invert" />
                 {appName}

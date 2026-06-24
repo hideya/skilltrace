@@ -25,7 +25,7 @@ Start SkillTrace from the main project in another terminal:
 
 ```bash
 pnpm traceskill:install
-pnpm traceskill serve
+traceskill serve
 ```
 
 If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:

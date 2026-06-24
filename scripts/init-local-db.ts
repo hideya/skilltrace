@@ -4,6 +4,25 @@ import { createClient } from '@libsql/client'
 import { dbPath } from '../app/config/.server/db'
 
 const STATEMENTS = [
+  `create table if not exists users (
+    id integer primary key autoincrement not null,
+    public_id text not null,
+    email text not null,
+    name text,
+    role text,
+    created_at text not null default (CURRENT_TIMESTAMP),
+    updated_at text not null default (CURRENT_TIMESTAMP),
+    verified_at text,
+    token text not null,
+    token_expires_at text,
+    password text,
+    bag text
+  )`,
+  `create unique index if not exists users_public_id_unique on users(public_id)`,
+  `create unique index if not exists users_email_unique on users(email)`,
+  `create index if not exists users_created_at_index on users(created_at)`,
+  `create index if not exists users_updated_at_index on users(updated_at)`,
+
   `create table if not exists runs (
     id integer primary key autoincrement not null,
     public_id text not null,
@@ -47,13 +66,12 @@ const STATEMENTS = [
   `create index if not exists trace_events_skill_name_index on trace_events(skill_name)`,
 ]
 
-async function main() {
+export async function initLocalDb() {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
   let db = createClient({ url: `file:${dbPath}` })
 
   try {
-    await assertUsersTable(db)
     await db.execute('pragma foreign_keys = on')
 
     for (let statement of STATEMENTS) {
@@ -66,20 +84,6 @@ async function main() {
   }
 }
 
-async function assertUsersTable(db: any) {
-  let result = await db.execute({
-    sql: `
-      select name
-      from sqlite_master
-      where type = 'table'
-        and name = ?
-    `,
-    args: ['users'],
-  })
-
-  if (result.rows.length === 0) {
-    throw new Error(`Missing users table in ${dbPath}`)
-  }
+if (import.meta.url === `file://${process.argv[1]}`) {
+  await initLocalDb()
 }
-
-await main()
