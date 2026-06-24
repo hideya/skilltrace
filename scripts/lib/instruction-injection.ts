@@ -3,11 +3,8 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 
-const LIB_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
-const INSTRUMENTATION_TEMPLATE_PATH = path.join(
-  LIB_ROOT,
-  'templates/instrumentation.md',
-)
+const PACKAGE_ROOT = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)))
+const INSTRUMENTATION_TEMPLATE_PATH = path.join(PACKAGE_ROOT, 'scripts/templates/instrumentation.md')
 const INJECTION_BLOCK =
   'Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.\n\n'
 const INJECTION_MANIFEST_PATH = '.skilltrace/injection.json'
@@ -265,6 +262,17 @@ function removeEmptyDir(dir: string) {
   try {
     if (fs.readdirSync(dir).length === 0) fs.rmdirSync(dir)
   } catch {}
+}
+
+function findPackageRoot(startDir: string) {
+  let dir = startDir
+
+  while (true) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir
+    let parent = path.dirname(dir)
+    if (parent === dir) return startDir
+    dir = parent
+  }
 }
 
 type InjectionResultInput = {

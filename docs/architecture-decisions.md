@@ -54,8 +54,16 @@ npm install -g ./skilltrace-0.0.0.tgz
 ```
 
 The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
-React Router production build so the tarball includes `build/client` and
-`build/server`.
+full production build so the tarball includes:
+
+- `build/client` and `build/server` from React Router
+- `dist/traceskill.js` for the CLI
+- `dist/skilltrace-mcp.js` for the MCP server
+- `dist/traceskill-probe-worker.js` for passive probing
+- `dist/traceskill-serve.js` for the local production server shim
+
+The installed `traceskill` command runs built JavaScript from `dist`. It does
+not depend on `tsx` at runtime.
 
 The checkout installer remains intentionally small. `pnpm traceskill:install`
 writes `~/.skilltrace/bin/traceskill-dev`, points it back to the current
@@ -74,11 +82,11 @@ It also removes old generated checkout wrappers named `traceskill` from
 Packaging complications found:
 
 - Runtime commands cannot shell out to `pnpm --dir <checkout>` after npm
-  install, so `traceskill` launches package-local scripts directly.
-- The packaged bin and generated development wrapper use Node with
+  install, so `traceskill` launches package-local built scripts directly.
+- The generated development wrapper still uses Node with
   `--import tsx/dist/loader.mjs` instead of the `tsx` CLI. In restricted
   environments, the `tsx` CLI may try to open an IPC socket and fail before our
-  script runs.
+  script runs. The packaged command avoids this by running built JavaScript.
 - The production local server needs a small runtime shim instead of
   `react-router dev`. It uses `@react-router/node`, serves `build/client`
   assets, and loads the generated `build/server/index.js`.

@@ -84,6 +84,10 @@ export async function initLocalDb() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  path.basename(process.argv[1]).startsWith('init-local-db.') &&
+  import.meta.url === `file://${process.argv[1]}`
+) {
   await initLocalDb()
 }

@@ -11,3 +11,4 @@ agent-sandbox-repo/
 # React Router
 .react-router/
 build/
+dist/

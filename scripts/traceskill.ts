@@ -13,8 +13,12 @@ import {
 
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const ENTRY_DIR = path.dirname(fileURLToPath(import.meta.url))
+const DIST_MODE = path.basename(ENTRY_DIR) === 'dist'
 const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', 'loader.mjs')
-const RUNTIME_ENV_IMPORT_PATH = path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
+const RUNTIME_ENV_IMPORT_PATH = DIST_MODE
+  ? path.join(ENTRY_DIR, 'skilltrace-runtime-env.js')
+  : path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
 const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
@@ -446,9 +450,7 @@ function printDaemonStatus(status: any) {
 
 function runScript(scriptPath: string, args: string[] = []) {
   let result = spawnSync(process.execPath, [
-    '--import',
-    TSX_LOADER_PATH,
-    path.join(PROJECT_ROOT, scriptPath),
+    ...nodeScriptArgs(scriptPath),
     ...args,
   ], {
     stdio: 'inherit',
@@ -492,10 +494,24 @@ function packagedServeArgs() {
   return [
     '--import',
     RUNTIME_ENV_IMPORT_PATH,
+    ...nodeScriptArgs('scripts/traceskill-serve.js'),
+  ]
+}
+
+function nodeScriptArgs(scriptPath: string) {
+  let builtPath = builtScriptPath(scriptPath)
+  if (DIST_MODE) return [builtPath]
+
+  return [
     '--import',
     TSX_LOADER_PATH,
-    path.join(PROJECT_ROOT, 'scripts/traceskill-serve.js'),
+    path.join(PROJECT_ROOT, scriptPath),
   ]
+}
+
+function builtScriptPath(scriptPath: string) {
+  let parsed = path.parse(scriptPath)
+  return path.join(ENTRY_DIR, `${parsed.name}.js`)
 }
 
 function processAlive(pid?: number) {
@@ -558,9 +574,7 @@ function startProbeWorker(options: ProbeWorkerOptions) {
   fs.mkdirSync(path.dirname(logPath), { recursive: true })
   let logFd = fs.openSync(logPath, 'a')
   let args = [
-    '--import',
-    TSX_LOADER_PATH,
-    path.join(PROJECT_ROOT, 'scripts/traceskill-probe-worker.ts'),
+    ...nodeScriptArgs('scripts/traceskill-probe-worker.ts'),
     '--run',
     options.runId,
     '--target',

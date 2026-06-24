@@ -108,6 +108,12 @@ npm pack
 npm install -g ./skilltrace-0.0.0.tgz
 ```
 
+The package build emits React Router production assets under `build/` and
+package-facing Node entrypoints under `dist/`. The installed `traceskill`
+command runs built JavaScript, not TypeScript through `tsx`; `tsx` is kept only
+for checkout development commands such as `pnpm traceskill` and
+`traceskill-dev`.
+
 After publishing, the intended install shape is:
 
 ```bash
