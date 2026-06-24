@@ -54,6 +54,10 @@ npm pack
 npm install -g ./skilltrace-0.0.0.tgz
 ```
 
+The explicit local path marker matters. `npm install -g skilltrace-0.0.0.tgz`
+or `npm install -g skill-trace/skilltrace-0.0.0.tgz` can be parsed as a package
+or GitHub spec instead of a local tarball, which makes npm try a remote fetch.
+
 The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
 full production build so the tarball includes:
 
@@ -113,6 +117,9 @@ Packaging complications found:
 - The packaged server binds to `127.0.0.1` by default for local safety. Container
   or VM trials can use `HOST=0.0.0.0 traceskill daemon start`; the server log and
   daemon output should show the actual bind host and detected IPv4 UI URLs.
+- When a daemon is already running, changing `HOST` or `PORT` on a second
+  `daemon start` command should not silently change the process. The CLI reports
+  the current bind and asks the user to stop and restart the daemon.
 
 This packaging shape is intentionally a developer preview, not a fully
 standalone binary. It still requires Node/npm. Passive probing currently uses
@@ -176,11 +183,13 @@ The local web server does not start the passive probe directly.
 Instead, `traceskill start`:
 
 1. asks the daemon to create an active session
-2. prompts for sudo in the user's terminal
+2. prepares the platform probe in the user's terminal
 3. launches a background probe worker
 4. attaches the worker PID to the active session
 
-This avoids password prompts or sudo context problems inside the React Router dev server process.
+On macOS, probe preparation means warming sudo for `fs_usage` from the user's
+terminal. This avoids password prompts or sudo context problems inside the React
+Router dev server process. On Linux, the `inotifywait` probe does not need sudo.
 
 ## Use `fs_usage`, Not `opensnoop`
 
@@ -211,12 +220,15 @@ Reasons:
 - its output can be mapped directly to the same passive read event shape as the
   macOS probe
 
-Complications discovered or expected:
+Complications discovered:
 
 - the dependency may be missing, so Linux probing must degrade to semantic-only
   tracing with a visible warning
 - inotify reports filesystem opens, not model intent
 - events can be noisy or duplicated, so the worker still dedupes repeated paths
+- an Alpine package trial with `inotify-tools` installed produced the expected
+  passive `skill_file_read` and `skill_reference_read` events alongside MCP
+  semantic declarations
 
 ## Command-Line Codex First
 

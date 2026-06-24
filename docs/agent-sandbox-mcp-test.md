@@ -78,14 +78,43 @@ The foreground `serve` command is still the default dogfooding path. The daemon
 mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`.
 
-`traceskill-dev start` launches the passive probe worker from your terminal, so the
-sudo prompt happens there instead of inside the web server process.
+`traceskill-dev start` launches the passive probe worker from your terminal. On
+macOS, that keeps the sudo prompt in the user's terminal instead of inside the
+web server process. On Linux, the `inotifywait` probe does not need sudo.
 
 The examples below assume SkillTrace is running at:
 
 ```text
 http://localhost:5777
 ```
+
+For package-style trials, build and install a local tarball from the main
+SkillTrace repo instead of using `traceskill-dev`:
+
+```bash
+npm pack
+npm install -g ./skilltrace-0.0.0.tgz
+traceskill daemon start
+```
+
+Use `./` or an absolute path for the tarball. Without it, npm can interpret the
+value as a package or GitHub spec and try to fetch it remotely.
+
+The packaged command defaults to:
+
+```text
+http://localhost:7555
+```
+
+For Linux containers or VMs that should be opened from the host machine, bind
+the daemon to all interfaces:
+
+```bash
+HOST=0.0.0.0 traceskill daemon start
+```
+
+The daemon prints the actual bind address and a host-reachable UI URL when it
+can detect one.
 
 If you have installed the Codex app but not the Codex CLI, define a shell alias to access the bundled CLI version:
 
@@ -119,6 +148,12 @@ Register the local SkillTrace MCP server with Codex. This registration is generi
 codex mcp add skilltrace -- traceskill-dev mcp
 ```
 
+For package-style trials, use:
+
+```bash
+codex mcp add skilltrace -- traceskill mcp
+```
+
 Then confirm it is registered:
 
 ```bash
@@ -129,7 +164,7 @@ The command should show:
 
 - `enabled: true`
 - `transport: stdio`
-- `command: traceskill-dev`
+- `command: traceskill-dev` for checkout trials, or `command: traceskill` for package trials
 - `args: mcp`
 
 The run ID is not configured in the MCP registration. The MCP server resolves
@@ -143,6 +178,8 @@ Start the passive trace session from the sandbox repo:
 cd agent-sandbox-repo
 traceskill-dev start --inject-instructions
 ```
+
+For package-style trials, use `traceskill start --inject-instructions`.
 
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
 inserts one SkillTrace instruction at the top of `AGENTS.md`, and records
@@ -251,6 +288,9 @@ In the main SkillTrace app, open:
 ```text
 http://localhost:5777/app/runs
 ```
+
+For package-style trials, open `http://localhost:7555/app/runs`, or the
+host-reachable URL printed by `HOST=0.0.0.0 traceskill daemon start`.
 
 Look for a run ID like:
 
@@ -417,14 +457,23 @@ sudo -v
 then start a fresh command-line Codex session. On macOS, the probe intentionally
 uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
+This sudo step is macOS-only. Linux uses `inotifywait` and does not need sudo
+for the passive probe.
+
 On Alpine Linux, install the passive probe dependency with:
 
 ```bash
 apk add inotify-tools
 ```
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` and `.skills`, and that `traceskill-dev start --inject-instructions` was run before Codex started.
-Run `traceskill-dev status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.
+With `inotify-tools` installed, a successful Linux run should show passive
+`skill_file_read` and `skill_reference_read` events as well as MCP semantic
+events. If the MCP semantic events appear but passive events do not, check that
+the target repo has `.skilltrace.json` and `.skills`, and that
+`traceskill-dev start --inject-instructions` or
+`traceskill start --inject-instructions` was run before Codex started. Run
+`traceskill-dev status` or `traceskill status` and confirm the probe says
+`running`. If it is not running, inspect the printed probe log.
 
 If the sandbox starts already fixed, run:
 

@@ -95,7 +95,7 @@ debugging utility:
 npm install -g ./skilltrace-0.0.0.tgz
 traceskill daemon start
 cd <repo>
-traceskill start
+traceskill start --inject-instructions
 codex
 traceskill stop
 ```
@@ -107,6 +107,10 @@ checkout:
 npm pack
 npm install -g ./skilltrace-0.0.0.tgz
 ```
+
+The `./` is important. Without `./`, npm may interpret
+`skilltrace-0.0.0.tgz` or `some-dir/skilltrace-0.0.0.tgz` as a registry or
+GitHub-style package spec instead of a local tarball path.
 
 The package build emits React Router production assets under `build/` and
 package-facing Node entrypoints under `dist/`. The installed `traceskill`
@@ -173,6 +177,15 @@ Passive file probing currently uses macOS `fs_usage` on macOS and
 `inotifywait` from `inotify-tools` on Linux. If the Linux dependency is missing,
 `traceskill start` still creates the run and enables semantic MCP tracing, but
 records a visible warning that passive probing is unavailable.
+
+On Alpine Linux, install the passive probe dependency with:
+
+```bash
+apk add inotify-tools
+```
+
+With `HOST=0.0.0.0`, the daemon prints a host-reachable UI URL when it can
+detect one, such as `http://192.168.64.2:7555`.
 
 When installed as an npm package, `traceskill` is available from npm's global
 bin location. From this checkout, `pnpm traceskill:install` is still available

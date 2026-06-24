@@ -48,12 +48,18 @@ npm install -g ./skilltrace-0.0.0.tgz
 traceskill daemon start
 ```
 
+Use `./` or an absolute path for local tarballs. Without it, npm can interpret
+the value as a package or GitHub spec and try to contact a registry or git host.
+
 For a Linux container or VM that should be opened from the host machine, start
 the daemon with:
 
 ```bash
 HOST=0.0.0.0 traceskill daemon start
 ```
+
+The daemon prints the bind address and a host-reachable UI URL when it can
+detect one, for example `http://192.168.64.2:7555`.
 
 Linux passive probing uses `inotifywait` from `inotify-tools`. On Alpine, install
 it with:
@@ -80,8 +86,9 @@ fi
 That starts a passive probe before Codex reads the target repo. On macOS the
 probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks the
 SkillTrace server for the one active session ID when the model calls one of the
-SkillTrace MCP tools.
-`traceskill-dev start` launches the passive probe worker and prompts for sudo from your terminal.
+SkillTrace MCP tools. On macOS, `traceskill-dev start` prompts for sudo from
+your terminal before launching the probe worker. On Linux, the `inotifywait`
+probe does not need sudo.
 
 ## Start Command
 
@@ -109,6 +116,12 @@ For Codex, register the SkillTrace MCP server with:
 codex mcp add skilltrace -- traceskill-dev mcp
 ```
 
+For package-style trials, register the packaged command instead:
+
+```bash
+codex mcp add skilltrace -- traceskill mcp
+```
+
 Then confirm the server is registered:
 
 ```bash
@@ -118,8 +131,8 @@ codex mcp get skilltrace
 
 Open a new Codex session after registration so the tool list is refreshed.
 
-When `traceskill-dev start` is active, `traceskill-dev mcp` resolves the active
-SkillTrace session over HTTP. Without an active session, use
+When `traceskill-dev start` or `traceskill start` is active, the MCP command
+resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown
 below.
 
