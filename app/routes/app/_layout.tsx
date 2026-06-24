@@ -33,6 +33,7 @@ export default function Layout() {
   let navigation = useNavigation()
   let pendingPath = navigation.location?.pathname || null
   let runsBusy = pendingPath?.startsWith('/app/runs')
+  let diagnosticsBusy = pendingPath === '/app/diagnostics'
   let isDev = rootData?.PublicEnv?.SKILLTRACE_DEV === '1'
   // Remote/auth mode reference:
   // let location = useLocation()
@@ -62,11 +63,14 @@ export default function Layout() {
               <div className="flex items-center gap-1 text-2xl">
                 <img src="/logo.svg" className="w-7 invert" />
                 <span>{appName}</span>
-                {isDev ? <DevBadge /> : null}
               </div>
             </NavLink>
+            {isDev ? <DevBadge /> : null}
             <AppNavLink to="/app/runs" busy={runsBusy}>
-              Home
+              Runs
+            </AppNavLink>
+            <AppNavLink to="/app/diagnostics" busy={diagnosticsBusy}>
+              Diagnostics
             </AppNavLink>
           </div>
           {/* Remote/auth mode reference:
@@ -111,7 +115,7 @@ export default function Layout() {
 
 function DevBadge() {
   return (
-    <span className="badge-base ml-1 badge rounded-full bg-warning text-[1rem] font-medium tracking-widest text-warning-content badge-warning">
+    <span className="badge-base ml-1 badge rounded-full border-none bg-pink-500 text-[1rem] font-medium tracking-widest text-warning-content text-white badge-warning">
       DEV
     </span>
   )
