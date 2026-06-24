@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
-import { NavLink, Outlet, useNavigation } from 'react-router'
+import {
+  NavLink,
+  Outlet,
+  useNavigation,
+  useRouteLoaderData,
+} from 'react-router'
 import { appName } from '~/config/app-name'
 
 // Remote/auth mode reference:
@@ -22,11 +27,13 @@ export async function loader() {
 }
 
 export default function Layout() {
+  let rootData = useRouteLoaderData('root') as RootLoaderData | undefined
   let navRef = useRef<HTMLElement>(null)
   let isPastNav = useIsPastNavHeight(navRef)
   let navigation = useNavigation()
   let pendingPath = navigation.location?.pathname || null
   let runsBusy = pendingPath?.startsWith('/app/runs')
+  let isDev = rootData?.PublicEnv?.SKILLTRACE_DEV === '1'
   // Remote/auth mode reference:
   // let location = useLocation()
   // let currentPath = `${location.pathname}${location.search}${location.hash}`
@@ -52,9 +59,10 @@ export default function Layout() {
         <div className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <NavLink to="/app/runs">
-              <div className="flex gap-1 text-2xl">
+              <div className="flex items-center gap-1 text-2xl">
                 <img src="/logo.svg" className="w-7 invert" />
-                {appName}
+                <span>{appName}</span>
+                {isDev ? <DevBadge /> : null}
               </div>
             </NavLink>
             <AppNavLink to="/app/runs" busy={runsBusy}>
@@ -98,6 +106,14 @@ export default function Layout() {
         <Outlet />
       </div>
     </div>
+  )
+}
+
+function DevBadge() {
+  return (
+    <span className="badge-base ml-1 badge rounded-full bg-warning text-[1rem] font-medium tracking-widest text-warning-content badge-warning">
+      DEV
+    </span>
   )
 }
 
@@ -168,6 +184,12 @@ type AppNavLinkProps = {
   busy?: boolean
   className?: string
   children: any
+}
+
+type RootLoaderData = {
+  PublicEnv?: {
+    SKILLTRACE_DEV?: string
+  }
 }
 
 // Remote/auth mode reference:

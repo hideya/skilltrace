@@ -1,6 +1,6 @@
 import { assert } from 'es-toolkit'
 
-const PublicKeys = ['NODE_ENV'] as const
+const PublicKeys = ['NODE_ENV', 'SKILLTRACE_DEV'] as const
 
 export const PublicEnv = Object.fromEntries(
   PublicKeys.map((key) => [key, process.env[key]]),
