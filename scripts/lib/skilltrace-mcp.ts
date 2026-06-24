@@ -116,7 +116,7 @@ export function buildMcpSkillTraceReflectionEvent(
 }
 
 export function skillTraceServerUrl(env: SkillTraceMcpEnv) {
-  return env.server || 'http://localhost:5173'
+  return env.server || 'http://localhost:7555'
 }
 
 export function mcpRunId(env: SkillTraceMcpEnv, date = new Date()) {

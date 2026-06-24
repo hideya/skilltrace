@@ -14,8 +14,8 @@ describe('skilltrace demo helpers', () => {
   })
 
   test('builds run detail URLs', () => {
-    expect(runUrl('http://localhost:5173', 'run_fixture_001')).toBe(
-      'http://localhost:5173/app/runs/run_fixture_001',
+    expect(runUrl('http://localhost:7555', 'run_fixture_001')).toBe(
+      'http://localhost:7555/app/runs/run_fixture_001',
     )
   })
 

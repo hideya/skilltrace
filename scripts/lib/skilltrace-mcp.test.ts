@@ -110,7 +110,7 @@ describe('skilltrace MCP helpers', () => {
   })
 
   test('uses localhost as the default server', () => {
-    expect(skillTraceServerUrl({})).toBe('http://localhost:5173')
+    expect(skillTraceServerUrl({})).toBe('http://localhost:7555')
   })
 
   test('builds a timestamped MCP run ID from a stem', () => {

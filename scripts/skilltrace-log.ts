@@ -3,7 +3,7 @@ import {
   parseKeyValueData,
 } from './lib/skilltrace-log'
 
-const DEFAULT_SERVER = 'http://localhost:5173'
+const DEFAULT_SERVER = 'http://localhost:7555'
 
 async function main() {
   let options = parseArgs(process.argv.slice(2))

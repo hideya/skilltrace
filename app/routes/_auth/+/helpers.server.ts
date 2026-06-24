@@ -33,13 +33,13 @@ export async function sendAuthEmail(
 }
 
 function logAuthLink(path: string) {
-  let origin = process.env.ORIGIN || 'http://localhost:5173'
+  let origin = process.env.ORIGIN || 'http://localhost:7555'
   let url = new URL(path, origin)
   console.log(`[auth-link] ${url.toString()}`)
 }
 
 function buildAuthUrl(link: string) {
-  let origin = process.env.ORIGIN || 'http://localhost:5173'
+  let origin = process.env.ORIGIN || 'http://localhost:7555'
   return new URL(link, origin).toString()
 }
 

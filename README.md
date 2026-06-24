@@ -130,17 +130,20 @@ Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
 written to `~/.skilltrace/logs/daemon.log`.
 
 `pnpm traceskill:install` creates a local `traceskill` wrapper in
-`~/.local/bin`. The wrapper preserves the repo directory you run it from, so the
+`~/.skilltrace/bin`. The wrapper preserves the repo directory you run it from, so the
 trace target is normally just the current working directory.
 
-If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
-if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
+  echo 'export PATH="$HOME/.skilltrace/bin:$PATH"' >> ~/.zshrc
   source ~/.zshrc
 fi
 ```
+
+`pnpm traceskill:uninstall` removes generated wrappers from both the current
+`~/.skilltrace/bin` location and the older `~/.local/bin` location.
 
 The local server serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.

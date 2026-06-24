@@ -32,7 +32,7 @@ describe('skilltrace session helpers', () => {
     writeActiveSession(
       {
         run_id: 'run_session_001',
-        server: 'http://localhost:5173',
+        server: 'http://localhost:7555',
         target_root: '/tmp/repo',
         skill_roots: ['/tmp/repo/.skills'],
         started_at: '2026-06-19T00:15:30.000Z',

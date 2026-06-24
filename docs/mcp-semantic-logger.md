@@ -36,11 +36,11 @@ cd <repo>
 traceskill start
 ```
 
-If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
-if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
+  echo 'export PATH="$HOME/.skilltrace/bin:$PATH"' >> ~/.zshrc
   source ~/.zshrc
 fi
 ```
@@ -52,7 +52,7 @@ That starts a macOS `fs_usage` passive probe before Codex reads the target repo.
 
 ```bash
 SKILLTRACE_RUN_STEM=run_mcp_fixture \
-SKILLTRACE_SERVER=http://localhost:5173 \
+SKILLTRACE_SERVER=http://localhost:7555 \
 pnpm skilltrace:mcp
 ```
 
@@ -103,7 +103,7 @@ Use `SKILLTRACE_RUN_ID` when you want a fixed run ID instead:
 
 ```bash
 SKILLTRACE_RUN_ID=run_mcp_fixture_001 \
-SKILLTRACE_SERVER=http://localhost:5173 \
+SKILLTRACE_SERVER=http://localhost:7555 \
 pnpm skilltrace:mcp
 ```
 
@@ -244,7 +244,7 @@ source = mcp_semantic_logger
 Open the run detail page:
 
 ```text
-http://localhost:5173/app/runs/<run_id>
+http://localhost:7555/app/runs/<run_id>
 ```
 
 The event should appear in:

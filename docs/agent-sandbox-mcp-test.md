@@ -41,15 +41,18 @@ Install the local `traceskill` wrapper once:
 pnpm traceskill:install
 ```
 
-The installer writes `~/.local/bin/traceskill`. If your shell cannot find
-`traceskill`, add `~/.local/bin` to your `PATH`:
+The installer writes `~/.skilltrace/bin/traceskill`. If your shell cannot find
+`traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
-if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
+  echo 'export PATH="$HOME/.skilltrace/bin:$PATH"' >> ~/.zshrc
   source ~/.zshrc
 fi
 ```
+
+`pnpm traceskill:uninstall` also removes older generated wrappers from
+`~/.local/bin/traceskill`.
 
 Start the local SkillTrace daemon in another terminal:
 
@@ -76,7 +79,7 @@ sudo prompt happens there instead of inside the web server process.
 The examples below assume SkillTrace is running at:
 
 ```text
-http://localhost:5173
+http://localhost:7555
 ```
 
 If you have installed the Codex app but not the Codex CLI, define a shell alias to access the bundled CLI version:
@@ -227,7 +230,7 @@ In the sandbox Codex session, the agent should:
 In the main SkillTrace app, open:
 
 ```text
-http://localhost:5173/app/runs
+http://localhost:7555/app/runs
 ```
 
 Look for a run ID like:
@@ -344,7 +347,7 @@ If the passive probe misses the read and you want to force the same run into the
 pnpm skilltrace:read \
   --run <generated_run_id> \
   --skill type-fix \
-  --server http://localhost:5173 \
+  --server http://localhost:7555 \
   agent-sandbox-repo/.skills/type-fix/SKILL.md
 ```
 
@@ -368,7 +371,7 @@ pnpm sandbox:reset
 
 If no run appears, check that:
 
-- SkillTrace is running at `http://localhost:5173`.
+- SkillTrace is running at `http://localhost:7555`.
 - The MCP server command is `traceskill mcp`.
 - You ran `traceskill start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.

@@ -15,7 +15,7 @@ import {
   writeActiveSession,
 } from './lib/skilltrace-session'
 
-const DEFAULT_SERVER = 'http://localhost:5173'
+const DEFAULT_SERVER = 'http://localhost:7555'
 const DEFAULT_CODEX = '/Applications/Codex.app/Contents/Resources/codex'
 
 let shuttingDown = false

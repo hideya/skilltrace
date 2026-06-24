@@ -9,7 +9,7 @@ import {
   instructionInjectionStatus,
 } from './lib/instruction-injection'
 
-const DEFAULT_SERVER = 'http://localhost:5173'
+const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')

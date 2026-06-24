@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "prep": "node scripts/prep.js",
-    "dev": "react-router dev --host 0.0.0.0",
+    "dev": "react-router dev --host 0.0.0.0 --port 7555",
     "build": "react-router build",
     "test": "vitest run",
     "tsc": "tsc --noEmit",
