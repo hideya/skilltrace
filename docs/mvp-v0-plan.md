@@ -11,6 +11,9 @@ SkillTrace v0 builds the smallest useful loop for observing AI agent skill use:
 
 The first milestone is not skill governance, postmortem automation, or a marketplace. The first milestone is enough trace evidence to reconstruct what happened when a skill appears to succeed, fail, or be ignored.
 
+For the emerging strategy of reducing instrumentation while comparing evidence
+quality, see `docs/phased-skill-debugging-plan.md`.
+
 ## Goal
 
 Build a local SkillTrace server and web app that can answer these questions for a single agent run:
