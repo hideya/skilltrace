@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -63,7 +62,9 @@ function uninstall() {
 }
 
 function wrapperContent() {
-  let pnpmPath = resolvePnpmPath()
+  let nodePath = process.execPath
+  let tsxLoaderPath = path.join(PROJECT_ROOT, 'node_modules/tsx/dist/loader.mjs')
+  let traceskillPath = path.join(PROJECT_ROOT, 'scripts/traceskill.ts')
 
   return `#!/bin/sh
 ${MARKER}
@@ -71,21 +72,10 @@ SKILLTRACE_TARGET_ROOT="\${SKILLTRACE_TARGET_ROOT:-$PWD}" \\
 SKILLTRACE_DEV="\${SKILLTRACE_DEV:-1}" \\
 SKILLTRACE_SERVER="\${SKILLTRACE_SERVER:-${DEV_SERVER}}" \\
 PORT="\${PORT:-${DEV_PORT}}" \\
-exec ${shellQuote(pnpmPath)} --dir ${shellQuote(PROJECT_ROOT)} traceskill "$@"
+exec ${shellQuote(nodePath)} --import ${shellQuote(tsxLoaderPath)} ${shellQuote(
+    traceskillPath,
+  )} "$@"
 `
-}
-
-function resolvePnpmPath() {
-  let result = spawnSync('/bin/sh', ['-lc', 'command -v pnpm'], {
-    encoding: 'utf8',
-  })
-  let pnpmPath = result.stdout.trim()
-
-  if (result.status !== 0 || !pnpmPath) {
-    throw new Error('pnpm was not found on PATH during traceskill install')
-  }
-
-  return pnpmPath
 }
 
 function shellQuote(value: string) {

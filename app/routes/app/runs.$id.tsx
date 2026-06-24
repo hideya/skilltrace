@@ -328,9 +328,9 @@ function Timeline({ events }: TimelineProps) {
           {events.map((event) => (
             <li className="relative pl-9" key={event.id}>
               <span
-                className={`absolute top-3 left-1.5 size-3 rounded-full ring-4 ring-base-100 ${eventDotClass(
+                className={`absolute rounded-full ring-4 ring-base-100 ${eventDotSizeClass(
                   event,
-                )}`}
+                )} ${eventDotClass(event)}`}
               />
               <TimelineItem event={event} />
             </li>
@@ -359,10 +359,7 @@ function TimelineItem({ event }: TimelineItemProps) {
               {event.event_type}
             </span>
             {warning ? (
-              <span
-                className="badge badge-warning badge-sm"
-                title={warning}
-              >
+              <span className="badge badge-sm badge-warning" title={warning}>
                 warning
               </span>
             ) : null}
@@ -466,6 +463,11 @@ function eventDotClass(event: any) {
   if (isSemanticEvent(event)) return 'bg-info'
   if (isPassiveEvent(event)) return 'bg-primary'
   return 'bg-base-content'
+}
+
+function eventDotSizeClass(event: any) {
+  if (isSemanticEvent(event)) return 'top-4.5 left-1 size-4'
+  return 'top-5.5 left-2 size-2'
 }
 
 function eventTitleClass(event: any) {

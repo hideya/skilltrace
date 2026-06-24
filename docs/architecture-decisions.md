@@ -59,7 +59,8 @@ React Router production build so the tarball includes `build/client` and
 
 The checkout installer remains intentionally small. `pnpm traceskill:install`
 writes `~/.skilltrace/bin/traceskill-dev`, points it back to the current
-checkout, and sets default development environment variables:
+checkout, launches the CLI through Node's `--import tsx/dist/loader.mjs`, and
+sets default development environment variables:
 
 ```text
 SKILLTRACE_SERVER=http://localhost:5777
@@ -74,9 +75,10 @@ Packaging complications found:
 
 - Runtime commands cannot shell out to `pnpm --dir <checkout>` after npm
   install, so `traceskill` launches package-local scripts directly.
-- The packaged bin uses Node with `--import tsx/dist/loader.mjs` instead of the
-  `tsx` CLI. In restricted environments, the `tsx` CLI may try to open an IPC
-  socket and fail before our script runs.
+- The packaged bin and generated development wrapper use Node with
+  `--import tsx/dist/loader.mjs` instead of the `tsx` CLI. In restricted
+  environments, the `tsx` CLI may try to open an IPC socket and fail before our
+  script runs.
 - The production local server needs a small runtime shim instead of
   `react-router dev`. It uses `@react-router/node`, serves `build/client`
   assets, and loads the generated `build/server/index.js`.
