@@ -160,6 +160,38 @@ Operational note:
 - after reinstalling or restarting packaged SkillTrace, refresh any already-open
   UI tabs if navigation feels stale
 
+## Diagnostics Page Is Read-Only
+
+SkillTrace includes `/app/diagnostics` for local setup checks.
+
+It currently reports:
+
+- daemon state from `~/.skilltrace/daemon.json`
+- the server process rendering the page
+- shared probe PID and log path when configured
+- the one active trace session, if present
+- Codex MCP registration from `codex mcp get skilltrace`
+
+Decision:
+
+- diagnostics are observational, not managerial
+- the page may shell out to local read-only commands such as
+  `codex mcp get skilltrace`
+- it should not add, remove, start, stop, or mutate local configuration
+
+Reasons:
+
+- most current setup mistakes are mode mismatches, stale daemons, or MCP command
+  mismatches
+- a visible UI check is harder to miss than repeated terminal output
+- keeping diagnostics read-only avoids turning the local app into a process
+  manager before the lifecycle model is stable
+
+The Codex MCP check compares the current server mode with the expected command:
+
+- checkout/dev mode expects `traceskill-dev mcp`
+- package mode expects `traceskill mcp`
+
 ## One Active Session
 
 SkillTrace v0 uses one active trace session globally.

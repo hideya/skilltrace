@@ -145,6 +145,17 @@ codex mcp get skilltrace
 
 Open a new Codex session after registration so the tool list is refreshed.
 
+The local UI also exposes a read-only registration check at `/app/diagnostics`.
+It runs `codex mcp get skilltrace` from the server process and compares the
+registered command with the current SkillTrace mode:
+
+- checkout/dev mode expects `traceskill-dev mcp`
+- package mode expects `traceskill mcp`
+
+Use this page when switching between dogfooding the checkout and testing the
+packaged command; a mismatched MCP registration is easy to overlook from the
+terminal alone.
+
 When `traceskill-dev start` or `traceskill start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown

@@ -232,6 +232,17 @@ supervises the passive probe, and receives MCP semantic events.
 See `docs/architecture-decisions.md` for the decisions and complications found
 while building the first local prototype.
 
+The local UI has two primary views:
+
+- `/app/runs` lists grouped trace runs and opens run detail pages.
+- `/app/diagnostics` shows read-only runtime checks for the daemon, server
+  process, shared passive probe, active session, and Codex MCP registration.
+
+The diagnostics page is intentionally not a manager. It does not start or stop
+processes or edit Codex configuration. It is a quick way to catch common setup
+mistakes, such as running the package UI while Codex is still registered to
+`traceskill-dev mcp`, or vice versa.
+
 ```text
 Local LLM environment
   ├─ Agent / LLM client
@@ -249,6 +260,8 @@ SkillTrace local daemon
   │    ├─ run timeline
   │    ├─ run context view
   │    ├─ run reflection view
+  │    ├─ daemon diagnostics view
+  │    ├─ Codex MCP registration check
   │    └─ mismatch detection
   │
   ├─ Local HTTP API
@@ -518,11 +531,12 @@ MVP v0 includes:
 
 - `skill_trace_context`, `skill_log_event`, and `skill_trace_reflection` MCP tools
 - passive file access event receiver
-- local file access tracking harness
+- local file access tracking harness for macOS and Linux
 - trace event store
 - run ID correlation
 - simple consistency checker
 - run timeline web UI
+- read-only daemon and MCP diagnostics UI
 - instrumentation ON/OFF comparison support
 
 MVP v0 does not include:

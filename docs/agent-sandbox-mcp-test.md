@@ -104,6 +104,18 @@ The examples below assume SkillTrace is running at:
 http://localhost:5777
 ```
 
+The checkout UI is available at:
+
+```text
+http://localhost:5777/app/runs
+http://localhost:5777/app/diagnostics
+```
+
+Use `/app/diagnostics` as a read-only setup check. It shows the daemon process,
+server mode, shared probe status, active session, and whether
+`codex mcp get skilltrace` matches the current command surface. For checkout
+trials, Codex should be registered to `traceskill-dev mcp`.
+
 For package-style trials, build and install a local tarball from the main
 SkillTrace repo instead of using `traceskill-dev`:
 
@@ -121,6 +133,16 @@ The packaged command defaults to:
 ```text
 http://localhost:7555
 ```
+
+For package-style trials, use:
+
+```text
+http://localhost:7555/app/runs
+http://localhost:7555/app/diagnostics
+```
+
+In package mode, `/app/diagnostics` expects Codex to be registered to
+`traceskill mcp`.
 
 For Linux containers or VMs that should be opened from the host machine, bind
 the daemon to all interfaces:
@@ -185,6 +207,10 @@ The command should show:
 
 The run ID is not configured in the MCP registration. The MCP server resolves
 the active SkillTrace session when a SkillTrace MCP tool is called.
+
+You can also confirm this from the SkillTrace UI at `/app/diagnostics`. This is
+especially useful when switching between checkout and package trials because
+the page compares the registered Codex command against the current UI mode.
 
 ## Run The Experiment
 
@@ -454,6 +480,7 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.
 - The MCP server command is `traceskill-dev mcp`.
+- `/app/diagnostics` shows the expected daemon mode and Codex MCP registration.
 - You ran `traceskill-dev start --inject-instructions` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called the SkillTrace MCP tools.
