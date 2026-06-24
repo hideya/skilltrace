@@ -225,16 +225,23 @@ Router dev server process. On Linux, the `inotifywait` probe does not need sudo.
 
 ## Experimental macOS Shared Probe
 
-macOS can also use an explicit daemon-owned shared probe:
+macOS daemon mode starts a daemon-owned shared probe by default:
 
 ```bash
-traceskill daemon start --shared-probe
+traceskill daemon start
 ```
 
 This is experimental and macOS-only. It starts the server and a daemon-owned
-`fs_usage` worker at daemon startup, so sudo is requested once before trace
-sessions begin. Later `traceskill start` calls keep the single-active-session
-model and attach the active run to the shared worker.
+`fs_usage` worker at daemon startup, so the user may be prompted for their
+macOS admin password once before trace sessions begin. Later `traceskill start`
+calls keep the single-active-session model and attach the active run to the
+shared worker without another password prompt during the daemon lifetime.
+
+For macOS troubleshooting, the user can opt out:
+
+```bash
+traceskill daemon start --no-shared-probe
+```
 
 Reasons:
 
@@ -264,8 +271,9 @@ Failure behavior:
   the probe's own file hashing does not create a feedback loop of repeated
   passive events
 
-This keeps the new path opt-in while preserving the simpler per-run probe as
-the default.
+This makes the repeated macOS dogfooding path smoother while preserving the
+simpler per-run probe as an explicit troubleshooting option. Linux keeps the
+per-run `inotifywait` path as its default.
 
 ## Use `fs_usage`, Not `opensnoop`
 
@@ -320,19 +328,24 @@ SkillTrace tracing instructions should be reusable outside the sandbox.
 
 The current pattern is:
 
-1. add one opt-in line near the top of `AGENTS.md`
+1. add one tracing-policy line near the top of `AGENTS.md`
 2. place generic tracing policy in `.skilltrace/instrumentation.md`
 3. declare passive skill roots in `.skilltrace.json`
 4. keep task-specific skill metadata in the relevant `SKILL.md`
 
-For lower-friction real-repo trials, `traceskill start --inject-instructions`
-can apply the reusable SkillTrace pieces automatically for the current trace
-session. It writes `.skilltrace/instrumentation.md`, creates a minimal
-`.skilltrace.json` with `skill_roots: ['.skills']` when needed, and prepends the
-single `AGENTS.md` instruction. The mutation is manifest-backed in
-`.skilltrace/injection.json`, and `traceskill stop` removes only the exact
-inserted instruction block and only removes generated files when SkillTrace
-created them and they are unchanged.
+For lower-friction real-repo trials, `traceskill start` applies the reusable
+SkillTrace pieces automatically for the current trace session. It writes
+`.skilltrace/instrumentation.md`, creates a minimal `.skilltrace.json` with
+`skill_roots: ['.skills']` when needed, and prepends the single `AGENTS.md`
+instruction. The mutation is manifest-backed in `.skilltrace/injection.json`,
+and `traceskill stop` removes only the exact inserted instruction block and only
+removes generated files when SkillTrace created them and they are unchanged.
+
+For passive-only troubleshooting, the user can opt out:
+
+```bash
+traceskill start --no-inject-instructions
+```
 
 Reasons:
 

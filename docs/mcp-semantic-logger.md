@@ -37,7 +37,7 @@ For the current best local prototype, prefer the local server flow:
 pnpm traceskill:install
 traceskill-dev serve
 cd <repo>
-traceskill-dev start --inject-instructions
+traceskill-dev start
 ```
 
 For package-style trials, create and install a local tarball instead:
@@ -71,22 +71,30 @@ apk add inotify-tools
 If the dependency is missing, SkillTrace still runs semantic MCP tracing and the
 timeline records a warning that passive probing is unavailable.
 
-On macOS, daemon mode can opt into a shared `fs_usage` probe:
+On macOS, daemon mode starts a shared `fs_usage` probe by default:
 
 ```bash
-traceskill daemon start --shared-probe
+traceskill daemon start
 ```
 
-This requests sudo at daemon startup and lets `traceskill start` attach the
-active run to the daemon-owned probe. If the shared probe is unavailable,
-SkillTrace records a warning and falls back to the normal per-run probe when it
-can.
+This may prompt for your macOS admin password once at daemon startup so
+SkillTrace can start the daemon-owned probe. Later `traceskill start` sessions
+attach the active run to that shared probe and should not ask for the password
+again during the daemon lifetime. If the shared probe is unavailable, SkillTrace
+records a warning and falls back to the normal per-run probe when it can.
+
+For macOS troubleshooting, disable the shared probe with:
+
+```bash
+traceskill daemon start --no-shared-probe
+```
 
 Do not run dev and packaged macOS shared-probe daemons at the same time. The
 underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
 
-Use plain `traceskill-dev start` for passive-only trials where you do not want
-SkillTrace to inject MCP tracing instructions into the target repo.
+Use `traceskill-dev start --no-inject-instructions` for passive-only trials
+where you do not want SkillTrace to inject MCP tracing instructions into the
+target repo.
 
 If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 

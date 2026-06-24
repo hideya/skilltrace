@@ -74,17 +74,25 @@ traceskill-dev daemon logs
 traceskill-dev daemon stop
 ```
 
-On macOS, you can ask daemon mode to own a shared `fs_usage` probe:
+On macOS, daemon mode owns a shared `fs_usage` probe by default:
 
 ```bash
-traceskill-dev daemon start --shared-probe
+traceskill-dev daemon start
 ```
 
-This is experimental. It requests sudo at daemon startup, shows `shared probe`
-in `daemon status`, and lets later `traceskill-dev start` sessions attach to the
-shared worker. If the shared worker is unavailable, `traceskill-dev start`
-records a warning and falls back to the normal per-run probe. Linux keeps the
-normal per-run `inotifywait` path because it does not need sudo.
+This is experimental. It may prompt for your macOS admin password once at
+daemon startup, shows `shared probe` in `daemon status`, and lets later
+`traceskill-dev start` sessions attach to the shared worker without asking for
+the password again during the daemon lifetime. If the shared worker is
+unavailable, `traceskill-dev start` records a warning and falls back to the
+normal per-run probe. Linux keeps the normal per-run `inotifywait` path because
+it does not need sudo.
+
+For macOS troubleshooting, disable the shared probe with:
+
+```bash
+traceskill-dev daemon start --no-shared-probe
+```
 
 Do not run dev and packaged macOS shared-probe daemons at the same time. The
 underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
@@ -214,14 +222,14 @@ the page compares the registered Codex command against the current UI mode.
 
 ## Run The Experiment
 
-Start the passive trace session from the sandbox repo:
+Start the trace session from the sandbox repo:
 
 ```bash
 cd agent-sandbox-repo
-traceskill-dev start --inject-instructions
+traceskill-dev start
 ```
 
-For package-style trials, use `traceskill start --inject-instructions`.
+For package-style trials, use `traceskill start`.
 
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
 inserts one SkillTrace instruction at the top of `AGENTS.md`, and records
@@ -239,15 +247,15 @@ If a session is already active, `traceskill-dev start` refuses and asks you to r
 `traceskill-dev stop` first. This avoids accidental low-value runs and keeps
 manifest-backed instruction cleanup predictable.
 
-Plain `traceskill-dev start` is still valid for passive-only trials. When
-instrumentation is not configured, the CLI prints a warning and the run detail
-timeline shows a warning badge on the `trace_session_started` row so the missing
-semantic tracing setup is visible even after the terminal output is gone.
+For passive-only troubleshooting, use `traceskill-dev start --no-inject-instructions`.
+When instrumentation is not configured, the CLI prints a warning and the run
+detail timeline shows a warning badge on the `trace_session_started` row so the
+missing semantic tracing setup is visible even after the terminal output is gone.
 
 If passive events do not appear, restart with:
 
 ```bash
-traceskill-dev start --inject-instructions --debug-probe
+traceskill-dev start --debug-probe
 ```
 
 Then inspect the printed probe log.
@@ -271,7 +279,7 @@ the skill so the run records declared agent, model, client, working directory,
 and task summary metadata.
 
 The probe discovers the target repo from the command-line Codex session.
-`traceskill-dev start --inject-instructions` creates the passive probe config:
+`traceskill-dev start` creates the passive probe config:
 
 ```text
 .skilltrace.json
@@ -399,7 +407,7 @@ with reversible instruction injection.
 The low-friction path is:
 
 ```bash
-traceskill-dev start --inject-instructions
+traceskill-dev start
 codex
 traceskill-dev stop
 ```
@@ -481,7 +489,7 @@ If no run appears, check that:
 - SkillTrace is running at `http://localhost:5777`.
 - The MCP server command is `traceskill-dev mcp`.
 - `/app/diagnostics` shows the expected daemon mode and Codex MCP registration.
-- You ran `traceskill-dev start --inject-instructions` from the target repo before launching Codex.
+- You ran `traceskill-dev start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called the SkillTrace MCP tools.
 - The run may be under the generated path-hash timestamped ID.
@@ -513,8 +521,7 @@ With `inotify-tools` installed, a successful Linux run should show passive
 `skill_file_read` and `skill_reference_read` events as well as MCP semantic
 events. If the MCP semantic events appear but passive events do not, check that
 the target repo has `.skilltrace.json` and `.skills`, and that
-`traceskill-dev start --inject-instructions` or
-`traceskill start --inject-instructions` was run before Codex started. Run
+`traceskill-dev start` or `traceskill start` was run before Codex started. Run
 `traceskill-dev status` or `traceskill status` and confirm the probe says
 `running`. If it is not running, inspect the printed probe log.
 
@@ -537,7 +544,7 @@ traceskill-dev stop
 From any repo you can run:
 
 ```bash
-traceskill-dev start --inject-instructions
+traceskill-dev start
 traceskill-dev status
 traceskill-dev stop
 ```

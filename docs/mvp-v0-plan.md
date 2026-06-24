@@ -180,7 +180,7 @@ instructions in every task skill.
 The low-friction path is:
 
 ```bash
-traceskill start --inject-instructions
+traceskill start
 codex
 traceskill stop
 ```
@@ -191,7 +191,8 @@ and creates a minimal `.skilltrace.json` passive probe config when needed. The
 injected changes are manifest-backed and removed by `traceskill stop` when they
 are still unchanged.
 
-Add one opt-in line near the top of `AGENTS.md`:
+The default injection flow adds one tracing-policy line near the top of
+`AGENTS.md`:
 
 ```md
 Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.

@@ -95,7 +95,7 @@ debugging utility:
 npm install -g ./skilltrace-0.0.0.tgz
 traceskill daemon start
 cd <repo>
-traceskill start --inject-instructions
+traceskill start
 codex
 traceskill stop
 ```
@@ -130,10 +130,10 @@ After publishing, the intended install shape is:
 npm install -g skilltrace
 ```
 
-For opt-in plug-and-play tracing instructions, start a session with:
+By default, `traceskill start` enables the plug-and-play tracing overlay:
 
 ```bash
-traceskill start --inject-instructions
+traceskill start
 ```
 
 This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template,
@@ -143,9 +143,13 @@ manifest at `.skilltrace/injection.json`. `traceskill stop` removes only the
 exact inserted instruction and only removes generated files if SkillTrace
 created them and they were not changed.
 
-The injection is experimental and intentionally opt-in. If existing files or
-unexpected edits are detected, SkillTrace prints warnings and records them in
-the run timeline.
+The injection is experimental but now part of the default local tracing path.
+If existing files or unexpected edits are detected, SkillTrace prints warnings
+and records them in the run timeline. For passive-only troubleshooting, use:
+
+```bash
+traceskill start --no-inject-instructions
+```
 
 Only one trace session can be active at a time. If a session is already active,
 `traceskill start` refuses and asks you to run `traceskill stop` first.
@@ -163,22 +167,30 @@ traceskill daemon stop
 Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
 written to `~/.skilltrace/logs/daemon.log`.
 
-On macOS, daemon mode can also start an experimental shared passive probe:
+On macOS, daemon mode starts an experimental shared passive probe by default:
 
 ```bash
-traceskill daemon start --shared-probe
+traceskill daemon start
 ```
 
-This asks for sudo once at daemon startup, starts a daemon-owned `fs_usage`
-worker, and lets later `traceskill start` sessions attach to that shared probe.
-If the shared probe is unavailable or has crashed, `traceskill start` records a
-visible warning and falls back to the normal per-run probe. Linux keeps the
-current per-run `inotifywait` probe because it is scoped, lightweight, and does
-not need sudo.
+This may prompt for your macOS admin password once at daemon startup so
+SkillTrace can start a daemon-owned `fs_usage` worker. Later
+`traceskill start` sessions attach to that shared probe and should not ask for
+the password again during the daemon lifetime. If the shared probe is
+unavailable or has crashed, `traceskill start` records a visible warning and
+falls back to the normal per-run probe. Linux keeps the current per-run
+`inotifywait` probe because it is scoped, lightweight, and does not need sudo.
+
+For macOS troubleshooting, disable the shared probe and return to the per-run
+probe path with:
+
+```bash
+traceskill daemon start --no-shared-probe
+```
 
 macOS allows only one active `fs_usage`/ktrace-style probe at a time in this
 workflow. Stop the dev daemon before trying the packaged daemon with
-`--shared-probe`, and vice versa.
+shared probing, and vice versa.
 
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
@@ -314,7 +326,7 @@ The current overlay pattern is:
 - emit `skill_trace_reflection` at the end of the task
 
 For passive probing, the repo also needs `.skilltrace.json` to declare skill
-roots. The opt-in injection flow creates this minimal config when it is missing:
+roots. The default injection flow creates this minimal config when it is missing:
 
 ```json
 {

@@ -50,8 +50,9 @@ async function start(args: string[]) {
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
   let sharedProbe = sharedProbeStatus(server)
+  let shouldInjectInstructions = options.injectInstructions !== false
   let instrumentation = withPassiveProbeWarning(
-    assessInstrumentation(targetRoot, options.injectInstructions),
+    assessInstrumentation(targetRoot, shouldInjectInstructions),
     probe,
   )
   let active = await getJson(server, '/api/sessions/status')
@@ -68,8 +69,8 @@ async function start(args: string[]) {
     target_root: targetRoot,
     instrumentation,
   })
-  printInstrumentationWarning(instrumentation, options.injectInstructions)
-  let injection = options.injectInstructions
+  printInstrumentationWarning(instrumentation, shouldInjectInstructions)
+  let injection = shouldInjectInstructions
     ? injectInstructions(targetRoot, result.session.run_id)
     : null
   if (injection) {
@@ -192,12 +193,13 @@ async function daemonStart(args: string[]) {
   let bindHost = process.env.HOST || '127.0.0.1'
   let port = process.env.PORT || new URL(server).port || '7555'
   let status = await getDaemonStatus(server)
+  let requestSharedProbe = sharedProbeRequested(options)
 
   if (status.alive) {
     if (status.state) {
       console.log('SkillTrace daemon is already running.')
       printBindChangeHint(status.state, bindHost, port)
-      printSharedProbeChangeHint(status.state, options.sharedProbe)
+      printSharedProbeChangeHint(status.state, requestSharedProbe)
     } else {
       console.log('A SkillTrace server is already responding.')
     }
@@ -205,7 +207,7 @@ async function daemonStart(args: string[]) {
     return
   }
 
-  let sharedProbe = prepareSharedProbe(options, server)
+  let sharedProbe = prepareSharedProbe(requestSharedProbe, server)
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
   let child = spawn(serveCommand(), serveArgs(), {
@@ -361,8 +363,12 @@ function parseArgs(args: string[]) {
       options.debugProbe = true
     } else if (arg === '--inject-instructions') {
       options.injectInstructions = true
+    } else if (arg === '--no-inject-instructions') {
+      options.injectInstructions = false
     } else if (arg === '--shared-probe') {
       options.sharedProbe = true
+    } else if (arg === '--no-shared-probe') {
+      options.sharedProbe = false
     } else if (arg === '--lines') {
       options.lines = Number(args[++index])
     } else {
@@ -561,11 +567,13 @@ function printBindChangeHint(state: DaemonState, bindHost: string, port: string)
   console.log('Run `traceskill daemon stop` before changing HOST or PORT.')
 }
 
-function printSharedProbeChangeHint(state: DaemonState, requested?: boolean) {
-  if (!requested || state.shared_probe_requested) return
+function printSharedProbeChangeHint(state: DaemonState, requested: boolean) {
+  if (state.shared_probe_requested === requested) return
 
-  console.log('SkillTrace daemon is already running without a shared probe.')
-  console.log('Run `traceskill daemon stop` before enabling --shared-probe.')
+  let current = state.shared_probe_requested ? 'with' : 'without'
+  let next = requested ? 'with' : 'without'
+  console.log(`SkillTrace daemon is already running ${current} a shared probe.`)
+  console.log(`Run \`traceskill daemon stop\` before restarting ${next} a shared probe.`)
 }
 
 function printSharedProbeDaemonState(state: DaemonState) {
@@ -813,7 +821,9 @@ function printInstrumentationWarning(instrumentation: any, injectRequested?: boo
 
   console.warn('Warning: SkillTrace instrumentation is not configured.')
   console.warn('Semantic MCP events are unlikely.')
-  console.warn('Use: traceskill start --inject-instructions')
+  console.warn(
+    'Run without --no-inject-instructions to let SkillTrace configure temporary tracing instructions.',
+  )
   for (let warning of instrumentation.warnings ?? []) {
     console.warn(`  warning: ${warning}`)
   }
@@ -849,8 +859,13 @@ function passiveProbeSupport() {
   }
 }
 
-function prepareSharedProbe(options: Options, server: string): PreparedSharedProbe {
-  if (!options.sharedProbe) {
+function sharedProbeRequested(options: Options) {
+  if (typeof options.sharedProbe === 'boolean') return options.sharedProbe
+  return process.platform === 'darwin'
+}
+
+function prepareSharedProbe(requested: boolean, server: string): PreparedSharedProbe {
+  if (!requested) {
     return {
       requested: false,
     }
@@ -1013,8 +1028,8 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--inject-instructions]')
-  console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe]')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--no-inject-instructions]')
+  console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }
 
