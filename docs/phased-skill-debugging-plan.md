@@ -189,7 +189,7 @@ Near-term changes:
   file-list fields
 - extend `skill_trace_reflection` examples with `skills_read`,
   `references_read`, and `files_believed_to_influence_work`
-- show reflected file lists in the Run Reflection panel
+- show reflected file lists as first-class sections in the Run Reflection panel
 
 Later changes:
 
