@@ -165,6 +165,8 @@ fi
 
 `pnpm traceskill:uninstall` removes generated development wrappers from both
 the current `~/.skilltrace/bin` location and the older `~/.local/bin` location.
+See `docs/architecture-decisions.md` for the package/dev installer split and
+runtime packaging notes.
 
 The local server serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.

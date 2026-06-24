@@ -28,6 +28,77 @@ Reasons:
 - route-level auth references are kept as comments near the local-mode changes
   to make a future remote mode easy to restore
 
+## Package And Development Installers
+
+SkillTrace has two command surfaces:
+
+- `traceskill` is the npm-package command for users and friend trials.
+- `traceskill-dev` is the checkout-local command for dogfooding this repository.
+
+Reasons:
+
+- `npm install -g skilltrace` should eventually expose the simple command name.
+- checkout dogfooding should not shadow or mutate a globally installed package
+  command
+- separate default ports let package and checkout environments coexist
+- package/default uses `http://localhost:7555`
+- checkout/dev uses `http://localhost:5777`
+- MCP registration is less ambiguous when development trials explicitly use
+  `traceskill-dev mcp`
+
+Before publishing, the package can be tested with:
+
+```bash
+npm pack
+npm install -g ./skilltrace-0.0.0.tgz
+```
+
+The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
+React Router production build so the tarball includes `build/client` and
+`build/server`.
+
+The checkout installer remains intentionally small. `pnpm traceskill:install`
+writes `~/.skilltrace/bin/traceskill-dev`, points it back to the current
+checkout, and sets default development environment variables:
+
+```text
+SKILLTRACE_SERVER=http://localhost:5777
+PORT=5777
+```
+
+It also removes old generated checkout wrappers named `traceskill` from
+`~/.skilltrace/bin` and `~/.local/bin`, but preserves non-SkillTrace files.
+
+Packaging complications found:
+
+- Runtime commands cannot shell out to `pnpm --dir <checkout>` after npm
+  install, so `traceskill` launches package-local scripts directly.
+- The packaged bin uses Node with `--import tsx/dist/loader.mjs` instead of the
+  `tsx` CLI. In restricted environments, the `tsx` CLI may try to open an IPC
+  socket and fail before our script runs.
+- The production local server needs a small runtime shim instead of
+  `react-router dev`. It uses `@react-router/node`, serves `build/client`
+  assets, and loads the generated `build/server/index.js`.
+- Runtime environment must be initialized before importing the generated server
+  build, because the build imports database and auth modules at module load
+  time.
+- Packaged local mode stores data under `~/.skilltrace` through
+  `SKILLTRACE_DATA_DIR`; checkout development still defaults to `data/local`
+  unless that variable is set.
+- Production mode should use the local file database unless `DB_URL` is
+  explicitly provided. `NODE_ENV=production` alone is not enough to imply a
+  remote database for this local package.
+- The package server initializes the local tables on startup, including the
+  scaffolded `users` table, so friend installs do not need to run
+  `pnpm db:init-local`.
+- A local-only fallback `COOKIE_SECRET` is set for packaged local mode because
+  the v0 local UI does not require login, but the scaffolded auth modules still
+  validate cookie configuration at import time.
+
+This packaging shape is intentionally a developer preview, not a fully
+standalone binary. It still requires Node/npm and macOS for passive probing, but
+it removes the need for friends to clone and initialize this repository.
+
 ## One Active Session
 
 SkillTrace v0 uses one active trace session globally.
