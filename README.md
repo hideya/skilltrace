@@ -159,6 +159,21 @@ traceskill daemon stop
 Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
 written to `~/.skilltrace/logs/daemon.log`.
 
+The packaged server binds to `127.0.0.1` by default. For Linux containers or
+VMs where you want to open the UI from the host machine, bind to all interfaces:
+
+```bash
+HOST=0.0.0.0 traceskill daemon start
+```
+
+The daemon output and log will show the bind address and any detected IPv4 UI
+URLs, such as `http://192.168.64.2:7555`.
+
+Passive file probing currently uses macOS `fs_usage`. On Linux, `traceskill
+start` still creates the run and enables semantic MCP tracing, but records a
+visible warning that passive probing is unavailable until a Linux backend is
+added.
+
 When installed as an npm package, `traceskill` is available from npm's global
 bin location. From this checkout, `pnpm traceskill:install` is still available
 as a development helper; it creates a local `traceskill-dev` wrapper in

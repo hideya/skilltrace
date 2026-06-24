@@ -48,14 +48,18 @@ async function start(args: string[]) {
   let options = parseArgs(args)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
-  let instrumentation = assessInstrumentation(targetRoot, options.injectInstructions)
+  let probe = passiveProbeSupport()
+  let instrumentation = withPassiveProbeWarning(
+    assessInstrumentation(targetRoot, options.injectInstructions),
+    probe,
+  )
   let active = await getJson(server, '/api/sessions/status')
   if (active.session) {
     printActiveSessionRefusal(server, active.session)
     process.exit(1)
   }
 
-  primeSudo()
+  if (probe.supported) primeSudo()
   cleanupTargetInjection(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
@@ -73,23 +77,34 @@ async function start(args: string[]) {
       target_root: targetRoot,
     })
   }
-  let worker = startProbeWorker({
-    runId: result.session.run_id,
-    targetRoot,
-    server,
-    debug: options.debugProbe,
-  })
+  let worker = probe.supported
+    ? startProbeWorker({
+      runId: result.session.run_id,
+      targetRoot,
+      server,
+      debug: options.debugProbe,
+    })
+    : null
 
-  await postJson(server, '/api/sessions/probe', {
-    run_id: result.session.run_id,
-    probe_pid: worker.pid,
-    probe_log_path: worker.logPath,
-  })
+  if (worker) {
+    await postJson(server, '/api/sessions/probe', {
+      run_id: result.session.run_id,
+      probe_pid: worker.pid,
+      probe_log_path: worker.logPath,
+    })
+  } else {
+    printPassiveProbeWarning(probe)
+    await postSessionEvent(server, result.session.run_id, 'trace_probe_unavailable', {
+      platform: probe.platform,
+      reason: probe.reason,
+      target_root: targetRoot,
+    })
+  }
 
   printSession('Started SkillTrace session', server, {
     ...result.session,
-    probe_pid: worker.pid,
-    probe_log_path: worker.logPath,
+    probe_pid: worker?.pid,
+    probe_log_path: worker?.logPath,
   })
 }
 
@@ -138,6 +153,8 @@ async function daemon(args: string[]) {
 async function daemonStart(args: string[]) {
   let options = parseArgs(args)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let bindHost = process.env.HOST || '127.0.0.1'
+  let port = process.env.PORT || new URL(server).port || '7555'
   let status = await getDaemonStatus(server)
 
   if (status.alive) {
@@ -172,6 +189,9 @@ async function daemonStart(args: string[]) {
   let state = {
     pid: child.pid,
     server,
+    bind_host: bindHost,
+    bind_port: port,
+    ui_urls: displayUrls(bindHost, port),
     log_path: DAEMON_LOG_PATH,
     started_at: new Date().toISOString(),
   }
@@ -181,6 +201,8 @@ async function daemonStart(args: string[]) {
   console.log('Started experimental SkillTrace daemon.')
   console.log(`  pid: ${state.pid}`)
   console.log(`  server: ${state.server}`)
+  console.log(`  bind: ${state.bind_host}:${port}`)
+  printDisplayUrls(state.ui_urls)
   console.log(`  log: ${state.log_path}`)
 
   if (await waitForDaemon(server)) {
@@ -436,6 +458,10 @@ function printDaemonStatus(status: any) {
   console.log(`  server: ${status.server}`)
   if (status.state) {
     console.log(`  pid: ${status.pid_status}`)
+    if (status.state.bind_host) {
+      console.log(`  bind: ${status.state.bind_host}:${status.state.bind_port ?? '?'}`)
+    }
+    printDisplayUrls(status.state.ui_urls)
     console.log(`  started: ${status.state.started_at}`)
     console.log(`  log: ${status.state.log_path}`)
   } else {
@@ -641,10 +667,67 @@ function printInstrumentationWarning(instrumentation: any, injectRequested?: boo
   }
 }
 
+function passiveProbeSupport() {
+  if (process.platform === 'darwin') {
+    return {
+      supported: true,
+      platform: process.platform,
+    }
+  }
+
+  return {
+    supported: false,
+    platform: process.platform,
+    reason: `Passive file probing is not available on ${process.platform} yet; semantic tracing will still run.`,
+  }
+}
+
+function withPassiveProbeWarning(instrumentation: any, probe: PassiveProbeSupport) {
+  if (probe.supported) return instrumentation
+
+  return {
+    ...instrumentation,
+    warnings: [...(instrumentation.warnings ?? []), probe.reason],
+  }
+}
+
+function printPassiveProbeWarning(probe: PassiveProbeSupport) {
+  if (probe.supported) return
+  console.warn(`Warning: ${probe.reason}`)
+}
+
 function primeSudo() {
   let sudo = spawnSync('sudo', ['-v'], { stdio: 'inherit' })
   if (sudo.status !== 0) {
     throw new Error('sudo authorization failed')
+  }
+}
+
+function displayUrls(host: string, port: string) {
+  if (host === '0.0.0.0' || host === '::') {
+    let urls = networkAddresses().map((address) => `http://${address}:${port}`)
+    return urls.length > 0 ? [...new Set(urls)] : [`http://127.0.0.1:${port}`]
+  }
+
+  return [`http://${host || '127.0.0.1'}:${port}`]
+}
+
+function networkAddresses() {
+  let addresses: string[] = []
+
+  for (let values of Object.values(os.networkInterfaces())) {
+    for (let value of values ?? []) {
+      if (value.family !== 'IPv4' || value.internal) continue
+      addresses.push(value.address)
+    }
+  }
+
+  return addresses
+}
+
+function printDisplayUrls(urls?: string[]) {
+  for (let url of urls ?? []) {
+    console.log(`  ui: ${url}`)
   }
 }
 
@@ -695,6 +778,15 @@ type ProbeWorkerOptions = {
 type DaemonState = {
   pid: number
   server: string
+  bind_host?: string
+  bind_port?: string
+  ui_urls?: string[]
   log_path: string
   started_at: string
+}
+
+type PassiveProbeSupport = {
+  supported: boolean
+  platform: NodeJS.Platform
+  reason?: string
 }

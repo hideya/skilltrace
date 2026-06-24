@@ -48,6 +48,16 @@ npm install -g ./skilltrace-0.0.0.tgz
 traceskill daemon start
 ```
 
+For a Linux container or VM that should be opened from the host machine, start
+the daemon with:
+
+```bash
+HOST=0.0.0.0 traceskill daemon start
+```
+
+Linux currently runs semantic MCP tracing without passive file probing. The run
+timeline records a warning when the passive probe is unavailable.
+
 Use plain `traceskill-dev start` for passive-only trials where you do not want
 SkillTrace to inject MCP tracing instructions into the target repo.
 

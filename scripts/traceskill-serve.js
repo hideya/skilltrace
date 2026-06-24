@@ -1,6 +1,7 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import { fileURLToPath } from 'url'
 import { createRequestListener } from '@react-router/node'
 import './lib/skilltrace-runtime-env.js'
@@ -24,7 +25,10 @@ async function main() {
   })
 
   server.listen(port, host, () => {
-    console.log(`SkillTrace server listening on http://localhost:${port}`)
+    console.log(`SkillTrace server listening on http://${host}:${port}`)
+    for (let url of displayUrls(host, port)) {
+      console.log(`SkillTrace UI available at ${url}`)
+    }
   })
 }
 
@@ -58,6 +62,28 @@ function contentType(filePath) {
   if (filePath.endsWith('.png')) return 'image/png'
   if (filePath.endsWith('.ico')) return 'image/x-icon'
   return 'application/octet-stream'
+}
+
+function displayUrls(host, port) {
+  if (host === '0.0.0.0' || host === '::') {
+    let urls = networkAddresses().map((address) => `http://${address}:${port}`)
+    return urls.length > 0 ? urls : [`http://127.0.0.1:${port}`]
+  }
+
+  return [`http://${host || '127.0.0.1'}:${port}`]
+}
+
+function networkAddresses() {
+  let addresses = []
+
+  for (let values of Object.values(os.networkInterfaces())) {
+    for (let value of values ?? []) {
+      if (value.family !== 'IPv4' || value.internal) continue
+      addresses.push(value.address)
+    }
+  }
+
+  return [...new Set(addresses)]
 }
 
 await main()

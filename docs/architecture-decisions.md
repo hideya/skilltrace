@@ -109,10 +109,14 @@ Packaging complications found:
 - A local-only fallback `COOKIE_SECRET` is set for packaged local mode because
   the v0 local UI does not require login, but the scaffolded auth modules still
   validate cookie configuration at import time.
+- The packaged server binds to `127.0.0.1` by default for local safety. Container
+  or VM trials can use `HOST=0.0.0.0 traceskill daemon start`; the server log and
+  daemon output should show the actual bind host and detected IPv4 UI URLs.
 
 This packaging shape is intentionally a developer preview, not a fully
-standalone binary. It still requires Node/npm and macOS for passive probing, but
-it removes the need for friends to clone and initialize this repository.
+standalone binary. It still requires Node/npm. Passive probing currently
+requires macOS `fs_usage`; Linux package trials run in semantic-only mode and
+record a visible warning until a Linux passive backend is added.
 
 ## Packaged UI Navigation
 
