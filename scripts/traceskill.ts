@@ -160,6 +160,7 @@ async function daemonStart(args: string[]) {
   if (status.alive) {
     if (status.state) {
       console.log('SkillTrace daemon is already running.')
+      printBindChangeHint(status.state, bindHost, port)
     } else {
       console.log('A SkillTrace server is already responding.')
     }
@@ -472,6 +473,15 @@ function printDaemonStatus(status: any) {
   if (status.health?.session) {
     printSession('Active SkillTrace session', status.server, status.health.session)
   }
+}
+
+function printBindChangeHint(state: DaemonState, bindHost: string, port: string) {
+  if (state.bind_host === bindHost && state.bind_port === port) return
+
+  console.log(
+    `SkillTrace daemon is already running with bind ${state.bind_host ?? 'unknown'}:${state.bind_port ?? '?'}.`,
+  )
+  console.log('Run `traceskill daemon stop` before changing HOST or PORT.')
 }
 
 function runScript(scriptPath: string, args: string[] = []) {
