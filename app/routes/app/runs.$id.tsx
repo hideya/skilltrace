@@ -348,6 +348,7 @@ function Timeline({ events }: TimelineProps) {
 function TimelineItem({ event }: TimelineItemProps) {
   let name = fileNameForEvent(event)
   let isSemantic = isSemanticEvent(event)
+  let warning = eventWarning(event)
 
   return (
     <details className="group rounded-box border border-base-300 bg-base-100">
@@ -357,6 +358,14 @@ function TimelineItem({ event }: TimelineItemProps) {
             <span className={`truncate ${eventTitleClass(event)}`}>
               {event.event_type}
             </span>
+            {warning ? (
+              <span
+                className="badge badge-warning badge-sm"
+                title={warning}
+              >
+                warning
+              </span>
+            ) : null}
             {name ? (
               <span className="truncate font-mono text-xs text-base-content/60">
                 {name}
@@ -462,6 +471,20 @@ function eventDotClass(event: any) {
 function eventTitleClass(event: any) {
   if (isSemanticEvent(event)) return 'font-semibold'
   return 'font-normal'
+}
+
+function eventWarning(event: any) {
+  let warnings = event.payload?.instrumentation?.warnings
+  if (Array.isArray(warnings) && warnings.length > 0) {
+    return warnings.join('\n')
+  }
+
+  let status = event.payload?.instrumentation?.status
+  if (status && status !== 'ready') {
+    return `Instrumentation status: ${status}`
+  }
+
+  return null
 }
 
 function fileNameForEvent(event: any) {

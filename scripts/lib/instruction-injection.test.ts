@@ -3,6 +3,7 @@ import os from 'os'
 import path from 'path'
 import { afterEach, describe, expect, test } from 'vitest'
 import {
+  assessInstrumentation,
   ejectInstructions,
   injectInstructions,
   instructionInjectionStatus,
@@ -59,6 +60,23 @@ describe('instruction injection', () => {
     expect(injected.warnings.join('\n')).toContain('already exists')
     expect(ejected?.removed_instrumentation).toBe(false)
     expect(fs.readFileSync(instrumentationPath, 'utf8')).toBe('user policy\n')
+  })
+
+  test('reports instrumentation readiness', () => {
+    let dir = tempRoot()
+
+    let missing = assessInstrumentation(dir)
+
+    expect(missing.status).toBe('not_configured')
+    expect(missing.warnings.length).toBeGreaterThan(0)
+
+    injectInstructions(dir, 'run_003')
+
+    let ready = assessInstrumentation(dir, true)
+
+    expect(ready.status).toBe('ready')
+    expect(ready.inject_requested).toBe(true)
+    expect(ready.warnings).toEqual([])
   })
 })
 

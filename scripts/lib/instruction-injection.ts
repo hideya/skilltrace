@@ -150,6 +150,40 @@ export function instructionInjectionStatus(targetRoot?: string) {
   return 'inactive'
 }
 
+export function assessInstrumentation(targetRoot: string, injectRequested = false) {
+  let agentsPath = path.join(targetRoot, 'AGENTS.md')
+  let instrumentationPath = path.join(targetRoot, INSTRUMENTATION_PATH)
+  let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
+  let agentsFileExists = fs.existsSync(agentsPath)
+  let agentsText = agentsFileExists ? fs.readFileSync(agentsPath, 'utf8') : ''
+  let agentsInstructionPresent = agentsText.includes(INJECTION_BLOCK.trim())
+  let instrumentationFileExists = fs.existsSync(instrumentationPath)
+  let injectionManifestExists = fs.existsSync(manifestPath)
+  let warnings: string[] = []
+
+  if (!agentsFileExists) {
+    warnings.push('AGENTS.md is missing; SkillTrace instrumentation is not configured.')
+  }
+  if (!agentsInstructionPresent) {
+    warnings.push('AGENTS.md does not point to .skilltrace/instrumentation.md.')
+  }
+  if (!instrumentationFileExists) {
+    warnings.push('.skilltrace/instrumentation.md is missing.')
+  }
+
+  let status = warnings.length === 0 ? 'ready' : 'not_configured'
+
+  return {
+    inject_requested: injectRequested,
+    agents_file_exists: agentsFileExists,
+    agents_instruction_present: agentsInstructionPresent,
+    instrumentation_file_exists: instrumentationFileExists,
+    injection_manifest_exists: injectionManifestExists,
+    status,
+    warnings,
+  }
+}
+
 function injectionResult(input: InjectionResultInput) {
   return {
     status: input.status,

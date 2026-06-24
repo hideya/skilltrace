@@ -39,6 +39,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
   })
   await appendSessionEvent(run.id, 'trace_session_started', session, {
     reason: 'started',
+    instrumentation: input.instrumentation,
   })
 
   return session
@@ -216,6 +217,7 @@ type TraceSessionState = {
 
 type StartTraceSessionInput = {
   target_root: string
+  instrumentation?: Record<string, unknown>
   now?: Date
 }
 

@@ -4,6 +4,7 @@ import os from 'os'
 import { spawn, spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import {
+  assessInstrumentation,
   ejectInstructions,
   injectInstructions,
   instructionInjectionStatus,
@@ -39,12 +40,15 @@ async function start(args: string[]) {
   let options = parseArgs(args)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let instrumentation = assessInstrumentation(targetRoot, options.injectInstructions)
 
   primeSudo()
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
+    instrumentation,
   })
+  printInstrumentationWarning(instrumentation, options.injectInstructions)
   let injection = options.injectInstructions
     ? injectInstructions(targetRoot, result.session.run_id)
     : null
@@ -537,6 +541,18 @@ function printInjectionResult(label: string, result: any) {
     console.log(`  removed instrumentation: ${result.removed_instrumentation ? 'yes' : 'no'}`)
   }
   for (let warning of result.warnings ?? []) {
+    console.warn(`  warning: ${warning}`)
+  }
+}
+
+function printInstrumentationWarning(instrumentation: any, injectRequested?: boolean) {
+  if (instrumentation.status === 'ready') return
+  if (injectRequested) return
+
+  console.warn('Warning: SkillTrace instrumentation is not configured.')
+  console.warn('Semantic MCP events are unlikely.')
+  console.warn('Use: traceskill start --inject-instructions')
+  for (let warning of instrumentation.warnings ?? []) {
     console.warn(`  warning: ${warning}`)
   }
 }

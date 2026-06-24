@@ -22,6 +22,7 @@ export async function action({ request }) {
   try {
     session = await startTraceSession({
       target_root: input.target_root,
+      instrumentation: input.instrumentation,
     })
   } catch (error) {
     if (error instanceof Error && error.message.includes('sudo is not ready')) {
