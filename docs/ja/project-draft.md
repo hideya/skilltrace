@@ -2,6 +2,11 @@
 
 ## 失敗履歴を持つ実行可能な集合知へ
 
+> 歴史的な設計ドラフト。現在のセットアップ、パッケージング、MCP
+> tools、dogfooding 手順については、`README.md`、
+> `docs/architecture-decisions.md`、`docs/mcp-semantic-logger.md`、
+> `docs/agent-sandbox-mcp-test.md` を優先する。
+
 ## 1. 背景
 
 AIエージェントと skills の登場によって、知識のあり方が変わり始めている。

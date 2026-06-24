@@ -197,7 +197,7 @@ Local LLM environment
   │    └─ watches SKILL.md / references access
   │
   └─ MCP client
-       └─ calls skill_log_event MCP tool
+       └─ calls SkillTrace MCP tools
 
 SkillTrace local daemon
   ├─ Web UI
@@ -212,7 +212,7 @@ SkillTrace local daemon
   │    └─ semantic event receiver
   │
   ├─ MCP server command
-  │    └─ skill_log_event
+  │    └─ skill_trace_context / skill_log_event / skill_trace_reflection
   │
   ├─ Trace store
   │    ├─ mechanical events
@@ -471,7 +471,7 @@ Other possible early skills:
 
 MVP v0 includes:
 
-- `skill_log_event` MCP tool
+- `skill_trace_context`, `skill_log_event`, and `skill_trace_reflection` MCP tools
 - passive file access event receiver
 - local file access tracking harness
 - trace event store

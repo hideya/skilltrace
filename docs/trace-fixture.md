@@ -48,7 +48,7 @@ pnpm db:init-local
 Run the fixture demo sequence:
 
 ```bash
-pnpm skilltrace:demo --server http://localhost:7555
+pnpm skilltrace:demo --server http://localhost:5777
 ```
 
 By default, the command creates two runs.
@@ -63,8 +63,7 @@ The pass run posts:
 Expected result:
 
 - the Timeline shows all four events
-- Passive skill access shows the file reads
-- Semantic declarations shows start and finish events
+- the compact timeline rows expand to show event payload details
 - Consistency shows `Observed and declared` with a `pass` badge
 
 The warning run posts:
@@ -75,14 +74,12 @@ The warning run posts:
 Expected result:
 
 - the Timeline shows passive file events
-- Passive skill access shows the file reads
-- Semantic declarations is empty
 - Consistency shows `Read but not declared` with a `warning` badge
 
 At the end, it prints run URLs:
 
 ```text
-http://localhost:7555/app/runs/<run_id>
+http://localhost:5777/app/runs/<run_id>
 ```
 
 Open those URLs in the browser.
@@ -92,13 +89,13 @@ Open those URLs in the browser.
 Run only the passing case:
 
 ```bash
-pnpm skilltrace:demo --case pass --server http://localhost:7555
+pnpm skilltrace:demo --case pass --server http://localhost:5777
 ```
 
 Run only the warning case:
 
 ```bash
-pnpm skilltrace:demo --case warning --server http://localhost:7555
+pnpm skilltrace:demo --case warning --server http://localhost:5777
 ```
 
 ## Fixed Run ID
@@ -109,7 +106,7 @@ Use a fixed run ID when you want repeatable manual testing:
 pnpm skilltrace:demo \
   --case both \
   --run run_fixture_pr_review_demo \
-  --server http://localhost:7555
+  --server http://localhost:5777
 ```
 
 Repeated runs with the same base run ID append more events to the same timelines. Use a new run ID when you want clean timelines.
@@ -124,7 +121,7 @@ Passive read:
 pnpm skilltrace:read \
   --run run_fixture_pr_review_manual \
   --skill pr-review \
-  --server http://localhost:7555 \
+  --server http://localhost:5777 \
   fixtures/skills/pr-review/SKILL.md
 ```
 
@@ -137,7 +134,7 @@ pnpm skilltrace:log \
   --event skill_use_started \
   --summary "Using PR review fixture." \
   --confidence medium \
-  --server http://localhost:7555
+  --server http://localhost:5777
 ```
 
 Semantic finish:
@@ -149,7 +146,7 @@ pnpm skilltrace:log \
   --event skill_use_finished \
   --summary "Completed PR review fixture." \
   --confidence medium \
-  --server http://localhost:7555
+  --server http://localhost:5777
 ```
 
 ## What This Test Proves

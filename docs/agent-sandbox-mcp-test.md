@@ -5,15 +5,24 @@ This runbook explains how to test SkillTrace with a real Codex session using the
 The goal is to verify that an agent working in a separate fake repository can:
 
 1. load a local skill-like instruction file
-2. call the SkillTrace `skill_log_event` MCP tool
+2. call SkillTrace MCP tools
 3. fix intentionally broken TypeScript code
 4. create semantic trace events visible in the SkillTrace UI
 
-This is the first true MCP-path experiment. It is stronger than the CLI fixture because the semantic events come from an MCP tool call made by the agent. It is still not full passive file monitoring.
+This is the main end-to-end MCP-path experiment. It is stronger than the CLI
+fixture because semantic events come from MCP tool calls made by the agent while
+the passive probe observes skill and reference file access.
 
-Use command-line Codex for this experiment. In early testing, Codex via VS Code saw the sandbox skill instructions but did not expose the custom `skill_log_event` MCP tool to the agent session, even though `/mcp` showed the `skilltrace` server as enabled.
+Use command-line Codex for this experiment. In early testing, Codex via VS Code
+saw the sandbox skill instructions but did not expose the custom SkillTrace MCP
+tools to the agent session, even though `/mcp` showed the `skilltrace` server as
+enabled.
 
-The current recommended checkout flow uses `traceskill-dev start`. It asks the local SkillTrace daemon to create an active session, then launches a macOS `fs_usage` probe worker for the current repo before Codex starts. The MCP server resolves the one active session from the daemon, so passive skill reads and semantic declarations share the same run ID.
+The current recommended checkout flow uses `traceskill-dev start`. It asks the
+local SkillTrace server to create an active session, then launches a macOS
+`fs_usage` probe worker for the current repo before Codex starts. The MCP server
+resolves the one active session from the server, so passive skill reads and
+semantic declarations share the same run ID.
 
 ## Pieces
 
@@ -23,7 +32,8 @@ The current recommended checkout flow uses `traceskill-dev start`. It asks the l
 - Local checkout CLI: `traceskill-dev`.
 - Local checkout MCP server command: `traceskill-dev mcp`.
 - Passive probe: `sudo -n fs_usage -w -f filesys`.
-- MCP tool exposed to Codex: `skill_log_event`.
+- MCP tools exposed to Codex: `skill_trace_context`, `skill_log_event`, and
+  `skill_trace_reflection`.
 
 `agent-sandbox-repo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
 
@@ -48,7 +58,7 @@ fi
 `pnpm traceskill:uninstall` also removes older generated wrappers from
 `~/.local/bin/traceskill`.
 
-Start the local SkillTrace daemon in another terminal:
+Start the local SkillTrace server in another terminal:
 
 ```bash
 traceskill-dev serve
@@ -121,7 +131,8 @@ The command should show:
 - `command: traceskill-dev`
 - `args: mcp`
 
-The run ID is not configured in the MCP registration. The MCP server resolves the daemon's one active session when `skill_log_event` is called.
+The run ID is not configured in the MCP registration. The MCP server resolves
+the active SkillTrace session when a SkillTrace MCP tool is called.
 
 ## Run The Experiment
 
@@ -237,7 +248,7 @@ In the sandbox Codex session, the agent should:
 In the main SkillTrace app, open:
 
 ```text
-http://localhost:7/app/runs
+http://localhost:5777/app/runs
 ```
 
 Look for a run ID like:
@@ -281,12 +292,12 @@ If the consistency panel says `Declared but not observed`, the MCP semantic path
 This test verifies:
 
 - Codex can launch the local SkillTrace MCP server through stdio.
-- Codex can see and call the `skill_log_event` tool.
+- Codex can see and call the SkillTrace MCP tools.
 - A reusable `.skilltrace/instrumentation.md` overlay can drive SkillTrace MCP calls.
 - The local probe worker can observe skill file reads with `fs_usage` before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
-- The daemon's one active session ID correlates passive probe events and MCP semantic events.
+- The active session ID correlates passive probe events and MCP semantic events.
 - The SkillTrace UI can display the resulting run timeline.
 
 This test does not yet verify:
@@ -388,10 +399,13 @@ If no run appears, check that:
 - The MCP server command is `traceskill-dev mcp`.
 - You ran `traceskill-dev start --inject-instructions` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
-- The sandbox agent actually called `skill_log_event`.
+- The sandbox agent actually called the SkillTrace MCP tools.
 - The run may be under the generated path-hash timestamped ID.
 
-If Codex says `skill_log_event` is not available, verify that you are running the command-line Codex session from `agent-sandbox-repo`. In observed testing, Codex via VS Code could show the `skilltrace` MCP server as enabled but still not expose the custom `skill_log_event` tool to the agent.
+If Codex says a SkillTrace MCP tool is not available, verify that you are
+running the command-line Codex session from `agent-sandbox-repo`. In observed
+testing, Codex via VS Code could show the `skilltrace` MCP server as enabled
+but still not expose the custom SkillTrace tools to the agent.
 
 If the MCP server fails to start, run:
 

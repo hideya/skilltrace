@@ -1,12 +1,16 @@
 # SkillTrace MCP Semantic Logger
 
-SkillTrace includes a small stdio MCP server prototype that exposes one tool:
+SkillTrace includes a small stdio MCP server prototype that exposes three
+tools:
 
 ```text
+skill_trace_context
 skill_log_event
+skill_trace_reflection
 ```
 
-The tool logs active semantic skill-use declarations to the local SkillTrace server.
+Together, these tools log declared run context, semantic skill-use declarations,
+and a concise run reflection to the local SkillTrace server.
 
 This is the MCP-shaped counterpart to:
 
@@ -20,14 +24,14 @@ Use this server to test the active semantic trace path through an MCP tool inter
 
 It is intentionally small:
 
-- one MCP tool
+- three MCP tools
 - stdio transport
 - posts to `/api/skill-log-events`
 - uses `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER`
 
 By itself, this command does not implement passive file observation, skill loading, or a full agent platform.
 
-For the current best local prototype, prefer the local daemon flow:
+For the current best local prototype, prefer the local server flow:
 
 ```bash
 pnpm traceskill:install
@@ -56,7 +60,7 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the daemon for the one active session ID when the model calls `skill_log_event`.
+That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the SkillTrace server for the one active session ID when the model calls one of the SkillTrace MCP tools.
 `traceskill-dev start` launches the passive probe worker and prompts for sudo from your terminal.
 
 ## Start Command
@@ -94,7 +98,10 @@ codex mcp get skilltrace
 
 Open a new Codex session after registration so the tool list is refreshed.
 
-When `traceskill-dev start` is active, `traceskill-dev mcp` resolves the daemon's active session over HTTP. Without an active session, use `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown below.
+When `traceskill-dev start` is active, `traceskill-dev mcp` resolves the active
+SkillTrace session over HTTP. Without an active session, use
+`SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown
+below.
 
 To remove the SkillTrace MCP server later:
 
@@ -268,10 +275,11 @@ The event should appear in:
 
 ## Notes
 
-The current fixture demo still uses CLI helpers for repeatability:
+The fixture demo still uses CLI helpers for repeatability:
 
 ```bash
 pnpm skilltrace:demo
 ```
 
-The MCP server is the next step toward letting an actual agent declare skill use through a tool boundary.
+Use the sandbox runbook for an end-to-end agent test where Codex calls the MCP
+tools directly.

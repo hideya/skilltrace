@@ -2,6 +2,10 @@
 # AI Agent Skills Observability Project Draft  
 ## Toward Executable Collective Intelligence with Failure Histories
 
+> Historical design draft. For current setup, packaging, MCP tools, and
+> dogfooding instructions, prefer `README.md`, `docs/architecture-decisions.md`,
+> `docs/mcp-semantic-logger.md`, and `docs/agent-sandbox-mcp-test.md`.
+
 ## 1. Background
 
 AI agents and agent skills are beginning to change the structure of knowledge.

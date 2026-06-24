@@ -25,7 +25,7 @@ Build a local SkillTrace server and web app that can answer these questions for 
 - Trace event model for passive, semantic, and human or evaluation events.
 - Run ID correlation shared across event sources.
 - Passive event receiver for local file access harness events.
-- Semantic logging endpoint aligned with a future `skill_log_event` MCP tool.
+- Semantic logging endpoint aligned with the SkillTrace MCP tools.
 - Pluggable `.skilltrace/instrumentation.md` overlay for real-repo trials.
 - Trace event store for runs and chronological events.
 - Consistency checker for passive activation and declared use.
@@ -123,7 +123,7 @@ Minimum behavior:
 
 ### Semantic event ingestion
 
-Receives model-declared skill use events and should match the future MCP tool contract.
+Receives model-declared skill use events and should match the MCP tool contract.
 
 Minimum behavior:
 

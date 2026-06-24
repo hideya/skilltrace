@@ -5,7 +5,7 @@ This is a fake repository generated from `agent-sandbox-repo-template`.
 The goal is to verify whether an agent can:
 
 1. read a local skill-like instruction file
-2. call the SkillTrace `skill_log_event` MCP tool
+2. call SkillTrace MCP tools
 3. fix intentionally broken TypeScript code
 4. produce passive and semantic trace events that appear in SkillTrace
 
@@ -97,6 +97,7 @@ read `.skills/type-fix/SKILL.md` before fixing TypeScript or syntax errors.
 The agent should:
 
 - read `.skilltrace/instrumentation.md`
+- call `skill_trace_context`
 - read `.skills/type-fix/SKILL.md`
 - call `skill_log_event` with `skill_use_started`
 - run or inspect `pnpm tsc`
@@ -104,6 +105,7 @@ The agent should:
 - call `skill_log_event` with `skill_reference_read`
 - fix `src/profile.ts`
 - call `skill_log_event` with `skill_use_finished`
+- call `skill_trace_reflection`
 
 Then open the SkillTrace run page:
 
@@ -111,9 +113,9 @@ Then open the SkillTrace run page:
 http://localhost:5777/app/runs/<generated_run_id>
 ```
 
-The timeline should include passive skill/reference reads and semantic started,
-reference-read, and finished declarations. The consistency panel should report
-`Observed and declared`.
+The run page should include declared context, passive skill/reference reads,
+semantic started/reference-read/finished declarations, and a run reflection. The
+consistency panel should report `Observed and declared`.
 
 When you are done, stop the active trace session:
 
