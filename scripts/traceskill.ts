@@ -14,6 +14,7 @@ import {
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', 'loader.mjs')
+const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
 const DAEMON_STATE_PATH = path.join(DAEMON_DIR, 'daemon.json')
@@ -28,7 +29,7 @@ async function main() {
   } else if (command === 'status') {
     await status(args)
   } else if (command === 'serve') {
-    runScript('scripts/traceskill-serve.js')
+    runServe()
   } else if (command === 'daemon') {
     await daemon(args)
   } else if (command === 'mcp') {
@@ -146,11 +147,7 @@ async function daemonStart(args: string[]) {
 
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
-  let child = spawn(process.execPath, [
-    '--import',
-    TSX_LOADER_PATH,
-    path.join(PROJECT_ROOT, 'scripts/traceskill-serve.js'),
-  ], {
+  let child = spawn(serveCommand(), serveArgs(), {
     cwd: PROJECT_ROOT,
     detached: true,
     stdio: ['ignore', logFd, logFd],
@@ -458,6 +455,34 @@ function runScript(scriptPath: string, args: string[] = []) {
   })
 
   process.exit(result.status ?? 1)
+}
+
+function runServe() {
+  if (DEV_MODE) {
+    let result = spawnSync('pnpm', ['dev'], {
+      cwd: PROJECT_ROOT,
+      stdio: 'inherit',
+      env: process.env,
+    })
+
+    process.exit(result.status ?? 1)
+  }
+
+  runScript('scripts/traceskill-serve.js')
+}
+
+function serveCommand() {
+  if (DEV_MODE) return 'pnpm'
+  return process.execPath
+}
+
+function serveArgs() {
+  if (DEV_MODE) return ['dev']
+  return [
+    '--import',
+    TSX_LOADER_PATH,
+    path.join(PROJECT_ROOT, 'scripts/traceskill-serve.js'),
+  ]
 }
 
 function processAlive(pid?: number) {

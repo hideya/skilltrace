@@ -68,6 +68,7 @@ function wrapperContent() {
   return `#!/bin/sh
 ${MARKER}
 SKILLTRACE_TARGET_ROOT="\${SKILLTRACE_TARGET_ROOT:-$PWD}" \\
+SKILLTRACE_DEV="\${SKILLTRACE_DEV:-1}" \\
 SKILLTRACE_SERVER="\${SKILLTRACE_SERVER:-${DEV_SERVER}}" \\
 PORT="\${PORT:-${DEV_PORT}}" \\
 exec ${shellQuote(pnpmPath)} --dir ${shellQuote(PROJECT_ROOT)} traceskill "$@"

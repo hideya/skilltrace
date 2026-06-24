@@ -64,6 +64,7 @@ checkout, and sets default development environment variables:
 ```text
 SKILLTRACE_SERVER=http://localhost:5777
 PORT=5777
+SKILLTRACE_DEV=1
 ```
 
 It also removes old generated checkout wrappers named `traceskill` from
@@ -79,6 +80,10 @@ Packaging complications found:
 - The production local server needs a small runtime shim instead of
   `react-router dev`. It uses `@react-router/node`, serves `build/client`
   assets, and loads the generated `build/server/index.js`.
+- The checkout development command sets `SKILLTRACE_DEV=1`, so `serve` and
+  `daemon start` use `pnpm dev` instead of the production server shim. Mixing
+  the production shim with the dev checkout can produce React runtime mismatch
+  errors.
 - Runtime environment must be initialized before importing the generated server
   build, because the build imports database and auth modules at module load
   time.
