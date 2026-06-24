@@ -51,6 +51,7 @@ export async function attachTraceSessionProbe(input: AttachProbeInput) {
 
   session.probe_pid = input.probe_pid
   session.probe_log_path = input.probe_log_path
+  session.probe_kind = input.probe_kind ?? 'run'
   return session
 }
 
@@ -68,7 +69,9 @@ export async function appendTraceSessionEvent(input: SessionEventInput) {
 export async function stopTraceSession(input: StopTraceSessionInput = {}) {
   let session = state.session
 
-  if (session?.probe_pid) killProcess(session.probe_pid)
+  if (session?.probe_pid && session.probe_kind !== 'shared') {
+    killProcess(session.probe_pid)
+  }
   state.session = undefined
 
   if (session) {
@@ -229,6 +232,7 @@ type AttachProbeInput = {
   run_id: string
   probe_pid: number
   probe_log_path?: string
+  probe_kind?: ProbeKind
 }
 
 type SessionEventInput = {
@@ -250,12 +254,15 @@ type TraceSession = {
   started_at: string
   probe_pid?: number
   probe_log_path?: string
+  probe_kind?: ProbeKind
 }
 
 type SkillTraceConfigFile = {
   skill_roots?: string[]
   skillRoots?: string[]
 }
+
+type ProbeKind = 'run' | 'shared'
 
 const STATE_KEY = Symbol.for('skilltrace.trace-session-state')
 const state = ((globalThis as any)[STATE_KEY] ??= {}) as TraceSessionState

@@ -163,6 +163,19 @@ traceskill daemon stop
 Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
 written to `~/.skilltrace/logs/daemon.log`.
 
+On macOS, daemon mode can also start an experimental shared passive probe:
+
+```bash
+traceskill daemon start --shared-probe
+```
+
+This asks for sudo once at daemon startup, starts a daemon-owned `fs_usage`
+worker, and lets later `traceskill start` sessions attach to that shared probe.
+If the shared probe is unavailable or has crashed, `traceskill start` records a
+visible warning and falls back to the normal per-run probe. Linux keeps the
+current per-run `inotifywait` probe because it is scoped, lightweight, and does
+not need sudo.
+
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
 

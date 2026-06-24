@@ -22,6 +22,13 @@ export async function action({ request }) {
   if (!Number.isInteger(input.probe_pid)) {
     throw badRequestError('probe_pid is required')
   }
+  if (
+    input.probe_kind !== undefined &&
+    input.probe_kind !== 'run' &&
+    input.probe_kind !== 'shared'
+  ) {
+    throw badRequestError('probe_kind must be run or shared')
+  }
 
   let session = await attachTraceSessionProbe({
     run_id: input.run_id,
@@ -29,6 +36,7 @@ export async function action({ request }) {
     probe_log_path: typeof input.probe_log_path === 'string'
       ? input.probe_log_path
       : undefined,
+    probe_kind: input.probe_kind,
   })
   if (!session) throw notFoundError()
 

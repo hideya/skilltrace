@@ -74,6 +74,18 @@ traceskill-dev daemon logs
 traceskill-dev daemon stop
 ```
 
+On macOS, you can ask daemon mode to own a shared `fs_usage` probe:
+
+```bash
+traceskill-dev daemon start --shared-probe
+```
+
+This is experimental. It requests sudo at daemon startup, shows `shared probe`
+in `daemon status`, and lets later `traceskill-dev start` sessions attach to the
+shared worker. If the shared worker is unavailable, `traceskill-dev start`
+records a warning and falls back to the normal per-run probe. Linux keeps the
+normal per-run `inotifywait` path because it does not need sudo.
+
 The foreground `serve` command is still the default dogfooding path. The daemon
 mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`.

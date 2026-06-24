@@ -49,6 +49,7 @@ async function start(args: string[]) {
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
+  let sharedProbe = sharedProbeStatus(server)
   let instrumentation = withPassiveProbeWarning(
     assessInstrumentation(targetRoot, options.injectInstructions),
     probe,
@@ -59,7 +60,8 @@ async function start(args: string[]) {
     process.exit(1)
   }
 
-  if (probe.supported && probe.platform === 'darwin') primeSudo()
+  let useSharedProbe = sharedProbe.available
+  if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
@@ -77,7 +79,14 @@ async function start(args: string[]) {
       target_root: targetRoot,
     })
   }
-  let worker = probe.supported
+  if (sharedProbe.requested && !sharedProbe.available) {
+    printSharedProbeFallbackWarning(sharedProbe)
+    await postSessionEvent(server, result.session.run_id, 'trace_probe_shared_unavailable', {
+      reason: sharedProbe.reason,
+      target_root: targetRoot,
+    })
+  }
+  let worker = !useSharedProbe && probe.supported
     ? startProbeWorker({
       runId: result.session.run_id,
       targetRoot,
@@ -86,11 +95,24 @@ async function start(args: string[]) {
     })
     : null
 
-  if (worker) {
+  if (useSharedProbe && sharedProbe.state?.shared_probe_pid) {
+    await postJson(server, '/api/sessions/probe', {
+      run_id: result.session.run_id,
+      probe_pid: sharedProbe.state.shared_probe_pid,
+      probe_log_path: sharedProbe.state.shared_probe_log_path,
+      probe_kind: 'shared',
+    })
+    await postSessionEvent(server, result.session.run_id, 'trace_probe_shared_attached', {
+      probe_pid: sharedProbe.state.shared_probe_pid,
+      probe_log_path: sharedProbe.state.shared_probe_log_path,
+      target_root: targetRoot,
+    })
+  } else if (worker) {
     await postJson(server, '/api/sessions/probe', {
       run_id: result.session.run_id,
       probe_pid: worker.pid,
       probe_log_path: worker.logPath,
+      probe_kind: 'run',
     })
   } else {
     printPassiveProbeWarning(probe)
@@ -103,8 +125,13 @@ async function start(args: string[]) {
 
   printSession('Started SkillTrace session', server, {
     ...result.session,
-    probe_pid: worker?.pid,
-    probe_log_path: worker?.logPath,
+    probe_pid: sharedProbe.available
+      ? sharedProbe.state?.shared_probe_pid
+      : worker?.pid,
+    probe_log_path: sharedProbe.available
+      ? sharedProbe.state?.shared_probe_log_path
+      : worker?.logPath,
+    probe_kind: sharedProbe.available ? 'shared' : worker ? 'run' : undefined,
   })
 }
 
@@ -161,6 +188,7 @@ async function daemonStart(args: string[]) {
     if (status.state) {
       console.log('SkillTrace daemon is already running.')
       printBindChangeHint(status.state, bindHost, port)
+      printSharedProbeChangeHint(status.state, options.sharedProbe)
     } else {
       console.log('A SkillTrace server is already responding.')
     }
@@ -168,6 +196,7 @@ async function daemonStart(args: string[]) {
     return
   }
 
+  let sharedProbe = prepareSharedProbe(options)
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
   let child = spawn(serveCommand(), serveArgs(), {
@@ -187,6 +216,13 @@ async function daemonStart(args: string[]) {
     throw new Error('Failed to start SkillTrace daemon')
   }
 
+  if (sharedProbe.requested && process.platform === 'darwin') {
+    sharedProbe.worker = startSharedProbeWorker({
+      server,
+      debug: options.debugProbe,
+    })
+  }
+
   let state = {
     pid: child.pid,
     server,
@@ -195,6 +231,11 @@ async function daemonStart(args: string[]) {
     ui_urls: displayUrls(bindHost, port),
     log_path: DAEMON_LOG_PATH,
     started_at: new Date().toISOString(),
+    shared_probe_requested: sharedProbe.requested,
+    shared_probe_pid: sharedProbe.worker?.pid,
+    shared_probe_log_path: sharedProbe.worker?.logPath,
+    shared_probe_platform: sharedProbe.worker ? process.platform : undefined,
+    shared_probe_warning: sharedProbe.warning,
   }
 
   writeDaemonState(state)
@@ -204,6 +245,7 @@ async function daemonStart(args: string[]) {
   console.log(`  server: ${state.server}`)
   console.log(`  bind: ${state.bind_host}:${port}`)
   printDisplayUrls(state.ui_urls)
+  printSharedProbeDaemonState(state)
   console.log(`  log: ${state.log_path}`)
 
   if (await waitForDaemon(server)) {
@@ -227,6 +269,16 @@ async function daemonStop(args: string[]) {
 
   await cleanupActiveInjection(server)
   await endServerSession(server)
+  if (state.shared_probe_pid && processAlive(state.shared_probe_pid)) {
+    killProcessGroup(state.shared_probe_pid, 'SIGTERM')
+    killProcessTree(state.shared_probe_pid, 'SIGTERM')
+    await waitForExit(state.shared_probe_pid)
+  }
+  if (state.shared_probe_pid && processAlive(state.shared_probe_pid)) {
+    killProcessGroup(state.shared_probe_pid, 'SIGKILL')
+    killProcessTree(state.shared_probe_pid, 'SIGKILL')
+    await waitForExit(state.shared_probe_pid)
+  }
   if (processAlive(state.pid)) {
     killProcessGroup(state.pid, 'SIGTERM')
     killProcessTree(state.pid, 'SIGTERM')
@@ -293,6 +345,8 @@ function parseArgs(args: string[]) {
       options.debugProbe = true
     } else if (arg === '--inject-instructions') {
       options.injectInstructions = true
+    } else if (arg === '--shared-probe') {
+      options.sharedProbe = true
     } else if (arg === '--lines') {
       options.lines = Number(args[++index])
     } else {
@@ -430,7 +484,8 @@ function printSession(label: string, server: string, session: any) {
   console.log(`  run: ${session.run_id}`)
   console.log(`  repo: ${session.target_root}`)
   console.log(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
-  console.log(`  probe: ${probeStatus(session.probe_pid)}`)
+  let probeLabel = session.probe_kind === 'shared' ? 'shared probe' : 'probe'
+  console.log(`  ${probeLabel}: ${probeStatus(session.probe_pid)}`)
   if (session.probe_log_path) {
     console.log(`  probe log: ${session.probe_log_path}`)
   }
@@ -463,6 +518,7 @@ function printDaemonStatus(status: any) {
       console.log(`  bind: ${status.state.bind_host}:${status.state.bind_port ?? '?'}`)
     }
     printDisplayUrls(status.state.ui_urls)
+    printSharedProbeDaemonState(status.state)
     console.log(`  started: ${status.state.started_at}`)
     console.log(`  log: ${status.state.log_path}`)
   } else {
@@ -482,6 +538,32 @@ function printBindChangeHint(state: DaemonState, bindHost: string, port: string)
     `SkillTrace daemon is already running with bind ${state.bind_host ?? 'unknown'}:${state.bind_port ?? '?'}.`,
   )
   console.log('Run `traceskill daemon stop` before changing HOST or PORT.')
+}
+
+function printSharedProbeChangeHint(state: DaemonState, requested?: boolean) {
+  if (!requested || state.shared_probe_requested) return
+
+  console.log('SkillTrace daemon is already running without a shared probe.')
+  console.log('Run `traceskill daemon stop` before enabling --shared-probe.')
+}
+
+function printSharedProbeDaemonState(state: DaemonState) {
+  if (!state.shared_probe_requested) return
+
+  if (state.shared_probe_warning) {
+    console.log(`  shared probe: unavailable (${state.shared_probe_warning})`)
+    return
+  }
+
+  console.log(`  shared probe: ${probeStatus(state.shared_probe_pid)}`)
+  if (state.shared_probe_log_path) {
+    console.log(`  shared probe log: ${state.shared_probe_log_path}`)
+  }
+}
+
+function printSharedProbeFallbackWarning(sharedProbe: SharedProbeStatus) {
+  if (!sharedProbe.requested) return
+  console.warn(`Warning: shared probe unavailable; using per-run probe. ${sharedProbe.reason}`)
 }
 
 function runScript(scriptPath: string, args: string[] = []) {
@@ -643,6 +725,45 @@ function startProbeWorker(options: ProbeWorkerOptions) {
   }
 }
 
+function startSharedProbeWorker(options: SharedProbeWorkerOptions) {
+  let logPath = path.join(
+    DAEMON_DIR,
+    'logs/probes',
+    'traceskill-probe-shared.log',
+  )
+  fs.mkdirSync(path.dirname(logPath), { recursive: true })
+  let logFd = fs.openSync(logPath, 'a')
+  let args = [
+    ...nodeScriptArgs('scripts/traceskill-probe-worker.ts'),
+    '--shared',
+    '--server',
+    options.server,
+  ]
+  if (options.debug) args.push('--debug')
+
+  let child = spawn(
+    process.execPath,
+    args,
+    {
+      detached: false,
+      stdio: ['ignore', logFd, logFd],
+      env: process.env,
+    },
+  )
+
+  child.unref()
+  fs.closeSync(logFd)
+
+  if (typeof child.pid !== 'number') {
+    throw new Error('Failed to start TraceSkill shared probe worker')
+  }
+
+  return {
+    pid: child.pid,
+    logPath,
+  }
+}
+
 function printInjectionResult(label: string, result: any) {
   console.log(label)
   console.log(`  status: ${result.status}`)
@@ -704,6 +825,77 @@ function passiveProbeSupport() {
     supported: false,
     platform: process.platform,
     reason: `Passive file probing is not available on ${process.platform} yet; semantic tracing will still run.`,
+  }
+}
+
+function prepareSharedProbe(options: Options): PreparedSharedProbe {
+  if (!options.sharedProbe) {
+    return {
+      requested: false,
+    }
+  }
+
+  if (process.platform !== 'darwin') {
+    return {
+      requested: true,
+      warning: 'shared probe is macOS-only; this platform uses per-run probing',
+    }
+  }
+
+  if (!commandExists('fs_usage')) {
+    return {
+      requested: true,
+      warning: 'fs_usage was not found on PATH',
+    }
+  }
+
+  primeSudo()
+
+  return {
+    requested: true,
+  }
+}
+
+function sharedProbeStatus(server: string): SharedProbeStatus {
+  let state = readDaemonState()
+  if (!state?.shared_probe_requested) {
+    return {
+      requested: false,
+      available: false,
+    }
+  }
+
+  if (state.server !== server) {
+    return {
+      requested: true,
+      available: false,
+      state,
+      reason: `daemon shared probe belongs to ${state.server}`,
+    }
+  }
+
+  if (state.shared_probe_warning) {
+    return {
+      requested: true,
+      available: false,
+      state,
+      reason: state.shared_probe_warning,
+    }
+  }
+
+  if (state.shared_probe_pid && processAlive(state.shared_probe_pid)) {
+    return {
+      requested: true,
+      available: true,
+      state,
+    }
+  }
+
+  return {
+    requested: true,
+    available: false,
+    state,
+    reason: 'shared probe process is not running',
   }
 }
 
@@ -783,7 +975,7 @@ function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
   console.error('       traceskill start [--target <repo>] [--server <url>] [--inject-instructions]')
-  console.error('       traceskill daemon <start|status|stop|logs>')
+  console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe]')
   process.exit(1)
 }
 
@@ -794,12 +986,18 @@ type Options = {
   server?: string
   debugProbe?: boolean
   injectInstructions?: boolean
+  sharedProbe?: boolean
   lines?: number
 }
 
 type ProbeWorkerOptions = {
   runId: string
   targetRoot: string
+  server: string
+  debug?: boolean
+}
+
+type SharedProbeWorkerOptions = {
   server: string
   debug?: boolean
 }
@@ -812,10 +1010,31 @@ type DaemonState = {
   ui_urls?: string[]
   log_path: string
   started_at: string
+  shared_probe_requested?: boolean
+  shared_probe_pid?: number
+  shared_probe_log_path?: string
+  shared_probe_platform?: NodeJS.Platform
+  shared_probe_warning?: string
 }
 
 type PassiveProbeSupport = {
   supported: boolean
   platform: NodeJS.Platform
+  reason?: string
+}
+
+type PreparedSharedProbe = {
+  requested: boolean
+  warning?: string
+  worker?: {
+    pid: number
+    logPath: string
+  }
+}
+
+type SharedProbeStatus = {
+  requested: boolean
+  available: boolean
+  state?: DaemonState
   reason?: string
 }

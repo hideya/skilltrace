@@ -71,6 +71,17 @@ apk add inotify-tools
 If the dependency is missing, SkillTrace still runs semantic MCP tracing and the
 timeline records a warning that passive probing is unavailable.
 
+On macOS, daemon mode can opt into a shared `fs_usage` probe:
+
+```bash
+traceskill daemon start --shared-probe
+```
+
+This requests sudo at daemon startup and lets `traceskill start` attach the
+active run to the daemon-owned probe. If the shared probe is unavailable,
+SkillTrace records a warning and falls back to the normal per-run probe when it
+can.
+
 Use plain `traceskill-dev start` for passive-only trials where you do not want
 SkillTrace to inject MCP tracing instructions into the target repo.
 

@@ -191,6 +191,41 @@ On macOS, probe preparation means warming sudo for `fs_usage` from the user's
 terminal. This avoids password prompts or sudo context problems inside the React
 Router dev server process. On Linux, the `inotifywait` probe does not need sudo.
 
+## Experimental macOS Shared Probe
+
+macOS can also use an explicit daemon-owned shared probe:
+
+```bash
+traceskill daemon start --shared-probe
+```
+
+This is experimental and macOS-only. It starts the server and a daemon-owned
+`fs_usage` worker at daemon startup, so sudo is requested once before trace
+sessions begin. Later `traceskill start` calls keep the single-active-session
+model and attach the active run to the shared worker.
+
+Reasons:
+
+- macOS `fs_usage` is already a broad system probe filtered in user space
+- moving sudo to daemon startup improves the repeated start/stop dogfooding loop
+- SkillTrace still keeps one active session, so the shared probe has only one
+  run to route events into
+- Linux does not need this path because `inotifywait` is scoped to configured
+  skill roots and does not require sudo
+
+Failure behavior:
+
+- daemon status shows the shared probe PID and log when it is configured
+- if the shared worker is unavailable or crashed, `traceskill start` records
+  `trace_probe_shared_unavailable`
+- when possible, `traceskill start` falls back to the existing per-run probe
+- shared probes are marked as `probe_kind: shared` on the active session so
+  `traceskill stop` does not kill the daemon-owned worker
+- `traceskill daemon stop` owns cleanup of the shared worker
+
+This keeps the new path opt-in while preserving the simpler per-run probe as
+the default.
+
 ## Use `fs_usage`, Not `opensnoop`
 
 The first probe backend used `opensnoop`, but on the tested macOS environment it failed under System Integrity Protection with DTrace probe errors.
