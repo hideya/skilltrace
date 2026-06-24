@@ -277,15 +277,25 @@ function saveExpandedRunGroups(keys: string[]) {
 
 function ResultBadge({ result }: ResultBadgeProps) {
   let className =
-    result === 'pass'
+    result === 'running'
+      ? 'badge-info'
+      : result === 'pass'
       ? 'badge-success'
       : result === 'warning'
         ? 'badge-warning'
         : result === 'incomplete'
-          ? 'badge-info'
+          ? 'badge-warning'
           : 'badge-ghost'
 
-  return <span className={`badge ${className}`}>{result}</span>
+  return <span className={`badge ${className}`}>{resultLabel(result)}</span>
+}
+
+function resultLabel(result: ResultState) {
+  if (result === 'pass') return 'Pass'
+  if (result === 'warning') return 'Warning'
+  if (result === 'incomplete') return 'Incomplete'
+  if (result === 'running') return 'Running'
+  return 'Unknown'
 }
 
 function ModelCell({ context }: ModelCellProps) {
@@ -333,8 +343,10 @@ type RunGroup = {
 }
 
 type ResultBadgeProps = {
-  result: 'pass' | 'warning' | 'incomplete' | 'unknown'
+  result: ResultState
 }
+
+type ResultState = 'pass' | 'warning' | 'incomplete' | 'running' | 'unknown'
 
 type ModelCellProps = {
   context?: Record<string, any> | null

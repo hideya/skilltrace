@@ -250,6 +250,12 @@ The local UI has two primary views:
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
   process, shared passive probe, active session, and Codex MCP registration.
 
+On the runs page, the Result column intentionally shows `Running` while a trace
+session is active. Final diagnoses such as `Pass` or `Warning` appear only
+after `traceskill stop` records `trace_session_finished`. If an unstopped run is
+superseded by a newer `trace_session_started` event, the Result column shows
+`Incomplete` to make the missing cleanup visible.
+
 The diagnostics page is intentionally not a manager. It does not start or stop
 processes or edit Codex configuration. It is a quick way to catch common setup
 mistakes, such as running the package UI while Codex is still registered to

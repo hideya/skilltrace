@@ -92,14 +92,16 @@ export async function listRunSummaries() {
   let runs = await Run.newestBy('created_at')
   let events = await TraceEvent.newestBy('timestamp')
   let eventsByRun = groupEventsByRun(events)
+  let starts = sessionStartTimes(events)
 
   return runs.map((run) => {
     let runEvents = eventsByRun.get(run.id) ?? []
     let lastEvent = runEvents[0]
+    let lifecycle = runLifecycleResult(run, runEvents, starts)
 
     return {
       run,
-      result: summarizeConsistency(checkTraceConsistency(runEvents)),
+      result: lifecycle ?? summarizeConsistency(checkTraceConsistency(runEvents)),
       context: latestRunContext(runEvents),
       reflection: latestEventData(runEvents, 'run_reflection_declared'),
       event_count: runEvents.length,
@@ -173,6 +175,25 @@ function unique(values: string[]) {
   return [...new Set(values)]
 }
 
+export function runLifecycleResult(
+  run: RunLike,
+  events: TraceEventLike[],
+  starts: Date[],
+) {
+  let hasFinish = events.some((event) =>
+    event.event_type === 'trace_session_finished'
+  )
+  if (hasFinish || run.status === 'finished') return null
+
+  let startedAt = sessionStartTime(events) ?? new Date(run.started_at)
+  let hasNewerStart = starts.some((started) =>
+    started.getTime() > startedAt.getTime()
+  )
+  if (hasNewerStart) return 'incomplete'
+  if (run.status === 'active') return 'running'
+  return null
+}
+
 function summarizeConsistency(results: ConsistencySummaryResult[]) {
   if (results.length === 0) return 'unknown'
   if (results.some((result) => result.status === 'warning')) return 'warning'
@@ -197,6 +218,29 @@ function latestEventData(events: any[], eventType: string) {
   return latest.payload?.data ?? {}
 }
 
+function sessionStartTimes(events: any[]) {
+  return events
+    .filter((event) => event.event_type === 'trace_session_started')
+    .map((event) => new Date(event.timestamp))
+    .filter((date) => !Number.isNaN(date.getTime()))
+}
+
+function sessionStartTime(events: TraceEventLike[]) {
+  let starts = sessionStartTimes(events)
+  if (starts.length === 0) return null
+  return starts.toSorted((a, b) => a.getTime() - b.getTime())[0]
+}
+
 type ConsistencySummaryResult = {
   status: 'pass' | 'warning' | 'incomplete'
+}
+
+type RunLike = {
+  status: string
+  started_at: Date | string
+}
+
+type TraceEventLike = {
+  event_type: string
+  timestamp: Date | string
 }

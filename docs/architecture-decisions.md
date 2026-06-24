@@ -208,6 +208,19 @@ avoids low-value accidental runs and keeps instruction injection cleanup easy to
 reason about. The user should run `traceskill stop` before starting another
 session.
 
+The runs page should not show a final consistency diagnosis for an active run.
+While a run is active, the Result column shows `Running`. After
+`trace_session_finished`, the Result column shows the final consistency
+diagnosis. If a run never recorded `trace_session_finished` and any newer
+`trace_session_started` event exists globally, the older run is shown as
+`Incomplete`.
+
+This is intentionally global, not repo-scoped. With the current
+single-active-session and manifest-backed injection model, missing `stop` can
+mean SkillTrace lost the chance to clean up injected files for the previous
+session. The UI should make that lifecycle problem visible even if the next run
+targets a different repository.
+
 ## CLI-Owned Probe Worker
 
 The local web server does not start the passive probe directly.

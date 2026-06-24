@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { passiveEventSchema, semanticEventSchema } from './trace'
+import {
+  passiveEventSchema,
+  runLifecycleResult,
+  semanticEventSchema,
+} from './trace'
 
 describe('passiveEventSchema', () => {
   test('accepts a passive skill file event', () => {
@@ -124,5 +128,71 @@ describe('semanticEventSchema', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+})
+
+describe('runLifecycleResult', () => {
+  test('shows active unsuperseded runs as running', () => {
+    let result = runLifecycleResult(
+      {
+        status: 'active',
+        started_at: '2026-06-24T00:00:00Z',
+      },
+      [
+        {
+          event_type: 'trace_session_started',
+          timestamp: '2026-06-24T00:00:00Z',
+        },
+      ],
+      [new Date('2026-06-24T00:00:00Z')],
+    )
+
+    expect(result).toBe('running')
+  })
+
+  test('defers finished runs to final consistency diagnosis', () => {
+    let result = runLifecycleResult(
+      {
+        status: 'finished',
+        started_at: '2026-06-24T00:00:00Z',
+      },
+      [
+        {
+          event_type: 'trace_session_started',
+          timestamp: '2026-06-24T00:00:00Z',
+        },
+        {
+          event_type: 'trace_session_finished',
+          timestamp: '2026-06-24T00:10:00Z',
+        },
+      ],
+      [
+        new Date('2026-06-24T00:00:00Z'),
+        new Date('2026-06-24T01:00:00Z'),
+      ],
+    )
+
+    expect(result).toBeNull()
+  })
+
+  test('marks unstopped runs superseded by any newer session as incomplete', () => {
+    let result = runLifecycleResult(
+      {
+        status: 'active',
+        started_at: '2026-06-24T00:00:00Z',
+      },
+      [
+        {
+          event_type: 'trace_session_started',
+          timestamp: '2026-06-24T00:00:00Z',
+        },
+      ],
+      [
+        new Date('2026-06-24T00:00:00Z'),
+        new Date('2026-06-24T01:00:00Z'),
+      ],
+    )
+
+    expect(result).toBe('incomplete')
   })
 })
