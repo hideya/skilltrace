@@ -169,10 +169,10 @@ HOST=0.0.0.0 traceskill daemon start
 The daemon output and log will show the bind address and any detected IPv4 UI
 URLs, such as `http://192.168.64.2:7555`.
 
-Passive file probing currently uses macOS `fs_usage`. On Linux, `traceskill
-start` still creates the run and enables semantic MCP tracing, but records a
-visible warning that passive probing is unavailable until a Linux backend is
-added.
+Passive file probing currently uses macOS `fs_usage` on macOS and
+`inotifywait` from `inotify-tools` on Linux. If the Linux dependency is missing,
+`traceskill start` still creates the run and enables semantic MCP tracing, but
+records a visible warning that passive probing is unavailable.
 
 When installed as an npm package, `traceskill` is available from npm's global
 bin location. From this checkout, `pnpm traceskill:install` is still available
@@ -208,7 +208,7 @@ Local LLM environment
   ├─ Skills directory
   ├─ traceskill CLI
   │    └─ starts / ends the active local trace session
-  ├─ macOS passive probe
+  ├─ passive probe
   │    └─ watches SKILL.md / references access
   │
   └─ MCP client

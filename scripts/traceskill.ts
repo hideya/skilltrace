@@ -59,7 +59,7 @@ async function start(args: string[]) {
     process.exit(1)
   }
 
-  if (probe.supported) primeSudo()
+  if (probe.supported && probe.platform === 'darwin') primeSudo()
   cleanupTargetInjection(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
@@ -685,6 +685,21 @@ function passiveProbeSupport() {
     }
   }
 
+  if (process.platform === 'linux') {
+    if (commandExists('inotifywait')) {
+      return {
+        supported: true,
+        platform: process.platform,
+      }
+    }
+
+    return {
+      supported: false,
+      platform: process.platform,
+      reason: 'Passive file probing on linux requires inotifywait. Install inotify-tools to enable passive tracing.',
+    }
+  }
+
   return {
     supported: false,
     platform: process.platform,
@@ -704,6 +719,10 @@ function withPassiveProbeWarning(instrumentation: any, probe: PassiveProbeSuppor
 function printPassiveProbeWarning(probe: PassiveProbeSupport) {
   if (probe.supported) return
   console.warn(`Warning: ${probe.reason}`)
+}
+
+function commandExists(command: string) {
+  return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
 }
 
 function primeSudo() {

@@ -19,10 +19,11 @@ tools to the agent session, even though `/mcp` showed the `skilltrace` server as
 enabled.
 
 The current recommended checkout flow uses `traceskill-dev start`. It asks the
-local SkillTrace server to create an active session, then launches a macOS
-`fs_usage` probe worker for the current repo before Codex starts. The MCP server
-resolves the one active session from the server, so passive skill reads and
-semantic declarations share the same run ID.
+local SkillTrace server to create an active session, then launches a passive
+probe worker for the current repo before Codex starts. The probe uses `fs_usage`
+on macOS and `inotifywait` on Linux. The MCP server resolves the one active
+session from the server, so passive skill reads and semantic declarations share
+the same run ID.
 
 ## Pieces
 
@@ -31,7 +32,7 @@ semantic declarations share the same run ID.
 - Generated sandbox repo: `agent-sandbox-repo`.
 - Local checkout CLI: `traceskill-dev`.
 - Local checkout MCP server command: `traceskill-dev mcp`.
-- Passive probe: `sudo -n fs_usage -w -f filesys`.
+- Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
 - MCP tools exposed to Codex: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
 
@@ -148,7 +149,7 @@ inserts one SkillTrace instruction at the top of `AGENTS.md`, and records
 `.skilltrace/injection.json` so `traceskill-dev stop` can clean up the exact
 injected changes.
 
-This starts a background `fs_usage` probe worker and prints the run URL.
+This starts a background passive probe worker and prints the run URL.
 It also prints a probe log path under:
 
 ```text
@@ -294,7 +295,7 @@ This test verifies:
 - Codex can launch the local SkillTrace MCP server through stdio.
 - Codex can see and call the SkillTrace MCP tools.
 - A reusable `.skilltrace/instrumentation.md` overlay can drive SkillTrace MCP calls.
-- The local probe worker can observe skill file reads with `fs_usage` before Codex starts reading the target repo.
+- The local probe worker can observe skill file reads before Codex starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
 - The active session ID correlates passive probe events and MCP semantic events.
@@ -305,7 +306,7 @@ This test does not yet verify:
 - general compliance across many skills
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
-- Linux or Windows passive probing
+- Windows passive probing
 - production deployment behavior
 
 ## Trying A Real Repository
@@ -413,7 +414,14 @@ If the MCP server fails to start, run:
 sudo -v
 ```
 
-then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
+then start a fresh command-line Codex session. On macOS, the probe intentionally
+uses `sudo -n` so it cannot ask for a password through MCP stdio.
+
+On Alpine Linux, install the passive probe dependency with:
+
+```bash
+apk add inotify-tools
+```
 
 If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` and `.skills`, and that `traceskill-dev start --inject-instructions` was run before Codex started.
 Run `traceskill-dev status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.

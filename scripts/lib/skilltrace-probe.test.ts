@@ -8,6 +8,7 @@ import {
   findTargetRoot,
   isWatchedSkillPath,
   loadProbeConfig,
+  parseInotifywaitPath,
   parseOpenSnoopPath,
 } from './skilltrace-probe'
 
@@ -92,6 +93,27 @@ describe('skilltrace probe helpers', () => {
     expect(parseOpenSnoopPath(line, [root], targetRoot)).toBe(
       path.join(targetRoot, '.skills/type-fix/SKILL.md'),
     )
+  })
+
+  test('parses inotifywait absolute paths', () => {
+    let filePath = '/tmp/repo/.skills/type-fix/SKILL.md'
+
+    expect(parseInotifywaitPath(filePath)).toBe(filePath)
+  })
+
+  test('parses inotifywait relative paths from the target root', () => {
+    expect(parseInotifywaitPath('.skills/type-fix/SKILL.md', '/tmp/repo')).toBe(
+      '/tmp/repo/.skills/type-fix/SKILL.md',
+    )
+  })
+
+  test('ignores inotifywait setup messages', () => {
+    expect(
+      parseInotifywaitPath(
+        'Setting up watches.  Beware: since -r was given, this may take a while!',
+      ),
+    ).toBeUndefined()
+    expect(parseInotifywaitPath('Watches established.')).toBeUndefined()
   })
 
   test('matches only files inside watched skill roots', () => {

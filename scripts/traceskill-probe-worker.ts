@@ -1,9 +1,11 @@
 import { spawn, spawnSync, type ChildProcess } from 'child_process'
+import fs from 'fs'
 import {
   ProbeDeduper,
   buildProbeReadEvent,
   discoverProbeConfig,
   isWatchedSkillPath,
+  parseInotifywaitPath,
   parseOpenSnoopPath,
 } from './lib/skilltrace-probe'
 
@@ -19,9 +21,10 @@ async function main() {
   })
   if (!config) usage('Target repo must contain .skilltrace.json or .skills')
 
-  assertMacProbeReady()
+  let backend = probeBackend()
+  assertProbeReady(backend)
 
-  let probe = startFsUsageProbe({
+  let probe = startPassiveProbe(backend, {
     runId: options.run,
     serverUrl: options.server,
     targetRoot: config.targetRoot,
@@ -32,7 +35,7 @@ async function main() {
   bindCleanup(probe)
 
   console.error(`TraceSkill probe worker started: ${process.pid}`)
-  console.error('TraceSkill probe backend: fs_usage')
+  console.error(`TraceSkill probe backend: ${backend}`)
   console.error(`TraceSkill run ID: ${options.run}`)
   console.error(`TraceSkill target root: ${config.targetRoot}`)
   console.error(`TraceSkill skill roots: ${config.skillRoots.join(', ')}`)
@@ -60,12 +63,50 @@ function parseArgs(args: string[]) {
   return options
 }
 
+function startPassiveProbe(backend: ProbeBackend, options: ProbeOptions) {
+  if (backend === 'fs_usage') return startFsUsageProbe(options)
+  return startInotifywaitProbe(options)
+}
+
 function startFsUsageProbe(options: ProbeOptions) {
   let probe = spawn('sudo', ['-n', 'fs_usage', '-w', '-f', 'filesys'], {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
+  return handleProbeOutput(probe, options, 'fs_usage', (line) =>
+    parseOpenSnoopPath(line, options.skillRoots, options.targetRoot)
+  )
+}
+
+function startInotifywaitProbe(options: ProbeOptions) {
+  let roots = options.skillRoots.filter((root) => fs.existsSync(root))
+  if (roots.length === 0) {
+    throw new Error('No configured skill roots exist for inotifywait')
+  }
+
+  let probe = spawn(
+    'inotifywait',
+    ['-m', '-r', '-e', 'open', '--format', '%w%f', ...roots],
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  )
+
+  return handleProbeOutput(probe, options, 'inotifywait', (line) =>
+    parseInotifywaitPath(line, options.targetRoot)
+  )
+}
+
+function handleProbeOutput(
+  probe: ChildProcess,
+  options: ProbeOptions,
+  backend: ProbeBackend,
+  parsePath: (line: string) => string | undefined,
+) {
   let deduper = new ProbeDeduper()
   let buffer = ''
+  if (!probe.stdout || !probe.stderr) {
+    throw new Error(`TraceSkill ${backend} did not expose stdout/stderr`)
+  }
 
   probe.stdout.setEncoding('utf8')
   probe.stderr.setEncoding('utf8')
@@ -76,7 +117,7 @@ function startFsUsageProbe(options: ProbeOptions) {
     buffer = lines.pop() ?? ''
 
     for (let line of lines) {
-      void handleProbeLine(line, options, deduper).catch((error) => {
+      void handleProbeLine(line, options, deduper, backend, parsePath).catch((error) => {
         console.error(`TraceSkill passive event failed: ${error.message}`)
       })
     }
@@ -87,12 +128,12 @@ function startFsUsageProbe(options: ProbeOptions) {
   })
 
   probe.on('error', (error) => {
-    console.error(`TraceSkill fs_usage failed: ${error.message}`)
+    console.error(`TraceSkill ${backend} failed: ${error.message}`)
     process.exit(1)
   })
 
   probe.on('exit', (code, signal) => {
-    console.error(`TraceSkill fs_usage exited: code=${code} signal=${signal}`)
+    console.error(`TraceSkill ${backend} exited: code=${code} signal=${signal}`)
     process.exit(code ?? 1)
   })
 
@@ -103,20 +144,19 @@ async function handleProbeLine(
   line: string,
   options: ProbeOptions,
   deduper: ProbeDeduper,
+  backend: ProbeBackend,
+  parsePath: (line: string) => string | undefined,
 ) {
-  let filePath = parseOpenSnoopPath(
-    line,
-    options.skillRoots,
-    options.targetRoot,
-  )
+  let filePath = parsePath(line)
   if (!filePath && options.debug && line.includes('.skills')) {
-    console.error(`TraceSkill fs_usage unmatched: ${line}`)
+    console.error(`TraceSkill ${backend} unmatched: ${line}`)
   }
   if (!filePath) return
   if (options.debug) {
-    console.error(`TraceSkill fs_usage matched: ${line}`)
+    console.error(`TraceSkill ${backend} matched: ${line}`)
   }
   if (!isWatchedSkillPath(filePath, options.skillRoots)) return
+  if (!isReadableFile(filePath)) return
   if (deduper.has(filePath)) return
 
   let event = buildProbeReadEvent({
@@ -129,19 +169,32 @@ async function handleProbeLine(
   console.error(`TraceSkill passive event: ${event.event_type} ${filePath}`)
 }
 
-function assertMacProbeReady() {
-  if (process.platform !== 'darwin') {
-    throw new Error('traceskill passive probing currently supports macOS only')
+function probeBackend(): ProbeBackend {
+  if (process.platform === 'darwin') return 'fs_usage'
+  if (process.platform === 'linux') return 'inotifywait'
+  throw new Error(`traceskill passive probing does not support ${process.platform}`)
+}
+
+function assertProbeReady(backend: ProbeBackend) {
+  let executable = backend === 'fs_usage' ? 'fs_usage' : 'inotifywait'
+  let which = spawnSync('which', [executable], { stdio: 'pipe' })
+  if (which.status !== 0) {
+    throw new Error(`${executable} was not found on PATH`)
   }
 
-  let which = spawnSync('which', ['fs_usage'], { stdio: 'pipe' })
-  if (which.status !== 0) {
-    throw new Error('fs_usage was not found on PATH')
-  }
+  if (backend !== 'fs_usage') return
 
   let sudo = spawnSync('sudo', ['-n', 'true'], { stdio: 'pipe' })
   if (sudo.status !== 0) {
     throw new Error('sudo is not ready. Run `sudo -v` before traceskill start.')
+  }
+}
+
+function isReadableFile(filePath: string) {
+  try {
+    return fs.statSync(filePath).isFile()
+  } catch {
+    return false
   }
 }
 
@@ -206,3 +259,5 @@ type ProbeOptions = {
   skillRoots: string[]
   debug?: boolean
 }
+
+type ProbeBackend = 'fs_usage' | 'inotifywait'

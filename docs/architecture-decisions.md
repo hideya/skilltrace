@@ -9,7 +9,8 @@ SkillTrace starts as a local debugging utility, not a remote web service.
 Reasons:
 
 - passive file access observation is inherently local
-- macOS probe permissions are easier to reason about in the user's terminal
+- native probe permissions and dependencies are easier to reason about in the
+  user's terminal
 - MCP registration should stay stable and generic
 - the first product goal is a smooth skill-debugging loop, not team hosting
 
@@ -114,9 +115,10 @@ Packaging complications found:
   daemon output should show the actual bind host and detected IPv4 UI URLs.
 
 This packaging shape is intentionally a developer preview, not a fully
-standalone binary. It still requires Node/npm. Passive probing currently
-requires macOS `fs_usage`; Linux package trials run in semantic-only mode and
-record a visible warning until a Linux passive backend is added.
+standalone binary. It still requires Node/npm. Passive probing currently uses
+macOS `fs_usage` on macOS and `inotifywait` from `inotify-tools` on Linux. If a
+probe backend or dependency is unavailable, SkillTrace keeps the run active for
+semantic tracing and records a visible warning.
 
 ## Packaged UI Navigation
 
@@ -196,6 +198,25 @@ Complications discovered:
 - `fs_usage` may emit repo-relative paths such as `.skills/type-fix/SKILL.md`
 - path matching must be case-insensitive on macOS
 - probe logs are essential for debugging parser misses
+
+## Linux Probe Uses `inotifywait`
+
+Linux package trials use `inotifywait` from `inotify-tools` as the first passive
+probe backend.
+
+Reasons:
+
+- it is easy to install in lightweight Linux environments such as Alpine
+- it can recursively watch configured skill roots without elevated privileges
+- its output can be mapped directly to the same passive read event shape as the
+  macOS probe
+
+Complications discovered or expected:
+
+- the dependency may be missing, so Linux probing must degrade to semantic-only
+  tracing with a visible warning
+- inotify reports filesystem opens, not model intent
+- events can be noisy or duplicated, so the worker still dedupes repeated paths
 
 ## Command-Line Codex First
 

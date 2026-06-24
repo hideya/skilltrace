@@ -82,6 +82,16 @@ export function parseOpenSnoopPath(
   return undefined
 }
 
+export function parseInotifywaitPath(line: string, targetRoot?: string) {
+  let filePath = line.trim()
+  if (!filePath) return undefined
+  if (filePath.startsWith('Setting up watches')) return undefined
+  if (filePath === 'Watches established.') return undefined
+  if (path.isAbsolute(filePath)) return filePath
+  if (targetRoot) return path.resolve(targetRoot, filePath)
+  return filePath
+}
+
 export function isWatchedSkillPath(filePath: string, roots: string[]) {
   let absolutePath = path.resolve(filePath).toLowerCase()
 

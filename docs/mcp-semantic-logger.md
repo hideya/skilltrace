@@ -55,8 +55,15 @@ the daemon with:
 HOST=0.0.0.0 traceskill daemon start
 ```
 
-Linux currently runs semantic MCP tracing without passive file probing. The run
-timeline records a warning when the passive probe is unavailable.
+Linux passive probing uses `inotifywait` from `inotify-tools`. On Alpine, install
+it with:
+
+```bash
+apk add inotify-tools
+```
+
+If the dependency is missing, SkillTrace still runs semantic MCP tracing and the
+timeline records a warning that passive probing is unavailable.
 
 Use plain `traceskill-dev start` for passive-only trials where you do not want
 SkillTrace to inject MCP tracing instructions into the target repo.
@@ -70,7 +77,10 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-That starts a macOS `fs_usage` passive probe before Codex reads the target repo. The MCP server asks the SkillTrace server for the one active session ID when the model calls one of the SkillTrace MCP tools.
+That starts a passive probe before Codex reads the target repo. On macOS the
+probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks the
+SkillTrace server for the one active session ID when the model calls one of the
+SkillTrace MCP tools.
 `traceskill-dev start` launches the passive probe worker and prompts for sudo from your terminal.
 
 ## Start Command
