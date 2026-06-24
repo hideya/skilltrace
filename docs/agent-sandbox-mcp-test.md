@@ -150,6 +150,15 @@ It also prints a probe log path under:
 data/local/traceskill-probe-<run_id>.log
 ```
 
+If a session is already active, `traceskill start` refuses and asks you to run
+`traceskill stop` first. This avoids accidental low-value runs and keeps
+manifest-backed instruction cleanup predictable.
+
+Plain `traceskill start` is still valid for passive-only trials. When
+instrumentation is not configured, the CLI prints a warning and the run detail
+timeline shows a warning badge on the `trace_session_started` row so the missing
+semantic tracing setup is visible even after the terminal output is gone.
+
 If passive events do not appear, restart with:
 
 ```bash
@@ -293,15 +302,27 @@ This test does not yet verify:
 ## Trying A Real Repository
 
 After the sandbox passes, a real repository can opt into the same tracing shape
-with two small additions.
+with reversible instruction injection.
 
-First, add a tracing-policy line near the top of the repo's `AGENTS.md`:
+The low-friction path is:
+
+```bash
+traceskill start --inject-instructions
+codex
+traceskill stop
+```
+
+This temporarily adds a tracing-policy line near the top of `AGENTS.md`, writes
+`.skilltrace/instrumentation.md` when needed, and removes only SkillTrace's
+unchanged injected files on `stop`.
+
+For a permanent repo-local setup, add the same tracing-policy line manually:
 
 ```md
 Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
 ```
 
-Second, copy or adapt `.skilltrace/instrumentation.md` from the sandbox
+Then copy or adapt `.skilltrace/instrumentation.md` from the SkillTrace bundled
 template. Keep it generic: it should describe when to call SkillTrace MCP tools,
 but it should not contain task-specific repair, review, or implementation
 instructions.
@@ -320,14 +341,6 @@ skill file:
 - required references:
   - path: `.skills/example-skill/references/checklist.md`
   - role: `required checklist`
-```
-
-Then run the normal local flow from the target repo:
-
-```bash
-traceskill start --inject-instructions
-codex
-traceskill stop
 ```
 
 This keeps the repository's normal task instructions separate from the
@@ -373,7 +386,7 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:7555`.
 - The MCP server command is `traceskill mcp`.
-- You ran `traceskill start` from the target repo before launching Codex.
+- You ran `traceskill start --inject-instructions` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called `skill_log_event`.
 - The run may be under the generated path-hash timestamped ID.
@@ -388,7 +401,7 @@ sudo -v
 
 then start a fresh command-line Codex session. The probe intentionally uses `sudo -n` so it cannot ask for a password through MCP stdio.
 
-If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill start` was run before Codex started.
+If the MCP semantic events appear but passive events do not, check that the target repo has `.skilltrace.json` or `.skills`, and that `traceskill start --inject-instructions` was run before Codex started.
 Run `traceskill status` and confirm the probe says `running`. If it is not running, inspect the printed probe log.
 
 If the sandbox starts already fixed, run:
@@ -402,16 +415,15 @@ If the consistency panel says `Declared but not observed`, the semantic MCP part
 When you are done, stop the active session:
 
 ```bash
-traceskill end
+traceskill stop
 ```
 
-`traceskill stop` is also accepted as an alias, but `end` is the canonical
-command because it ends the active trace session.
+`traceskill end` is also accepted as an alias.
 
 From any repo you can run:
 
 ```bash
-traceskill start
+traceskill start --inject-instructions
 traceskill status
-traceskill end
+traceskill stop
 ```

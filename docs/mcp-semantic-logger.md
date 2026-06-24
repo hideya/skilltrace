@@ -33,8 +33,11 @@ For the current best local prototype, prefer the local daemon flow:
 pnpm traceskill:install
 pnpm traceskill serve
 cd <repo>
-traceskill start
+traceskill start --inject-instructions
 ```
+
+Use plain `traceskill start` for passive-only trials where you do not want
+SkillTrace to inject MCP tracing instructions into the target repo.
 
 If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 

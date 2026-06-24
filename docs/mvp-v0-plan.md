@@ -177,6 +177,19 @@ The checker should produce human-readable messages for the UI. It should not try
 For real-repo trials, prefer a reusable overlay instead of embedding all tracing
 instructions in every task skill.
 
+The low-friction path is:
+
+```bash
+traceskill start --inject-instructions
+codex
+traceskill stop
+```
+
+This temporarily inserts the `AGENTS.md` instruction and creates
+`.skilltrace/instrumentation.md` from SkillTrace's bundled template when needed.
+The injected changes are manifest-backed and removed by `traceskill stop` when
+they are still unchanged.
+
 Add one opt-in line near the top of `AGENTS.md`:
 
 ```md

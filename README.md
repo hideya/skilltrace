@@ -97,7 +97,7 @@ pnpm traceskill serve
 cd <repo>
 traceskill start
 codex
-traceskill end
+traceskill stop
 ```
 
 For opt-in plug-and-play tracing instructions, start a session with:
@@ -115,6 +115,9 @@ SkillTrace created it and it was not changed.
 The injection is experimental and intentionally opt-in. If existing files or
 unexpected edits are detected, SkillTrace prints warnings and records them in
 the run timeline.
+
+Only one trace session can be active at a time. If a session is already active,
+`traceskill start` refuses and asks you to run `traceskill stop` first.
 
 `pnpm traceskill serve` runs the local server in the foreground. For early
 daemon dogfooding, there is also an explicit experimental background mode:

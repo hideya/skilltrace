@@ -37,7 +37,7 @@ Reasons:
 - avoids stale probe processes
 - simplifies MCP run ID resolution
 - matches the current assumption that one repo is being debugged at a time
-- makes `traceskill start` and `traceskill end` easy to understand
+- makes `traceskill start` and `traceskill stop` easy to understand
 
 Starting a new session should refuse while another session is active. This
 avoids low-value accidental runs and keeps instruction injection cleanup easy to

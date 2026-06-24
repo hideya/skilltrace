@@ -28,11 +28,11 @@ pnpm traceskill:install
 pnpm traceskill serve
 ```
 
-If your shell cannot find `traceskill`, add `~/.local/bin` to your `PATH`:
+If your shell cannot find `traceskill`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
-if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin"; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
+  echo 'export PATH="$HOME/.skilltrace/bin:$PATH"' >> ~/.zshrc
   source ~/.zshrc
 fi
 ```
@@ -108,7 +108,7 @@ The agent should:
 Then open the SkillTrace run page:
 
 ```text
-http://localhost:5173/app/runs/<generated_run_id>
+http://localhost:7555/app/runs/<generated_run_id>
 ```
 
 The timeline should include passive skill/reference reads and semantic started,
