@@ -400,9 +400,10 @@ If the consistency panel says `Declared but not observed`, the MCP semantic path
 
 On the runs list, the Result column should show `Running` until
 `traceskill-dev stop` or `traceskill stop` records `trace_session_finished`.
-After stop, it changes to the final diagnosis. If an unstopped run is
-superseded by a newer `trace_session_started` event, the Result column shows
-`Incomplete` to make the missing cleanup visible.
+After stop, it changes to the final diagnosis from the file-oriented
+consistency matrix. If an unstopped run is superseded by a newer
+`trace_session_started` event, the Status column shows `Interrupted` to make the
+missing cleanup visible.
 
 ## What This Test Proves
 

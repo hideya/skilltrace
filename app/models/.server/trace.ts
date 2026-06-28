@@ -5,7 +5,6 @@ import { trace_events } from '~/.server/db/schema/trace-events'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
 import {
-  checkTraceConsistency,
   summarizeConsistencyMatrix,
   traceConsistencyMatrix,
 } from './trace-consistency'
@@ -130,7 +129,6 @@ export async function getRunTimeline(publicId: string) {
   let starts = sessionStartTimes(allEvents)
   let traceMode = runTraceMode(run, events)
   let lifecycle = runLifecycleResult(run, events, starts)
-  let consistency = checkTraceConsistency(events, { traceMode })
   let consistencyMatrix = traceConsistencyMatrix(events, { traceMode })
 
   return {
@@ -143,7 +141,6 @@ export async function getRunTimeline(publicId: string) {
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
-    consistency,
     consistency_matrix: consistencyMatrix,
   }
 }

@@ -218,9 +218,9 @@ session.
 The runs page should not show a final consistency diagnosis for an active run.
 While a run is active, the Result column shows `Running`. After
 `trace_session_finished`, the Result column shows the final consistency
-diagnosis. If a run never recorded `trace_session_finished` and any newer
-`trace_session_started` event exists globally, the older run is shown as
-`Incomplete`.
+diagnosis from the file-oriented consistency matrix. If a run never recorded
+`trace_session_finished` and any newer `trace_session_started` event exists
+globally, the older run's Status is shown as `Interrupted`.
 
 This is intentionally global, not repo-scoped. With the current
 single-active-session and manifest-backed injection model, missing `stop` can

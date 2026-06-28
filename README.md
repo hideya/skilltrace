@@ -269,11 +269,13 @@ The local UI has two primary views:
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
   process, shared passive probe, active session, and Codex MCP registration.
 
-On the runs page, the Result column intentionally shows `Running` while a trace
-session is active. Final diagnoses such as `Pass` or `Warning` appear only
-after `traceskill stop` records `trace_session_finished`. If an unstopped run is
-superseded by a newer `trace_session_started` event, the Result column shows
-`Incomplete` to make the missing cleanup visible.
+On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
+Result column intentionally shows `Running` while a trace session is active.
+Final diagnoses such as `Pass` or `Warning` appear only after `traceskill stop`
+records `trace_session_finished`, and are derived from the file-oriented
+consistency matrix. If an unstopped run is superseded by a newer
+`trace_session_started` event, the Status column shows `Interrupted` to make the
+missing cleanup visible.
 
 The runs list and active run detail pages poll lightly while a run is `Running`
 so newly received daemon events appear without a manual refresh. Finished and

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   checkTraceConsistency,
+  summarizeConsistencyMatrix,
   traceConsistencyMatrix,
 } from './trace-consistency'
 
@@ -392,6 +393,28 @@ describe('checkTraceConsistency', () => {
         status: 'warning',
       },
     ])
+  })
+
+  test('summarizes matrix rows as the run result', () => {
+    let passingRows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_started'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_finished'),
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+      }),
+    ])
+    let warningRows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_started'),
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+      }),
+    ])
+
+    expect(summarizeConsistencyMatrix([])).toBe('unknown')
+    expect(summarizeConsistencyMatrix(passingRows)).toBe('pass')
+    expect(summarizeConsistencyMatrix(warningRows)).toBe('warning')
   })
 })
 
