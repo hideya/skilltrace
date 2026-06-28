@@ -9,6 +9,9 @@ import {
   parseOpenSnoopPath,
 } from './lib/skilltrace-probe'
 
+const SHARED_POLL_INTERVAL_MS = 500
+const SHARED_POLL_FAILURE_LIMIT = 60
+
 async function main() {
   let options = parseArgs(process.argv.slice(2))
   if (!options.server) usage('Missing --server')
@@ -301,13 +304,21 @@ async function getJson(serverUrl: string, pathname: string) {
 function createSharedState(serverUrl: string): SharedProbeState {
   return {
     serverUrl,
+    pollFailures: 0,
   }
 }
 
 async function pollSharedSession(state: SharedProbeState) {
-  while (true) {
-    await refreshSharedSession(state)
-    await sleep(500)
+  while (!state.stopped) {
+    let ok = await refreshSharedSession(state)
+    state.pollFailures = ok ? 0 : state.pollFailures + 1
+
+    if (state.pollFailures >= SHARED_POLL_FAILURE_LIMIT) {
+      console.error('TraceSkill shared probe lost contact with daemon; exiting')
+      process.exit(1)
+    }
+
+    await sleep(SHARED_POLL_INTERVAL_MS)
   }
 }
 
@@ -320,7 +331,7 @@ async function refreshSharedSession(state: SharedProbeState) {
         console.error('TraceSkill shared probe detached from active session')
       }
       state.session = undefined
-      return
+      return true
     }
 
     let next = {
@@ -334,9 +345,11 @@ async function refreshSharedSession(state: SharedProbeState) {
       console.error(`TraceSkill skill roots: ${next.skillRoots.join(', ')}`)
     }
     state.session = next
+    return true
   } catch (error) {
     let message = error instanceof Error ? error.message : String(error)
     console.error(`TraceSkill shared session poll failed: ${message}`)
+    return false
   }
 }
 
@@ -379,6 +392,8 @@ type SharedProbeOptions = {
 type SharedProbeState = {
   serverUrl: string
   session?: SharedProbeSession
+  stopped?: boolean
+  pollFailures: number
 }
 
 type SharedProbeSession = {

@@ -207,7 +207,7 @@ async function daemonStart(args: string[]) {
     return
   }
 
-  let sharedProbe = prepareSharedProbe(requestSharedProbe, server)
+  let sharedProbe = await prepareSharedProbe(requestSharedProbe, server)
   fs.mkdirSync(path.dirname(DAEMON_LOG_PATH), { recursive: true })
   let logFd = fs.openSync(DAEMON_LOG_PATH, 'a')
   let child = spawn(serveCommand(), serveArgs(), {
@@ -237,6 +237,9 @@ async function daemonStart(args: string[]) {
     } else {
       sharedProbe.warning = `shared probe exited during startup; check ${candidate.logPath}`
       sharedProbe.blocksRunProbe = true
+      killProcessGroup(candidate.pid, 'SIGTERM')
+      killProcessTree(candidate.pid, 'SIGTERM')
+      await waitForExit(candidate.pid)
     }
   }
 
@@ -280,6 +283,7 @@ async function daemonStop(args: string[]) {
   let server = options.server || state?.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
   if (!state) {
+    await cleanupSharedProbeWorkers(server)
     console.log('No SkillTrace daemon state found.')
     if (await isServerAlive(server)) console.log(`A server is responding at ${server}.`)
     return
@@ -287,16 +291,10 @@ async function daemonStop(args: string[]) {
 
   await cleanupActiveInjection(server)
   await endServerSession(server)
-  if (state.shared_probe_pid && processAlive(state.shared_probe_pid)) {
-    killProcessGroup(state.shared_probe_pid, 'SIGTERM')
-    killProcessTree(state.shared_probe_pid, 'SIGTERM')
-    await waitForExit(state.shared_probe_pid)
+  if (state.shared_probe_pid) {
+    await stopProcessTree(state.shared_probe_pid)
   }
-  if (state.shared_probe_pid && processAlive(state.shared_probe_pid)) {
-    killProcessGroup(state.shared_probe_pid, 'SIGKILL')
-    killProcessTree(state.shared_probe_pid, 'SIGKILL')
-    await waitForExit(state.shared_probe_pid)
-  }
+  await cleanupSharedProbeWorkers(server)
   if (processAlive(state.pid)) {
     killProcessGroup(state.pid, 'SIGTERM')
     killProcessTree(state.pid, 'SIGTERM')
@@ -705,6 +703,69 @@ function childPids(pid: number) {
     .filter((value) => Number.isInteger(value) && value > 0)
 }
 
+function sharedProbeWorkers() {
+  if (process.platform !== 'darwin') return []
+
+  let result = spawnSync('ps', ['-axo', 'pid=,command='], {
+    encoding: 'utf8',
+  })
+  if (result.status !== 0) return []
+
+  return result.stdout
+    .split('\n')
+    .map(parseProcessLine)
+    .filter((process): process is ProcessInfo => !!process)
+    .filter((process) =>
+      process.command.includes('traceskill-probe-worker') &&
+      process.command.includes('--shared')
+    )
+    .map((process) => ({
+      ...process,
+      server: sharedProbeServer(process.command),
+    }))
+}
+
+async function cleanupSharedProbeWorkers(server: string) {
+  let workers = sharedProbeWorkers().filter((worker) =>
+    worker.server === server || !worker.server
+  )
+
+  for (let worker of workers) {
+    await stopProcessTree(worker.pid)
+  }
+}
+
+async function stopProcessTree(pid: number) {
+  if (!processAlive(pid)) return
+
+  killProcessGroup(pid, 'SIGTERM')
+  killProcessTree(pid, 'SIGTERM')
+  await waitForExit(pid)
+
+  if (!processAlive(pid)) return
+
+  killProcessGroup(pid, 'SIGKILL')
+  killProcessTree(pid, 'SIGKILL')
+  await waitForExit(pid)
+}
+
+function parseProcessLine(line: string) {
+  let match = line.trim().match(/^(\d+)\s+(.+)$/)
+  if (!match) return null
+
+  return {
+    pid: Number(match[1]),
+    command: match[2],
+  }
+}
+
+function sharedProbeServer(command: string) {
+  let parts = command.split(/\s+/)
+  let index = parts.indexOf('--server')
+  if (index === -1) return undefined
+  return parts[index + 1]
+}
+
 function probeStatus(pid?: number) {
   if (!pid) return 'not running'
 
@@ -864,10 +925,34 @@ function sharedProbeRequested(options: Options) {
   return process.platform === 'darwin'
 }
 
-function prepareSharedProbe(requested: boolean, server: string): PreparedSharedProbe {
+async function prepareSharedProbe(
+  requested: boolean,
+  server: string,
+): Promise<PreparedSharedProbe> {
   if (!requested) {
     return {
       requested: false,
+    }
+  }
+
+  let sharedWorkers = sharedProbeWorkers()
+  let foreignWorker = sharedWorkers.find((worker) =>
+    worker.server && worker.server !== server
+  )
+  if (foreignWorker) {
+    return {
+      requested: true,
+      warning: `another shared probe is already running for ${foreignWorker.server ?? 'an unknown server'}`,
+      blocksRunProbe: true,
+    }
+  }
+
+  let staleWorkers = sharedWorkers.filter((worker) =>
+    worker.server === server || !worker.server
+  )
+  if (staleWorkers.length > 0) {
+    for (let worker of staleWorkers) {
+      await stopProcessTree(worker.pid)
     }
   }
 
@@ -1091,6 +1176,11 @@ type PreparedSharedProbe = {
     pid: number
     logPath: string
   }
+}
+
+type ProcessInfo = {
+  pid: number
+  command: string
 }
 
 type SharedProbeStatus = {

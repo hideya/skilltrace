@@ -272,6 +272,11 @@ Failure behavior:
   so dev and packaged shared-probe daemons should not be run at the same time
 - if another shared probe is already running for a different server, daemon
   startup records the conflict instead of starting a second shared worker
+- when starting or stopping the same server, stale shared probe workers are
+  terminated even if the daemon state file no longer has the worker PID
+- shared probe workers exit if they cannot reach the daemon for about 30
+  seconds, which prevents an orphan worker from holding the macOS `fs_usage`
+  slot forever after a daemon crash or manual kill
 - if the shared worker is unavailable or crashed, `traceskill start` records
   `trace_probe_shared_unavailable`
 - when possible, `traceskill start` falls back to the existing per-run probe

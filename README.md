@@ -190,7 +190,10 @@ traceskill daemon start --no-shared-probe
 
 macOS allows only one active `fs_usage`/ktrace-style probe at a time in this
 workflow. Stop the dev daemon before trying the packaged daemon with
-shared probing, and vice versa.
+shared probing, and vice versa. When restarting the same command surface,
+SkillTrace cleans up stale shared probe workers for that server before starting
+a new one. A shared worker also exits on its own if it cannot reach the daemon
+for about 30 seconds.
 
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:

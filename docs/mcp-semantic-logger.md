@@ -91,6 +91,9 @@ traceskill daemon start --no-shared-probe
 
 Do not run dev and packaged macOS shared-probe daemons at the same time. The
 underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
+Restarting the same command surface cleans up stale shared workers for that
+server, and a shared worker exits automatically if it cannot reach its daemon
+for about 30 seconds.
 
 Use `traceskill-dev start --no-inject-instructions` for passive-only trials
 where you do not want SkillTrace to inject MCP tracing instructions into the
