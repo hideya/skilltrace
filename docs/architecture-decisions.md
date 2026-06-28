@@ -99,6 +99,13 @@ Packaging complications found:
   `daemon start` use `pnpm dev` instead of the production server shim. Mixing
   the production shim with the dev checkout can produce React runtime mismatch
   errors.
+- The dev server uses React Router's strict port mode. This prevents a stale
+  server on `5777` from causing a new dev daemon to silently bind a neighboring
+  port while the CLI, MCP server, and browser keep talking to `5777`.
+- `/api/health` reports the serving process PID. `daemon start` accepts startup
+  only when the configured server URL is answered by the spawned daemon process
+  or one of its descendants; otherwise it cleans up the attempted daemon state
+  and reports the mismatch.
 - Runtime environment must be initialized before importing the generated server
   build, because the build imports database and auth modules at module load
   time.

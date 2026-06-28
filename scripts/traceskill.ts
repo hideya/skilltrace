@@ -269,10 +269,15 @@ async function daemonStart(args: string[]) {
   printSharedProbeDaemonState(state)
   console.log(`  log: ${state.log_path}`)
 
-  if (await waitForDaemon(server)) {
+  let startup = await waitForDaemon(child.pid, server)
+  if (startup.ready) {
     console.log('  health: ok')
   } else {
+    await stopStartedDaemon(state)
     console.log('  health: not ready yet')
+    if (startup.health?.ok) {
+      console.log(`  warning: ${server} is responding from pid ${startup.health.pid ?? 'unknown'}, not ${child.pid}`)
+    }
     console.log('  check: traceskill daemon logs')
   }
 }
@@ -312,6 +317,16 @@ async function daemonStop(args: string[]) {
   } else {
     console.log('Stopped SkillTrace daemon.')
   }
+}
+
+async function stopStartedDaemon(state: DaemonState) {
+  if (state.shared_probe_pid) {
+    await stopProcessTree(state.shared_probe_pid)
+  }
+
+  await cleanupSharedProbeWorkers(state.server)
+  await stopProcessTree(state.pid)
+  removeDaemonState()
 }
 
 async function daemonStatus(args: string[]) {
@@ -479,13 +494,28 @@ function cleanupTargetInjection(targetRoot: string) {
   printInjectionResult('Previous instruction injection cleanup', injection)
 }
 
-async function waitForDaemon(server: string) {
+async function waitForDaemon(pid: number, server: string) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    if (await isServerAlive(server)) return true
+    let health = await getHealth(server)
+    if (health?.ok === true && processOwnsServer(pid, health.pid)) {
+      return {
+        ready: true,
+        health,
+      }
+    }
     await sleep(500)
   }
 
-  return false
+  return {
+    ready: false,
+    health: await getHealth(server),
+  }
+}
+
+function processOwnsServer(parentPid: number, serverPid?: number) {
+  if (!serverPid) return false
+  if (serverPid === parentPid) return true
+  return descendantPids(parentPid).includes(serverPid)
 }
 
 async function waitForExit(pid: number) {
@@ -701,6 +731,14 @@ function childPids(pid: number) {
     .split('\n')
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isInteger(value) && value > 0)
+}
+
+function descendantPids(pid: number): number[] {
+  let descendants: number[] = []
+  for (let childPid of childPids(pid)) {
+    descendants.push(childPid, ...descendantPids(childPid))
+  }
+  return descendants
 }
 
 function sharedProbeWorkers() {

@@ -224,8 +224,10 @@ bin location. From this checkout, `pnpm traceskill:install` is still available
 as a development helper; it creates a local `traceskill-dev` wrapper in
 `~/.skilltrace/bin`. The development wrapper defaults to
 `http://localhost:5777` so it can coexist with the package command on
-`http://localhost:7555`. The wrapper preserves the repo directory you run it
-from, so the trace target is normally just the current working directory.
+`http://localhost:7555`. The dev server uses a strict port, so it fails fast
+instead of silently moving to another port when `5777` is already occupied. The
+wrapper preserves the repo directory you run it from, so the trace target is
+normally just the current working directory.
 
 If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 

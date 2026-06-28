@@ -16,7 +16,7 @@
   "type": "module",
   "scripts": {
     "prep": "node scripts/prep.js",
-    "dev": "react-router dev --host 0.0.0.0 --port 5777",
+    "dev": "react-router dev --host 0.0.0.0 --port 5777 --strictPort",
     "build": "react-router build && node scripts/build-package-scripts.js",
     "prepack": "pnpm build",
     "test": "vitest run",
