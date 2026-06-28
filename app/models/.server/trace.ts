@@ -6,6 +6,7 @@ import { Run } from './run'
 import { TraceEvent } from './trace-event'
 import {
   checkTraceConsistency,
+  summarizeConsistencyMatrix,
   traceConsistencyMatrix,
 } from './trace-consistency'
 
@@ -103,14 +104,13 @@ export async function listRunSummaries() {
     let lifecycle = runLifecycleResult(run, runEvents, starts)
     let traceMode = runTraceMode(run, runEvents)
     let status = runDisplayStatus(run, runEvents, starts)
+    let matrix = traceConsistencyMatrix(runEvents, { traceMode })
 
     return {
       run,
       status,
       trace_mode: traceMode,
-      result: lifecycle ?? summarizeConsistency(checkTraceConsistency(runEvents, {
-        traceMode,
-      })),
+      result: lifecycle ?? summarizeConsistencyMatrix(matrix),
       context: latestRunContext(runEvents),
       reflection: latestEventData(runEvents, 'run_reflection_declared'),
       event_count: runEvents.length,
@@ -131,19 +131,20 @@ export async function getRunTimeline(publicId: string) {
   let traceMode = runTraceMode(run, events)
   let lifecycle = runLifecycleResult(run, events, starts)
   let consistency = checkTraceConsistency(events, { traceMode })
+  let consistencyMatrix = traceConsistencyMatrix(events, { traceMode })
 
   return {
     run,
     events,
     status: runDisplayStatus(run, events, starts),
-    result: lifecycle ?? summarizeConsistency(consistency),
+    result: lifecycle ?? summarizeConsistencyMatrix(consistencyMatrix),
     trace_mode: traceMode,
     context: latestRunContext(events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
     consistency,
-    consistency_matrix: traceConsistencyMatrix(events, { traceMode }),
+    consistency_matrix: consistencyMatrix,
   }
 }
 
@@ -218,15 +219,6 @@ export function runLifecycleResult(
   return null
 }
 
-function summarizeConsistency(results: ConsistencySummaryResult[]) {
-  if (results.length === 0) return 'unknown'
-  if (results.some((result) => result.status === 'warning')) return 'warning'
-  if (results.some((result) => result.status === 'incomplete')) {
-    return 'incomplete'
-  }
-  return 'pass'
-}
-
 function runDisplayStatus(
   run: RunLike,
   events: TraceEventLike[],
@@ -281,10 +273,6 @@ function sessionStartTime(events: TraceEventLike[]) {
   let starts = sessionStartTimes(events)
   if (starts.length === 0) return null
   return starts.toSorted((a, b) => a.getTime() - b.getTime())[0]
-}
-
-type ConsistencySummaryResult = {
-  status: 'pass' | 'warning' | 'incomplete'
 }
 
 type RunLike = {

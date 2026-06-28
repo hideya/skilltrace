@@ -241,6 +241,7 @@ describe('checkTraceConsistency', () => {
     let rows = traceConsistencyMatrix([
       passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
       semanticPath('.skills/type-fix/SKILL.md', 'skill_use_started'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_finished'),
       passivePath(
         '.skills/type-fix/references/checklist.md',
         'skill_reference_read',
@@ -259,6 +260,9 @@ describe('checkTraceConsistency', () => {
         file: '/repo/.skills/type-fix/SKILL.md',
         passive: true,
         semantic: true,
+        semantic_started: true,
+        semantic_finished: true,
+        semantic_state: 'complete',
         reflection: true,
         passive_expected: true,
         semantic_expected: true,
@@ -271,6 +275,9 @@ describe('checkTraceConsistency', () => {
         file: '/repo/.skills/type-fix/references/checklist.md',
         passive: true,
         semantic: true,
+        semantic_started: false,
+        semantic_finished: false,
+        semantic_state: 'complete',
         reflection: true,
         passive_expected: true,
         semantic_expected: true,
@@ -303,6 +310,9 @@ describe('checkTraceConsistency', () => {
         file: '.skills/type-fix/SKILL.md',
         passive: true,
         semantic: false,
+        semantic_started: false,
+        semantic_finished: false,
+        semantic_state: 'missing',
         reflection: false,
         passive_expected: true,
         semantic_expected: false,
@@ -327,6 +337,9 @@ describe('checkTraceConsistency', () => {
         file: '.skills/type-fix/SKILL.md',
         passive: true,
         semantic: false,
+        semantic_started: false,
+        semantic_finished: false,
+        semantic_state: 'missing',
         reflection: true,
         passive_expected: true,
         semantic_expected: false,
@@ -349,6 +362,34 @@ describe('checkTraceConsistency', () => {
         message:
           'Passive reads were observed, but no run reflection was declared.',
         skill: 'run reflection',
+      },
+    ])
+  })
+
+  test('marks skill semantic lifecycle as partial when finish is missing', () => {
+    let rows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_started'),
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+      }),
+    ])
+
+    expect(rows).toEqual([
+      {
+        kind: 'Skill',
+        file: '.skills/type-fix/SKILL.md',
+        passive: true,
+        semantic: false,
+        semantic_started: true,
+        semantic_finished: false,
+        semantic_state: 'partial',
+        reflection: true,
+        passive_expected: true,
+        semantic_expected: true,
+        reflection_expected: true,
+        issue_count: 1,
+        status: 'warning',
       },
     ])
   })

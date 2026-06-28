@@ -79,10 +79,20 @@ export function traceConsistencyMatrix(
     }
 
     if (event.source === 'mcp_semantic_logger') {
-      if (
-        ['skill_use_started', 'skill_use_finished'].includes(event.event_type)
-      ) {
-        upsertMatrixRow(rows, 'Skill', semanticSkillPath(event), 'semantic')
+      if (event.event_type === 'skill_use_started') {
+        upsertMatrixRow(
+          rows,
+          'Skill',
+          semanticSkillPath(event),
+          'semantic_started',
+        )
+      } else if (event.event_type === 'skill_use_finished') {
+        upsertMatrixRow(
+          rows,
+          'Skill',
+          semanticSkillPath(event),
+          'semantic_finished',
+        )
       } else if (event.event_type === 'skill_reference_read') {
         upsertMatrixRow(
           rows,
@@ -103,18 +113,17 @@ export function traceConsistencyMatrix(
   }
 
   return rows
-    .map((row) => ({
-      ...row,
-      passive_expected: expected.passive,
-      semantic_expected: expected.semantic,
-      reflection_expected: expected.reflection,
-      issue_count: matrixIssueCount(row, expected),
-      status: matrixStatus(row, expected),
-    }))
+    .map((row) => finalizeMatrixRow(row, expected))
     .toSorted((left, right) => {
       let kind = kindOrder(left.kind) - kindOrder(right.kind)
       return kind || left.file.localeCompare(right.file)
     })
+}
+
+export function summarizeConsistencyMatrix(rows: ConsistencyMatrixRow[]) {
+  if (rows.length === 0) return 'unknown'
+  if (rows.some((row) => row.status !== 'pass')) return 'warning'
+  return 'pass'
 }
 
 function checkPassiveOnlyConsistency(
@@ -334,13 +343,21 @@ function upsertMatrixRow(
       file,
       passive: false,
       semantic: false,
+      semantic_started: false,
+      semantic_finished: false,
       reflection: false,
     }
     rows.push(row)
   }
 
   row.file = displayFile(row.file, file)
-  row[source] = true
+  if (source === 'semantic_started') {
+    row.semantic_started = true
+  } else if (source === 'semantic_finished') {
+    row.semantic_finished = true
+  } else {
+    row[source] = true
+  }
 }
 
 function displayFile(current: string, next: string) {
@@ -368,7 +385,7 @@ function matrixIssueCount(
 ) {
   return [
     expected.passive && !row.passive,
-    expected.semantic && !row.semantic,
+    expected.semantic && semanticState(row) !== 'complete',
     expected.reflection && !row.reflection,
   ].filter(Boolean).length
 }
@@ -381,6 +398,33 @@ function matrixStatus(
   if (issues === 0) return 'pass'
   if (issues === 1) return 'warning'
   return 'error'
+}
+
+function finalizeMatrixRow(
+  row: ConsistencyMatrixDraftRow,
+  expected: ConsistencyMatrixExpectedSources,
+): ConsistencyMatrixRow {
+  let next = {
+    ...row,
+    semantic: semanticState(row) === 'complete',
+    semantic_state: semanticState(row),
+    passive_expected: expected.passive,
+    semantic_expected: expected.semantic,
+    reflection_expected: expected.reflection,
+  }
+
+  return {
+    ...next,
+    issue_count: matrixIssueCount(next, expected),
+    status: matrixStatus(next, expected),
+  }
+}
+
+function semanticState(row: ConsistencyMatrixDraftRow): SemanticState {
+  if (row.kind === 'Reference') return row.semantic ? 'complete' : 'missing'
+  if (row.semantic_started && row.semantic_finished) return 'complete'
+  if (row.semantic_started || row.semantic_finished) return 'partial'
+  return 'missing'
 }
 
 function expectedSources(traceMode: TraceMode) {
@@ -419,6 +463,7 @@ export type ConsistencyResult = {
 }
 
 export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
+  semantic_state: SemanticState
   passive_expected: boolean
   semantic_expected: boolean
   reflection_expected: boolean
@@ -431,13 +476,24 @@ type ConsistencyMatrixDraftRow = {
   file: string
   passive: boolean
   semantic: boolean
+  semantic_started: boolean
+  semantic_finished: boolean
   reflection: boolean
 }
 
 type ConsistencyFileKind = 'Skill' | 'Reference'
-type ConsistencyMatrixSource = 'passive' | 'semantic' | 'reflection'
+type ConsistencyMatrixSource =
+  | 'passive'
+  | 'semantic'
+  | 'semantic_started'
+  | 'semantic_finished'
+  | 'reflection'
 
-type ConsistencyMatrixExpectedSources = Record<ConsistencyMatrixSource, boolean>
+type ConsistencyMatrixExpectedSources = Record<
+  'passive' | 'semantic' | 'reflection',
+  boolean
+>
+type SemanticState = 'complete' | 'partial' | 'missing'
 
 type ConsistencyOptions = {
   traceMode?: string

@@ -340,6 +340,7 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     <ConsistencyDot
                       active={row.semantic}
                       expected={row.semantic_expected}
+                      partial={row.semantic_state === 'partial'}
                       tone="semantic"
                     />
                   </td>
@@ -367,6 +368,7 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
 function ConsistencyDot({
   active,
   expected = true,
+  partial = false,
   tone,
 }: ConsistencyDotProps) {
   if (!expected) {
@@ -375,6 +377,16 @@ function ConsistencyDot({
         aria-label="Not expected in this mode"
         className="inline-block size-3 rounded-full border border-dashed border-base-300"
         title="Not expected in this mode"
+      />
+    )
+  }
+
+  if (partial) {
+    return (
+      <span
+        aria-label="Partially observed"
+        className="inline-block size-3 rounded-full bg-warning"
+        title="Partially observed"
       />
     )
   }
@@ -799,6 +811,7 @@ type ReflectionMode = (typeof reflectionModes)[number]
 type ConsistencyDotProps = {
   active: boolean
   expected?: boolean
+  partial?: boolean
   tone: 'passive' | 'semantic'
 }
 
