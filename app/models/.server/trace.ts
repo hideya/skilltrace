@@ -126,17 +126,23 @@ export async function getRunTimeline(publicId: string) {
   let events = await TraceEvent.oldestBy('timestamp', {
     where: { run_id: run.id },
   })
+  let allEvents = await TraceEvent.newestBy('timestamp')
+  let starts = sessionStartTimes(allEvents)
   let traceMode = runTraceMode(run, events)
+  let lifecycle = runLifecycleResult(run, events, starts)
+  let consistency = checkTraceConsistency(events, { traceMode })
 
   return {
     run,
     events,
+    status: runDisplayStatus(run, events, starts),
+    result: lifecycle ?? summarizeConsistency(consistency),
     trace_mode: traceMode,
     context: latestRunContext(events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
-    consistency: checkTraceConsistency(events, { traceMode }),
+    consistency,
     consistency_matrix: traceConsistencyMatrix(events, { traceMode }),
   }
 }

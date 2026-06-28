@@ -67,9 +67,10 @@ export default function Page({ loaderData }: PageProps) {
         </Form> */}
       </header>
 
-      <section className="grid grid-cols-3 gap-4 md:grid-cols-[2fr_2fr_1fr_1fr_1fr]">
-        <Metric label="Status" value={run.status} />
+      <section className="grid grid-cols-3 gap-4 md:grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr]">
         <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
+        <Metric label="Status" value={statusLabel(timeline.status)} />
+        <Metric label="Result" value={resultLabel(timeline.result)} />
         <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
@@ -421,6 +422,21 @@ function traceModeLabel(mode?: string) {
   if (mode === 'passive_only') return 'passive only'
   if (mode === 'full') return 'full'
   return 'unknown'
+}
+
+function statusLabel(status?: string) {
+  if (status === 'active') return 'active'
+  if (status === 'finished') return 'finished'
+  if (status === 'interrupted') return 'interrupted'
+  return status ?? 'unknown'
+}
+
+function resultLabel(result?: string) {
+  if (result === 'pass') return 'pass'
+  if (result === 'warning') return 'warning'
+  if (result === 'incomplete') return 'incomplete'
+  if (result === 'running') return 'running'
+  return result ?? 'unknown'
 }
 
 function Metric({ label, value }: MetricProps) {
