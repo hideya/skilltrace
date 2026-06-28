@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { checkTraceConsistency } from './trace-consistency'
+import {
+  checkTraceConsistency,
+  traceConsistencyMatrix,
+} from './trace-consistency'
 
 describe('checkTraceConsistency', () => {
   test('passes when skill read, started, and finished are present', () => {
@@ -192,6 +195,44 @@ describe('checkTraceConsistency', () => {
       },
     ])
   })
+
+  test('builds a file-oriented consistency matrix', () => {
+    let rows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      semanticPath('.skills/type-fix/SKILL.md', 'skill_use_started'),
+      passivePath(
+        '.skills/type-fix/references/checklist.md',
+        'skill_reference_read',
+      ),
+      semanticReferencePath('.skills/type-fix/references/checklist.md'),
+      reflection({
+        skills_read: ['/repo/.skills/type-fix/SKILL.md'],
+        references_read: ['/repo/.skills/type-fix/references/checklist.md'],
+        files_believed_to_influence_work: ['/repo/'],
+      }),
+    ])
+
+    expect(rows).toEqual([
+      {
+        kind: 'Skill',
+        file: '/repo/.skills/type-fix/SKILL.md',
+        passive: true,
+        semantic: true,
+        reflection: true,
+        issue_count: 0,
+        status: 'pass',
+      },
+      {
+        kind: 'Reference',
+        file: '/repo/.skills/type-fix/references/checklist.md',
+        passive: true,
+        semantic: true,
+        reflection: true,
+        issue_count: 0,
+        status: 'pass',
+      },
+    ])
+  })
 })
 
 function passive(skill_name: string) {
@@ -217,6 +258,26 @@ function passivePath(skill_path: string, event_type: string) {
     skill_path,
     payload: {
       file_path: `/repo/${skill_path}`,
+    },
+  }
+}
+
+function semanticPath(skill_path: string, event_type: string) {
+  return {
+    source: 'mcp_semantic_logger',
+    event_type,
+    skill_path,
+  }
+}
+
+function semanticReferencePath(reference_path: string) {
+  return {
+    source: 'mcp_semantic_logger',
+    event_type: 'skill_reference_read',
+    payload: {
+      data: {
+        reference_path,
+      },
     },
   }
 }

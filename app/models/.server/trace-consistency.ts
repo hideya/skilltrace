@@ -51,6 +51,55 @@ export function checkTraceConsistency(events: TraceEventLike[]) {
   return results
 }
 
+export function traceConsistencyMatrix(events: TraceEventLike[]) {
+  let reflection = latestReflection(events)
+  let rows: ConsistencyMatrixDraftRow[] = []
+
+  for (let event of events) {
+    if (event.source === 'passive_file_harness') {
+      if (event.event_type === 'skill_file_read') {
+        upsertMatrixRow(rows, 'Skill', passivePath(event), 'passive')
+      } else if (event.event_type === 'skill_reference_read') {
+        upsertMatrixRow(rows, 'Reference', passivePath(event), 'passive')
+      }
+    }
+
+    if (event.source === 'mcp_semantic_logger') {
+      if (
+        ['skill_use_started', 'skill_use_finished'].includes(event.event_type)
+      ) {
+        upsertMatrixRow(rows, 'Skill', semanticSkillPath(event), 'semantic')
+      } else if (event.event_type === 'skill_reference_read') {
+        upsertMatrixRow(
+          rows,
+          'Reference',
+          semanticReferencePath(event),
+          'semantic',
+        )
+      }
+    }
+  }
+
+  for (let file of stringList(reflection?.skills_read)) {
+    upsertMatrixRow(rows, 'Skill', file, 'reflection')
+  }
+
+  for (let file of stringList(reflection?.references_read)) {
+    upsertMatrixRow(rows, 'Reference', file, 'reflection')
+  }
+
+  return rows
+    .map((row) => ({
+      ...row,
+      issue_count: matrixIssueCount(row),
+      status: matrixStatus(row),
+    }))
+    .toSorted((left, right) => {
+      let kind = kindOrder(left.kind) - kindOrder(right.kind)
+      return kind || left.file.localeCompare(right.file)
+    })
+}
+
 function checkReflectionFileConsistency(events: TraceEventLike[]) {
   let reflection = latestReflection(events)
   if (!reflection) return []
@@ -168,6 +217,25 @@ function passivePathCandidates(event: TraceEventLike) {
   ].filter((value): value is string => typeof value === 'string' && !!value)
 }
 
+function semanticSkillPath(event: TraceEventLike) {
+  return (
+    event.skill_path ||
+    event.payload?.data?.skill_path ||
+    event.payload?.skill_path ||
+    event.skill_name ||
+    null
+  )
+}
+
+function semanticReferencePath(event: TraceEventLike) {
+  return (
+    event.payload?.data?.reference_path ||
+    event.payload?.reference_path ||
+    event.payload?.file_path ||
+    null
+  )
+}
+
 function reflectedFilePaths(reflection: Record<string, any>) {
   return unique([
     ...stringList(reflection.skills_read),
@@ -199,6 +267,65 @@ function stringList(value: any) {
   return value.filter((item) => typeof item === 'string' && item.trim())
 }
 
+function upsertMatrixRow(
+  rows: ConsistencyMatrixDraftRow[],
+  kind: ConsistencyFileKind,
+  file: string | null | undefined,
+  source: ConsistencyMatrixSource,
+) {
+  if (!file) return
+
+  let row = rows.find((item) =>
+    item.kind === kind &&
+    pathsMatch(normalizePath(item.file), normalizePath(file))
+  )
+
+  if (!row) {
+    row = {
+      kind,
+      file,
+      passive: false,
+      semantic: false,
+      reflection: false,
+    }
+    rows.push(row)
+  }
+
+  row.file = displayFile(row.file, file)
+  row[source] = true
+}
+
+function displayFile(current: string, next: string) {
+  if (pathLooksAbsolute(next) && !pathLooksAbsolute(current)) return next
+  if (
+    next.length > current.length &&
+    pathLooksAbsolute(next) === pathLooksAbsolute(current)
+  ) {
+    return next
+  }
+  return current
+}
+
+function pathLooksAbsolute(value: string) {
+  return value.startsWith('/') || /^[a-z]:\//i.test(value)
+}
+
+function matrixIssueCount(row: ConsistencyMatrixDraftRow) {
+  return [row.passive, row.semantic, row.reflection].filter((value) => !value)
+    .length
+}
+
+function matrixStatus(row: ConsistencyMatrixDraftRow) {
+  let issues = matrixIssueCount(row)
+  if (issues === 0) return 'pass'
+  if (issues === 1) return 'warning'
+  return 'error'
+}
+
+function kindOrder(kind: ConsistencyFileKind) {
+  return kind === 'Skill' ? 0 : 1
+}
+
 function unique(values: string[]) {
   return [...new Set(values)]
 }
@@ -209,6 +336,22 @@ export type ConsistencyResult = {
   message: string
   skill: string
 }
+
+export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
+  issue_count: number
+  status: 'pass' | 'warning' | 'error'
+}
+
+type ConsistencyMatrixDraftRow = {
+  kind: ConsistencyFileKind
+  file: string
+  passive: boolean
+  semantic: boolean
+  reflection: boolean
+}
+
+type ConsistencyFileKind = 'Skill' | 'Reference'
+type ConsistencyMatrixSource = 'passive' | 'semantic' | 'reflection'
 
 type SkillEventGroup = {
   label: string

@@ -4,7 +4,10 @@ import { db } from '~/.server/db'
 import { trace_events } from '~/.server/db/schema/trace-events'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
-import { checkTraceConsistency } from './trace-consistency'
+import {
+  checkTraceConsistency,
+  traceConsistencyMatrix,
+} from './trace-consistency'
 
 export const passiveEventSchema = z.object({
   run_id: z.string().trim().min(1, 'run_id is required'),
@@ -126,6 +129,7 @@ export async function getRunTimeline(publicId: string) {
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
     consistency: checkTraceConsistency(events),
+    consistency_matrix: traceConsistencyMatrix(events),
   }
 }
 

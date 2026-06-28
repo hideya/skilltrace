@@ -76,7 +76,7 @@ export default function Page({ loaderData }: PageProps) {
 
       <RunContextPanel context={timeline.context} />
 
-      <ConsistencyPanel results={timeline.consistency} />
+      <ConsistencyPanel rows={timeline.consistency_matrix} />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
@@ -281,41 +281,60 @@ function RunContextPanel({ context }: RunContextPanelProps) {
   )
 }
 
-function ConsistencyPanel({ results }: ConsistencyPanelProps) {
+function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Consistency</h2>
           <p className="text-sm text-base-content/60">
-            {results.length} check{results.length === 1 ? '' : 's'}
+            {rows.length} file{rows.length === 1 ? '' : 's'}
           </p>
         </div>
       </div>
 
-      {results.length > 0 ? (
-        <div className="grid gap-3">
-          {results.map((result, index) => (
-            <div
-              className="rounded-box border border-base-300 bg-base-100 p-4"
-              key={`${result.skill}-${result.title}-${index}`}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{result.title}</span>
-                    <ConsistencyBadge status={result.status} />
-                  </div>
-                  <p className="text-sm text-base-content/70">
-                    {result.message}
-                  </p>
-                </div>
-                <span className="badge badge-outline">
-                  skill: {result.skill}
-                </span>
-              </div>
-            </div>
-          ))}
+      {rows.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="table table-sm">
+            <thead>
+              <tr>
+                <th>Kind</th>
+                <th>File</th>
+                <th className="text-center">Passive</th>
+                <th className="text-center">Semantic</th>
+                <th className="text-center">Reflection</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  className={consistencyRowClass(row)}
+                  key={`${row.kind}-${row.file}`}
+                >
+                  <td>
+                    <span className="badge badge-outline badge-sm">
+                      {row.kind}
+                    </span>
+                  </td>
+                  <td
+                    className="max-w-[28rem] font-mono text-xs break-words"
+                    title={row.file}
+                  >
+                    {displayRunFilePath(row.file)}
+                  </td>
+                  <td className="text-center">
+                    <ConsistencyDot active={row.passive} />
+                  </td>
+                  <td className="text-center">
+                    <ConsistencyDot active={row.semantic} />
+                  </td>
+                  <td className="text-center">
+                    <ConsistencyDot active={row.reflection} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
@@ -326,15 +345,34 @@ function ConsistencyPanel({ results }: ConsistencyPanelProps) {
   )
 }
 
-function ConsistencyBadge({ status }: ConsistencyBadgeProps) {
-  let className =
-    status === 'pass'
-      ? 'badge-success'
-      : status === 'warning'
-        ? 'badge-warning'
-        : 'badge-info'
+function ConsistencyDot({ active }: ConsistencyDotProps) {
+  let className = active ? 'bg-success' : 'bg-base-300'
 
-  return <span className={`badge ${className}`}>{status}</span>
+  return (
+    <span
+      aria-label={active ? 'Observed' : 'Missing'}
+      className={`inline-block size-3 rounded-full ${className}`}
+      title={active ? 'Observed' : 'Missing'}
+    />
+  )
+}
+
+function consistencyRowClass(row: any) {
+  if (row.status === 'error') return 'bg-error/20'
+  if (row.status === 'warning') return 'bg-warning/20'
+  return ''
+}
+
+function displayRunFilePath(filePath: string) {
+  let normalized = filePath.replaceAll('\\', '/')
+  let parts = normalized.split('/').filter(Boolean)
+  let skillIndex = parts.indexOf('.skills')
+
+  if (skillIndex >= 0) {
+    return parts.slice(skillIndex).join('/')
+  }
+
+  return filePath
 }
 
 function Metric({ label, value }: MetricProps) {
@@ -654,7 +692,7 @@ type MetricProps = {
 }
 
 type ConsistencyPanelProps = {
-  results: any[]
+  rows: any[]
 }
 
 type RunContextPanelProps = {
@@ -685,8 +723,8 @@ type ReflectionValueProps = {
 
 type ReflectionMode = (typeof reflectionModes)[number]
 
-type ConsistencyBadgeProps = {
-  status: 'pass' | 'warning' | 'incomplete'
+type ConsistencyDotProps = {
+  active: boolean
 }
 
 type TimelineProps = {
