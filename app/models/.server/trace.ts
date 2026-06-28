@@ -124,6 +124,7 @@ export async function getRunTimeline(publicId: string) {
   return {
     run,
     events,
+    trace_mode: runTraceMode(run, events),
     context: latestRunContext(events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
@@ -209,6 +210,19 @@ function summarizeConsistency(results: ConsistencySummaryResult[]) {
 
 function latestRunContext(events: any[]) {
   return latestEventData(events, 'run_context_declared')
+}
+
+function runTraceMode(run: any, events: any[]) {
+  let bagMode = run.bag?.trace_mode
+  if (typeof bagMode === 'string') return bagMode
+
+  let started = events.find((event) =>
+    event.event_type === 'trace_session_started'
+  )
+  let eventMode = started?.payload?.trace_mode
+  if (typeof eventMode === 'string') return eventMode
+
+  return 'unknown'
 }
 
 function latestEventData(events: any[], eventType: string) {

@@ -172,6 +172,17 @@ Each mode should make its evidence boundary explicit. A passive-only result
 should not look as strong as a full-trace result. It should say what it can
 support, and what it cannot.
 
+Current implementation note:
+
+- runs record lightweight trace mode metadata without a database migration
+- current default `traceskill start` records `full`
+- current `traceskill start --no-inject-instructions` records `passive_only`
+- `passive_reflection` is reserved for the next CLI/template step
+- the run detail page shows the recorded mode in the top metrics
+- future mode-specific instrumentation should still write the target repo file
+  as `.skilltrace/instrumentation.md`; bundled templates can vary internally
+  while the injected AGENTS.md instruction stays stable
+
 Possible result labels:
 
 - `aligned`

@@ -21,6 +21,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
     target_name: path.basename(targetRoot),
     path_hash: pathHash(targetRoot),
     skill_roots: config.skillRoots,
+    trace_mode: normalizeTraceMode(input.trace_mode),
     started_at: new Date().toISOString(),
   }
 
@@ -35,6 +36,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
       target_root: targetRoot,
       path_hash: session.path_hash,
       skill_roots: config.skillRoots,
+      trace_mode: session.trace_mode,
     },
   })
   await appendSessionEvent(run.id, 'trace_session_started', session, {
@@ -107,6 +109,7 @@ async function appendSessionEvent(
       target_name: session.target_name,
       path_hash: session.path_hash,
       skill_roots: session.skill_roots,
+      trace_mode: session.trace_mode,
       probe_pid: session.probe_pid,
       probe_log_path: session.probe_log_path,
     },
@@ -214,6 +217,18 @@ function safeName(value: string) {
     .replace(/^-+|-+$/g, '') || 'repo'
 }
 
+export function normalizeTraceMode(value?: unknown): TraceMode {
+  if (
+    value === 'full' ||
+    value === 'passive_reflection' ||
+    value === 'passive_only'
+  ) {
+    return value
+  }
+
+  return 'full'
+}
+
 type TraceSessionState = {
   session?: TraceSession
 }
@@ -221,6 +236,7 @@ type TraceSessionState = {
 type StartTraceSessionInput = {
   target_root: string
   instrumentation?: Record<string, unknown>
+  trace_mode?: unknown
   now?: Date
 }
 
@@ -251,6 +267,7 @@ type TraceSession = {
   target_name: string
   path_hash: string
   skill_roots: string[]
+  trace_mode: TraceMode
   started_at: string
   probe_pid?: number
   probe_log_path?: string
@@ -263,6 +280,7 @@ type SkillTraceConfigFile = {
 }
 
 type ProbeKind = 'run' | 'shared'
+export type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 
 const STATE_KEY = Symbol.for('skilltrace.trace-session-state')
 const state = ((globalThis as any)[STATE_KEY] ??= {}) as TraceSessionState

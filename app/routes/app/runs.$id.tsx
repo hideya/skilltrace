@@ -67,8 +67,9 @@ export default function Page({ loaderData }: PageProps) {
         </Form> */}
       </header>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-5">
         <Metric label="Status" value={run.status} />
+        <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
         <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
@@ -373,6 +374,13 @@ function displayRunFilePath(filePath: string) {
   }
 
   return filePath
+}
+
+function traceModeLabel(mode?: string) {
+  if (mode === 'passive_reflection') return 'passive + reflection'
+  if (mode === 'passive_only') return 'passive only'
+  if (mode === 'full') return 'full'
+  return 'unknown'
 }
 
 function Metric({ label, value }: MetricProps) {

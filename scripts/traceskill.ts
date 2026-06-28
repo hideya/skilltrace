@@ -51,6 +51,7 @@ async function start(args: string[]) {
   let probe = passiveProbeSupport()
   let sharedProbe = sharedProbeStatus(server)
   let shouldInjectInstructions = options.injectInstructions !== false
+  let traceMode = traceModeForStart(shouldInjectInstructions)
   let instrumentation = withPassiveProbeWarning(
     assessInstrumentation(targetRoot, shouldInjectInstructions),
     probe,
@@ -68,6 +69,7 @@ async function start(args: string[]) {
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
     instrumentation,
+    trace_mode: traceMode,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -538,6 +540,9 @@ function printSession(label: string, server: string, session: any) {
   console.log(label)
   console.log(`  run: ${session.run_id}`)
   console.log(`  repo: ${session.target_root}`)
+  if (session.trace_mode) {
+    console.log(`  mode: ${session.trace_mode}`)
+  }
   console.log(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
   let probeLabel = session.probe_kind === 'shared' ? 'shared probe' : 'probe'
   console.log(`  ${probeLabel}: ${probeStatus(session.probe_pid)}`)
@@ -1093,6 +1098,10 @@ function printProbeUnavailableWarning(reason?: string) {
   console.warn(`Warning: ${reason ?? 'passive probe is unavailable'}`)
 }
 
+function traceModeForStart(shouldInjectInstructions: boolean): TraceMode {
+  return shouldInjectInstructions ? 'full' : 'passive_only'
+}
+
 function commandExists(command: string) {
   return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
 }
@@ -1169,6 +1178,8 @@ type Options = {
   sharedProbe?: boolean
   lines?: number
 }
+
+type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 
 type ProbeWorkerOptions = {
   runId: string

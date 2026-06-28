@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test } from 'vitest'
 import {
   buildSessionId,
   loadTargetConfig,
+  normalizeTraceMode,
   pathHash,
   timestampName,
 } from './trace-session'
@@ -57,6 +58,16 @@ describe('trace session helpers', () => {
     let config = loadTargetConfig(root)
 
     expect(config.skillRoots).toEqual([path.join(root, '.skills')])
+  })
+
+  test('normalizes trace mode values', () => {
+    expect(normalizeTraceMode('full')).toBe('full')
+    expect(normalizeTraceMode('passive_reflection')).toBe(
+      'passive_reflection',
+    )
+    expect(normalizeTraceMode('passive_only')).toBe('passive_only')
+    expect(normalizeTraceMode('unknown')).toBe('full')
+    expect(normalizeTraceMode(undefined)).toBe('full')
   })
 })
 
