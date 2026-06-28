@@ -172,7 +172,6 @@ function reflectedFilePaths(reflection: Record<string, any>) {
   return unique([
     ...stringList(reflection.skills_read),
     ...stringList(reflection.references_read),
-    ...stringList(reflection.files_believed_to_influence_work),
   ])
 }
 

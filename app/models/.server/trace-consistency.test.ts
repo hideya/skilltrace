@@ -112,8 +112,7 @@ describe('checkTraceConsistency', () => {
         skills_read: ['.skills/type-fix/SKILL.md'],
         references_read: ['.skills/type-fix/references/checklist.md'],
         files_believed_to_influence_work: [
-          '.skills/type-fix/SKILL.md',
-          '.skills/type-fix/references/checklist.md',
+          '/repo/',
         ],
       }),
     ])
