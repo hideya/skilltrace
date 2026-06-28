@@ -250,6 +250,11 @@ If a session is already active, `traceskill-dev start` refuses and asks you to r
 `traceskill-dev stop` first. This avoids accidental low-value runs and keeps
 manifest-backed instruction cleanup predictable.
 
+Run `traceskill-dev start` from the sandbox repo root, or pass
+`--target <repo>`. The command refuses if the target does not contain both
+`AGENTS.md` and `.skills/`, which catches accidental parent-directory runs
+before they create misleading records.
+
 For passive-only troubleshooting, use `traceskill-dev start --no-inject-instructions`.
 When instrumentation is not configured, the CLI prints a warning and the run
 detail timeline shows a warning badge on the `trace_session_started` row so the

@@ -143,6 +143,10 @@ manifest at `.skilltrace/injection.json`. `traceskill stop` removes only the
 exact inserted instruction and only removes generated files if SkillTrace
 created them and they were not changed.
 
+`traceskill start` expects to run from a target repo that contains `AGENTS.md`
+and `.skills/`. If either is missing, it refuses before creating a run so an
+accidental parent-directory command does not create misleading trace records.
+
 The injection is experimental but now part of the default local tracing path.
 If existing files or unexpected edits are detected, SkillTrace prints warnings
 and records them in the run timeline. For passive-only troubleshooting, use:

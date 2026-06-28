@@ -47,6 +47,7 @@ async function main() {
 async function start(args: string[]) {
   let options = parseArgs(args)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
+  assertTraceTarget(targetRoot)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
   let sharedProbe = sharedProbeStatus(server)
@@ -362,6 +363,27 @@ function defaultTargetRoot() {
     process.env.PWD ||
     process.cwd()
   )
+}
+
+function assertTraceTarget(targetRoot: string) {
+  let agentsPath = path.join(targetRoot, 'AGENTS.md')
+  let skillsPath = path.join(targetRoot, '.skills')
+
+  let hasAgents = fs.existsSync(agentsPath)
+  let hasSkills = fs.statSync(skillsPath, {
+    throwIfNoEntry: false,
+  })?.isDirectory()
+
+  if (hasAgents && hasSkills) {
+    return
+  }
+
+  console.error('The current directory does not look like a SkillTrace target repo.')
+  console.error(`  directory: ${targetRoot}`)
+  console.error('  expected: AGENTS.md and .skills/')
+  console.error('')
+  console.error('Run traceskill start from the target repo, or pass --target <repo>.')
+  process.exit(1)
 }
 
 function parseArgs(args: string[]) {

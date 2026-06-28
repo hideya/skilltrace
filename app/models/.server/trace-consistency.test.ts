@@ -196,6 +196,47 @@ describe('checkTraceConsistency', () => {
     ])
   })
 
+  test('ignores SkillTrace instrumentation in reflection consistency', () => {
+    let results = checkTraceConsistency([
+      reflection({
+        skills_read: ['.skilltrace/instrumentation.md'],
+        references_read: ['.skills/type-fix/references/checklist.md'],
+      }),
+      passivePath(
+        '.skills/type-fix/references/checklist.md',
+        'skill_reference_read',
+      ),
+    ])
+
+    expect(results).toEqual([
+      {
+        status: 'warning',
+        title: 'Read but not declared',
+        message:
+          '.skills/type-fix/references/checklist.md was read, but no skill_use_started event was logged.',
+        skill: '.skills/type-fix/references/checklist.md',
+      },
+      {
+        status: 'pass',
+        title: 'Reflected and observed',
+        message:
+          '.skills/type-fix/references/checklist.md was listed in reflection and observed passively.',
+        skill: '.skills/type-fix/references/checklist.md',
+      },
+    ])
+  })
+
+  test('omits SkillTrace instrumentation from the consistency matrix', () => {
+    let rows = traceConsistencyMatrix([
+      passivePath('.skilltrace/instrumentation.md', 'skill_file_read'),
+      reflection({
+        skills_read: ['.skilltrace/instrumentation.md'],
+      }),
+    ])
+
+    expect(rows).toEqual([])
+  })
+
   test('builds a file-oriented consistency matrix', () => {
     let rows = traceConsistencyMatrix([
       passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),

@@ -174,6 +174,11 @@ support, and what it cannot.
 
 Current implementation note:
 
+- The consistency matrix treats skill files and reference files as evidence
+  rows. SkillTrace's own `.skilltrace/instrumentation.md` is intentionally
+  ignored because it is read before semantic tracing can begin and is not a
+  target skill/reference file.
+
 - runs record lightweight trace mode metadata without a database migration
 - current default `traceskill start` records `full`
 - current `traceskill start --no-inject-instructions` records `passive_only`

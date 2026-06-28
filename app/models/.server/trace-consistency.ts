@@ -200,6 +200,7 @@ function passiveObservedPaths(events: TraceEventLike[]) {
     .filter(isPassiveSkillRead)
     .map(passivePath)
     .filter(Boolean)
+    .filter((path) => !isInstrumentationPath(path))
 
   return unique(paths)
 }
@@ -240,7 +241,7 @@ function reflectedFilePaths(reflection: Record<string, any>) {
   return unique([
     ...stringList(reflection.skills_read),
     ...stringList(reflection.references_read),
-  ])
+  ].filter((path) => !isInstrumentationPath(path)))
 }
 
 function pathSetHas(paths: string[], candidate: string) {
@@ -274,6 +275,7 @@ function upsertMatrixRow(
   source: ConsistencyMatrixSource,
 ) {
   if (!file) return
+  if (isInstrumentationPath(file)) return
 
   let row = rows.find((item) =>
     item.kind === kind &&
@@ -308,6 +310,10 @@ function displayFile(current: string, next: string) {
 
 function pathLooksAbsolute(value: string) {
   return value.startsWith('/') || /^[a-z]:\//i.test(value)
+}
+
+function isInstrumentationPath(value: string) {
+  return normalizePath(value).endsWith('.skilltrace/instrumentation.md')
 }
 
 function matrixIssueCount(row: ConsistencyMatrixDraftRow) {
