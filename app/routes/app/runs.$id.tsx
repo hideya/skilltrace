@@ -67,7 +67,7 @@ export default function Page({ loaderData }: PageProps) {
         </Form> */}
       </header>
 
-      <section className="grid gap-4 md:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-5">
         <Metric label="Status" value={run.status} />
         <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
         <Metric label="Events" value={timeline.events.length} />
@@ -299,7 +299,7 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>Kind</th>
+                <th className="text-center">Kind</th>
                 <th>File</th>
                 <th className="text-center">Passive</th>
                 <th className="text-center">Semantic</th>
@@ -312,7 +312,7 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
                   className={consistencyRowClass(row)}
                   key={`${row.kind}-${row.file}`}
                 >
-                  <td>
+                  <td className="text-center">
                     <span className="badge badge-outline badge-sm">
                       {row.kind}
                     </span>
@@ -324,13 +324,13 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
                     {displayRunFilePath(row.file)}
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.passive} />
+                    <ConsistencyDot active={row.passive} tone="passive" />
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.semantic} />
+                    <ConsistencyDot active={row.semantic} tone="semantic" />
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.reflection} />
+                    <ConsistencyDot active={row.reflection} tone="semantic" />
                   </td>
                 </tr>
               ))}
@@ -346,8 +346,9 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
   )
 }
 
-function ConsistencyDot({ active }: ConsistencyDotProps) {
-  let className = active ? 'bg-success' : 'bg-base-300'
+function ConsistencyDot({ active, tone }: ConsistencyDotProps) {
+  let activeClass = tone === 'semantic' ? 'bg-indigo-500' : 'bg-teal-500'
+  let className = active ? activeClass : 'bg-base-300'
 
   return (
     <span
@@ -389,7 +390,7 @@ function Metric({ label, value }: MetricProps) {
       <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold">{value}</p>
+      <p className="mt-2 truncate text-2xl font-bold">{value}</p>
     </div>
   )
 }
@@ -437,34 +438,37 @@ function TimelineItem({ event }: TimelineItemProps) {
   return (
     <details className="group rounded-box border border-base-300 bg-base-100">
       <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 marker:hidden">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className={`truncate ${eventTitleClass(event)}`}>
-              {event.event_type}
-            </span>
-            {warning ? (
-              <span className="badge badge-sm badge-warning" title={warning}>
-                warning
-              </span>
-            ) : null}
-            {name ? (
-              <span className="truncate font-mono text-xs text-base-content/60">
-                {name}
-              </span>
-            ) : null}
-          </div>
-          {isSemantic ? (
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-              <span className={`badge badge-sm ${sourceBadgeClass(event)}`}>
-                {event.source}
-              </span>
-              {event.skill_name ? (
-                <span className="badge badge-outline badge-sm">
-                  skill: {event.skill_name}
+        <div className="flex min-w-0 flex-col items-baseline gap-2">
+          {name ? (
+            <div className="flex items-baseline gap-2">
+              {name || isSemantic || warning ? (
+                <span
+                  className={`font-mono text-sm font-semibold ${eventFileNameClass(
+                    event,
+                  )}`}
+                >
+                  {name}
+                </span>
+              ) : null}
+              {isSemantic ? (
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  {event.skill_name ? (
+                    <span className="badge truncate badge-outline border-indigo-500 badge-sm text-indigo-600">
+                      skill: {event.skill_name}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              {warning ? (
+                <span className="badge badge-sm badge-warning" title={warning}>
+                  warning
                 </span>
               ) : null}
             </div>
           ) : null}
+          <div className={`truncate ${eventTitleClass(event)}`}>
+            {event.event_type}
+          </div>
         </div>
         <span className="font-mono text-xs text-base-content/50">
           {formatTime(event.timestamp)}
@@ -538,15 +542,9 @@ function isSemanticEvent(event: any) {
   return event.source === 'mcp_semantic_logger'
 }
 
-function sourceBadgeClass(event: any) {
-  if (isSemanticEvent(event)) return 'badge-info badge-outline'
-  if (isPassiveEvent(event)) return 'badge-primary badge-outline'
-  return 'badge-ghost'
-}
-
 function eventDotClass(event: any) {
-  if (isSemanticEvent(event)) return 'bg-info'
-  if (isPassiveEvent(event)) return 'bg-primary'
+  if (isSemanticEvent(event)) return 'bg-indigo-500'
+  if (isPassiveEvent(event)) return 'bg-teal-500'
   return 'bg-base-content'
 }
 
@@ -557,8 +555,22 @@ function eventDotSizeClass(event: any) {
 }
 
 function eventTitleClass(event: any) {
-  if (isSemanticEvent(event)) return 'font-semibold'
+  if (isSemanticEvent(event)) return 'font-semibold text-sm'
+  if (isPassiveReadEvent(event)) return 'font-semibold text-sm'
   return 'font-normal'
+}
+
+function eventFileNameClass(event: any) {
+  if (isSemanticEvent(event)) return 'text-indigo-600'
+  if (isPassiveEvent(event)) return 'text-teal-600'
+  return 'text-base-content/60'
+}
+
+function isPassiveReadEvent(event: any) {
+  return (
+    isPassiveEvent(event) &&
+    ['skill_file_read', 'skill_reference_read'].includes(event.event_type)
+  )
 }
 
 function eventWarning(event: any) {
@@ -593,8 +605,7 @@ function referencePathForEvent(event: any) {
   if (event.event_type !== 'skill_reference_read') return null
 
   let referencePath =
-    event.payload?.data?.reference_path ||
-    event.payload?.reference_path
+    event.payload?.data?.reference_path || event.payload?.reference_path
 
   if (!referencePath || typeof referencePath !== 'string') return null
   return referencePath
@@ -627,13 +638,11 @@ function reflectionLabel(key: string) {
 }
 
 function reflectionFileSections(value: Record<string, any>) {
-  return REFLECTION_FILE_FIELDS
-    .map((field) => ({
-      key: field.key,
-      title: field.title,
-      items: stringList(value[field.key]),
-    }))
-    .filter((section) => section.items.length > 0)
+  return REFLECTION_FILE_FIELDS.map((field) => ({
+    key: field.key,
+    title: field.title,
+    items: stringList(value[field.key]),
+  })).filter((section) => section.items.length > 0)
 }
 
 function omitReflectionFileSections(value: Record<string, any>) {
@@ -733,6 +742,7 @@ type ReflectionMode = (typeof reflectionModes)[number]
 
 type ConsistencyDotProps = {
   active: boolean
+  tone: 'passive' | 'semantic'
 }
 
 type TimelineProps = {

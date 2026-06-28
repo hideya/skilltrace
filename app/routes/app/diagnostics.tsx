@@ -29,6 +29,7 @@ export async function loader() {
       shared_probe_pid: state?.shared_probe_pid
         ? processStatus(state.shared_probe_pid)
         : 'missing',
+      shared_probe: sharedProbeCheck(state),
       state_matches_server: state?.server === server,
       mcp_registration: mcp.status,
     },
@@ -50,7 +51,7 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-4">
         <Metric
           label="Server"
           tone={checks.state_matches_server ? 'success' : 'warning'}
@@ -62,9 +63,9 @@ export default function Page({ loaderData }: PageProps) {
           value={checks.daemon_pid}
         />
         <Metric
-          label="Mode"
-          tone={process.mode === 'dev' ? 'warning' : 'neutral'}
-          value={process.mode}
+          label="Shared Probe"
+          tone={checks.shared_probe.tone}
+          value={checks.shared_probe.label}
         />
         <Metric
           label="Codex MCP"
@@ -73,7 +74,7 @@ export default function Page({ loaderData }: PageProps) {
         />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Panel
           description="State written by traceskill daemon start."
           title="Daemon"
@@ -83,10 +84,16 @@ export default function Page({ loaderData }: PageProps) {
               rows={[
                 ['PID', `${daemon.pid} ${checks.daemon_pid}`],
                 ['Server', daemon.server],
-                ['Bind', `${daemon.bind_host ?? '?'}:${daemon.bind_port ?? '?'}`],
+                [
+                  'Bind',
+                  `${daemon.bind_host ?? '?'}:${daemon.bind_port ?? '?'}`,
+                ],
                 ['Started', formatDate(daemon.started_at)],
                 ['Log', daemon.log_path],
-                ['State matches this UI', checks.state_matches_server ? 'yes' : 'no'],
+                [
+                  'State matches this UI',
+                  checks.state_matches_server ? 'yes' : 'no',
+                ],
               ]}
             />
           ) : (
@@ -118,38 +125,21 @@ export default function Page({ loaderData }: PageProps) {
             <KeyValues
               rows={[
                 ['Requested', 'yes'],
-                ['PID', daemon.shared_probe_pid
-                  ? `${daemon.shared_probe_pid} ${checks.shared_probe_pid}`
-                  : 'missing'],
+                [
+                  'PID',
+                  daemon.shared_probe_pid
+                    ? `${daemon.shared_probe_pid} ${checks.shared_probe_pid}`
+                    : 'missing',
+                ],
                 ['Platform', daemon.shared_probe_platform ?? 'unknown'],
                 ['Log', daemon.shared_probe_log_path ?? 'none'],
                 ['Warning', daemon.shared_probe_warning ?? 'none'],
               ]}
             />
           ) : (
-            <EmptyState>Shared probe is not configured for this daemon.</EmptyState>
-          )}
-        </Panel>
-
-        <Panel
-          description="One active run can be attached at a time."
-          title="Active Session"
-        >
-          {session ? (
-            <KeyValues
-              rows={[
-                ['Run', session.run_id],
-                ['Repo', session.target_root],
-                ['Started', formatDate(session.started_at)],
-                ['Probe', session.probe_pid
-                  ? `${session.probe_pid} ${processStatus(session.probe_pid)}`
-                  : 'not attached'],
-                ['Probe kind', session.probe_kind ?? 'run'],
-                ['Probe log', session.probe_log_path ?? 'none'],
-              ]}
-            />
-          ) : (
-            <EmptyState>No active SkillTrace session.</EmptyState>
+            <EmptyState>
+              Shared probe is not configured for this daemon.
+            </EmptyState>
           )}
         </Panel>
 
@@ -173,25 +163,51 @@ export default function Page({ loaderData }: PageProps) {
             </pre>
           ) : null}
         </Panel>
+
+        <Panel
+          description="One active run can be attached at a time."
+          title="Active Session"
+        >
+          {session ? (
+            <KeyValues
+              rows={[
+                ['Run', session.run_id],
+                ['Repo', session.target_root],
+                ['Started', formatDate(session.started_at)],
+                [
+                  'Probe',
+                  session.probe_pid
+                    ? `${session.probe_pid} ${processStatus(session.probe_pid)}`
+                    : 'not attached',
+                ],
+                ['Probe kind', session.probe_kind ?? 'run'],
+                ['Probe log', session.probe_log_path ?? 'none'],
+              ]}
+            />
+          ) : (
+            <EmptyState>No active SkillTrace session.</EmptyState>
+          )}
+        </Panel>
       </section>
     </main>
   )
 }
 
 function Metric({ label, value, tone = 'neutral' }: MetricProps) {
-  let toneClass = tone === 'success'
-    ? 'badge-success'
-    : tone === 'warning'
-      ? 'badge-warning'
-      : 'badge-outline'
+  let toneClass =
+    tone === 'success'
+      ? 'badge-success'
+      : tone === 'warning'
+        ? 'badge-warning'
+        : 'badge-outline'
 
   return (
     <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
+      <div className="md: mb-3 flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+        <div className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
           {label}
-        </p>
-        <span className={`badge badge-sm ${toneClass}`}>{tone}</span>
+        </div>
+        <div className={`badge badge-sm ${toneClass}`}>{tone}</div>
       </div>
       <p className="font-mono text-sm break-words">{value}</p>
     </div>
@@ -214,7 +230,10 @@ function KeyValues({ rows }: KeyValuesProps) {
   return (
     <dl className="grid gap-3 text-sm">
       {rows.map(([label, value]) => (
-        <div className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]" key={label}>
+        <div
+          className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]"
+          key={label}
+        >
           <dt className="text-base-content/50">{label}</dt>
           <dd className="min-w-0 font-mono text-xs break-words">{value}</dd>
         </div>
@@ -259,8 +278,46 @@ function processStatus(pid: number) {
   }
 }
 
+function sharedProbeCheck(state: DaemonState | null) {
+  if (!state) {
+    return {
+      label: 'missing',
+      tone: 'warning',
+    } satisfies MetricCheck
+  }
+
+  if (!state.shared_probe_requested) {
+    return {
+      label: 'not configured',
+      tone: 'neutral',
+    } satisfies MetricCheck
+  }
+
+  if (state.shared_probe_warning) {
+    return {
+      label: 'warning',
+      tone: 'warning',
+    } satisfies MetricCheck
+  }
+
+  if (!state.shared_probe_pid) {
+    return {
+      label: 'missing',
+      tone: 'warning',
+    } satisfies MetricCheck
+  }
+
+  let status = processStatus(state.shared_probe_pid)
+
+  return {
+    label: status,
+    tone: status === 'running' ? 'success' : 'warning',
+  } satisfies MetricCheck
+}
+
 function defaultServerUrl() {
-  let port = process.env.PORT || (process.env.SKILLTRACE_DEV === '1' ? '5777' : '7555')
+  let port =
+    process.env.PORT || (process.env.SKILLTRACE_DEV === '1' ? '5777' : '7555')
   let host = process.env.HOST || '127.0.0.1'
   let displayHost = host === '0.0.0.0' ? '127.0.0.1' : host
 
@@ -402,8 +459,14 @@ type ProcessInfo = {
 type Checks = {
   daemon_pid: string
   shared_probe_pid: string
+  shared_probe: MetricCheck
   state_matches_server: boolean
   mcp_registration: string
+}
+
+type MetricCheck = {
+  label: string
+  tone: 'neutral' | 'success' | 'warning'
 }
 
 type CodexMcpStatus = {
