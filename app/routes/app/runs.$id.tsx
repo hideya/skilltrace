@@ -506,6 +506,7 @@ function eventDotClass(event: any) {
 
 function eventDotSizeClass(event: any) {
   if (isSemanticEvent(event)) return 'top-4.5 left-1 size-4'
+  if (isPassiveEvent(event)) return 'top-5 left-1.5 size-3'
   return 'top-5.5 left-2 size-2'
 }
 
