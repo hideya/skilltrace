@@ -190,12 +190,12 @@ function RunRow({ summary, isEditing }: RunRowProps) {
           />
         </td>
       ) : null}
-      <td>
+      <td className="max-w-64">
         <a
-          className="link font-medium link-hover"
+          className="inline-block max-w-64 link font-medium link-hover"
           href={`/app/runs/${run.public_id}`}
         >
-          {label}
+          <RunLabel label={label} />
         </a>
         {run.description ? (
           <div className="mt-1 max-w-md truncate text-xs text-base-content/60">
@@ -286,24 +286,25 @@ function ResultBadge({ result }: ResultBadgeProps) {
     result === 'running'
       ? 'badge-info'
       : result === 'pass'
-      ? 'badge-success'
-      : result === 'warning'
-        ? 'badge-warning'
-        : result === 'incomplete'
+        ? 'badge-success'
+        : result === 'warning'
           ? 'badge-warning'
-          : 'badge-ghost'
+          : result === 'incomplete'
+            ? 'badge-warning'
+            : 'badge-ghost'
 
   return <span className={`badge ${className}`}>{resultLabel(result)}</span>
 }
 
 function StatusBadge({ status }: StatusBadgeProps) {
-  let className = status === 'interrupted'
-    ? 'badge-warning'
-    : status === 'finished'
-      ? 'badge-success'
-      : status === 'active'
-        ? 'badge-info'
-        : 'badge-outline badge-neutral'
+  let className =
+    status === 'interrupted'
+      ? 'badge-warning'
+      : status === 'finished'
+        ? 'badge-success'
+        : status === 'active'
+          ? 'badge-info'
+          : 'badge-outline badge-neutral'
 
   return <span className={`badge ${className}`}>{statusLabel(status)}</span>
 }
@@ -316,12 +317,34 @@ function ModeBadge({ mode }: ModeBadgeProps) {
   )
 }
 
+function RunLabel({ label }: RunLabelProps) {
+  let parts = splitRunLabel(label)
+  if (!parts) return <span className="break-words">{label}</span>
+
+  return (
+    <span className="flex flex-col gap-2 text-xs leading-tight">
+      <span>{parts.stem}</span>
+      <span className="font-mono text-sm font-bold">{parts.timestamp}</span>
+    </span>
+  )
+}
+
 function resultLabel(result: ResultState) {
   if (result === 'pass') return 'Pass'
   if (result === 'warning') return 'Warning'
   if (result === 'incomplete') return 'Incomplete'
   if (result === 'running') return 'Running'
   return 'Unknown'
+}
+
+function splitRunLabel(label: string) {
+  let match = label.match(/^(.*-)(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})$/)
+  if (!match) return null
+
+  return {
+    stem: match[1],
+    timestamp: match[2],
+  }
 }
 
 function statusLabel(status: string) {
@@ -409,6 +432,10 @@ type StatusBadgeProps = {
 
 type ModeBadgeProps = {
   mode?: string
+}
+
+type RunLabelProps = {
+  label: string
 }
 
 type ResultState = 'pass' | 'warning' | 'incomplete' | 'running' | 'unknown'
