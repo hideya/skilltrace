@@ -95,9 +95,19 @@ Restarting the same command surface cleans up stale shared workers for that
 server, and a shared worker exits automatically if it cannot reach its daemon
 for about 30 seconds.
 
-Use `traceskill-dev start --no-inject-instructions` for passive-only trials
-where you do not want SkillTrace to inject MCP tracing instructions into the
-target repo.
+Use explicit run modes when comparing intervention levels:
+
+```bash
+traceskill-dev start --mode full
+traceskill-dev start --mode passive_reflection
+traceskill-dev start --mode passive_only
+```
+
+`full` is the default and injects context, live skill lifecycle, reference-read,
+and reflection guidance. `passive_reflection` injects context and final
+reflection guidance only. `passive_only` does not inject MCP tracing
+instructions into the target repo. The older `--no-inject-instructions` flag
+remains available as a passive-only alias.
 
 If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
 

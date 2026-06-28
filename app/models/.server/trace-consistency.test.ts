@@ -260,6 +260,9 @@ describe('checkTraceConsistency', () => {
         passive: true,
         semantic: true,
         reflection: true,
+        passive_expected: true,
+        semantic_expected: true,
+        reflection_expected: true,
         issue_count: 0,
         status: 'pass',
       },
@@ -269,8 +272,83 @@ describe('checkTraceConsistency', () => {
         passive: true,
         semantic: true,
         reflection: true,
+        passive_expected: true,
+        semantic_expected: true,
+        reflection_expected: true,
         issue_count: 0,
         status: 'pass',
+      },
+    ])
+  })
+
+  test('treats passive-only observations as sufficient', () => {
+    let results = checkTraceConsistency([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ], { traceMode: 'passive_only' })
+    let rows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ], { traceMode: 'passive_only' })
+
+    expect(results).toEqual([
+      {
+        status: 'pass',
+        title: 'Observed passively',
+        message: '.skills/type-fix/SKILL.md was observed passively.',
+        skill: '.skills/type-fix/SKILL.md',
+      },
+    ])
+    expect(rows).toEqual([
+      {
+        kind: 'Skill',
+        file: '.skills/type-fix/SKILL.md',
+        passive: true,
+        semantic: false,
+        reflection: false,
+        passive_expected: true,
+        semantic_expected: false,
+        reflection_expected: false,
+        issue_count: 0,
+        status: 'pass',
+      },
+    ])
+  })
+
+  test('uses passive plus reflection expectations without requiring semantic events', () => {
+    let rows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      reflection({
+        skills_read: ['.skills/type-fix/SKILL.md'],
+      }),
+    ], { traceMode: 'passive_reflection' })
+
+    expect(rows).toEqual([
+      {
+        kind: 'Skill',
+        file: '.skills/type-fix/SKILL.md',
+        passive: true,
+        semantic: false,
+        reflection: true,
+        passive_expected: true,
+        semantic_expected: false,
+        reflection_expected: true,
+        issue_count: 0,
+        status: 'pass',
+      },
+    ])
+  })
+
+  test('warns when passive plus reflection mode has observed reads but no reflection', () => {
+    let results = checkTraceConsistency([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ], { traceMode: 'passive_reflection' })
+
+    expect(results).toEqual([
+      {
+        status: 'warning',
+        title: 'Reflection missing',
+        message:
+          'Passive reads were observed, but no run reflection was declared.',
+        skill: 'run reflection',
       },
     ])
   })

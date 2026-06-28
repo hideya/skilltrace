@@ -69,6 +69,22 @@ describe('instruction injection', () => {
     expect(fs.readFileSync(instrumentationPath, 'utf8')).toBe('user policy\n')
   })
 
+  test('injects reflection-only instrumentation for passive reflection mode', () => {
+    let dir = tempRoot()
+    let instrumentationPath = path.join(dir, '.skilltrace/instrumentation.md')
+    fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# Agent Guidelines\n')
+
+    let injected = injectInstructions(dir, 'run_reflection', {
+      traceMode: 'passive_reflection',
+    })
+    let content = fs.readFileSync(instrumentationPath, 'utf8')
+
+    expect(injected.status).toBe('ok')
+    expect(content).toContain('passive plus reflection tracing')
+    expect(content).toContain('Do not call `skill_log_event`')
+    expect(content).toContain('call `skill_trace_reflection`')
+  })
+
   test('preserves pre-existing passive config and warns', () => {
     let dir = tempRoot()
     let configPath = path.join(dir, '.skilltrace.json')

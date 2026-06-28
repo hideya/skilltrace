@@ -101,10 +101,13 @@ export async function listRunSummaries() {
     let runEvents = eventsByRun.get(run.id) ?? []
     let lastEvent = runEvents[0]
     let lifecycle = runLifecycleResult(run, runEvents, starts)
+    let traceMode = runTraceMode(run, runEvents)
 
     return {
       run,
-      result: lifecycle ?? summarizeConsistency(checkTraceConsistency(runEvents)),
+      result: lifecycle ?? summarizeConsistency(checkTraceConsistency(runEvents, {
+        traceMode,
+      })),
       context: latestRunContext(runEvents),
       reflection: latestEventData(runEvents, 'run_reflection_declared'),
       event_count: runEvents.length,
@@ -120,17 +123,18 @@ export async function getRunTimeline(publicId: string) {
   let events = await TraceEvent.oldestBy('timestamp', {
     where: { run_id: run.id },
   })
+  let traceMode = runTraceMode(run, events)
 
   return {
     run,
     events,
-    trace_mode: runTraceMode(run, events),
+    trace_mode: traceMode,
     context: latestRunContext(events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
-    consistency: checkTraceConsistency(events),
-    consistency_matrix: traceConsistencyMatrix(events),
+    consistency: checkTraceConsistency(events, { traceMode }),
+    consistency_matrix: traceConsistencyMatrix(events, { traceMode }),
   }
 }
 

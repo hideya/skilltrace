@@ -51,8 +51,8 @@ async function start(args: string[]) {
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
   let sharedProbe = sharedProbeStatus(server)
-  let shouldInjectInstructions = options.injectInstructions !== false
-  let traceMode = traceModeForStart(shouldInjectInstructions)
+  let traceMode = traceModeForStart(options)
+  let shouldInjectInstructions = traceMode !== 'passive_only'
   let instrumentation = withPassiveProbeWarning(
     assessInstrumentation(targetRoot, shouldInjectInstructions),
     probe,
@@ -74,7 +74,7 @@ async function start(args: string[]) {
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
-    ? injectInstructions(targetRoot, result.session.run_id)
+    ? injectInstructions(targetRoot, result.session.run_id, { traceMode })
     : null
   if (injection) {
     printInjectionResult('Instruction injection', injection)
@@ -402,6 +402,8 @@ function parseArgs(args: string[]) {
       options.injectInstructions = true
     } else if (arg === '--no-inject-instructions') {
       options.injectInstructions = false
+    } else if (arg === '--mode') {
+      options.mode = parseTraceMode(args[++index])
     } else if (arg === '--shared-probe') {
       options.sharedProbe = true
     } else if (arg === '--no-shared-probe') {
@@ -951,7 +953,7 @@ function printInstrumentationWarning(instrumentation: any, injectRequested?: boo
   console.warn('Warning: SkillTrace instrumentation is not configured.')
   console.warn('Semantic MCP events are unlikely.')
   console.warn(
-    'Run without --no-inject-instructions to let SkillTrace configure temporary tracing instructions.',
+    'Run `traceskill start --mode full` to let SkillTrace configure temporary tracing instructions.',
   )
   for (let warning of instrumentation.warnings ?? []) {
     console.warn(`  warning: ${warning}`)
@@ -1120,8 +1122,22 @@ function printProbeUnavailableWarning(reason?: string) {
   console.warn(`Warning: ${reason ?? 'passive probe is unavailable'}`)
 }
 
-function traceModeForStart(shouldInjectInstructions: boolean): TraceMode {
-  return shouldInjectInstructions ? 'full' : 'passive_only'
+function traceModeForStart(options: Options): TraceMode {
+  if (options.mode) return options.mode
+  if (options.injectInstructions === false) return 'passive_only'
+  return 'full'
+}
+
+function parseTraceMode(value?: string): TraceMode {
+  if (
+    value === 'full' ||
+    value === 'passive_reflection' ||
+    value === 'passive_only'
+  ) {
+    return value
+  }
+
+  usage(`Unknown trace mode: ${value ?? ''}`)
 }
 
 function commandExists(command: string) {
@@ -1185,7 +1201,7 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--no-inject-instructions]')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only]')
   console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }
@@ -1197,6 +1213,7 @@ type Options = {
   server?: string
   debugProbe?: boolean
   injectInstructions?: boolean
+  mode?: TraceMode
   sharedProbe?: boolean
   lines?: number
 }

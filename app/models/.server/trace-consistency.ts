@@ -1,4 +1,13 @@
-export function checkTraceConsistency(events: TraceEventLike[]) {
+export function checkTraceConsistency(
+  events: TraceEventLike[],
+  options: ConsistencyOptions = {},
+) {
+  let traceMode = normalizeTraceMode(options.traceMode)
+  if (traceMode === 'passive_only') return checkPassiveOnlyConsistency(events)
+  if (traceMode === 'passive_reflection') {
+    return checkPassiveReflectionConsistency(events)
+  }
+
   let groups = groupBySkill(events)
   let results: ConsistencyResult[] = []
 
@@ -51,7 +60,12 @@ export function checkTraceConsistency(events: TraceEventLike[]) {
   return results
 }
 
-export function traceConsistencyMatrix(events: TraceEventLike[]) {
+export function traceConsistencyMatrix(
+  events: TraceEventLike[],
+  options: ConsistencyOptions = {},
+) {
+  let traceMode = normalizeTraceMode(options.traceMode)
+  let expected = expectedSources(traceMode)
   let reflection = latestReflection(events)
   let rows: ConsistencyMatrixDraftRow[] = []
 
@@ -91,13 +105,45 @@ export function traceConsistencyMatrix(events: TraceEventLike[]) {
   return rows
     .map((row) => ({
       ...row,
-      issue_count: matrixIssueCount(row),
-      status: matrixStatus(row),
+      passive_expected: expected.passive,
+      semantic_expected: expected.semantic,
+      reflection_expected: expected.reflection,
+      issue_count: matrixIssueCount(row, expected),
+      status: matrixStatus(row, expected),
     }))
     .toSorted((left, right) => {
       let kind = kindOrder(left.kind) - kindOrder(right.kind)
       return kind || left.file.localeCompare(right.file)
     })
+}
+
+function checkPassiveOnlyConsistency(
+  events: TraceEventLike[],
+): ConsistencyResult[] {
+  return passiveObservedPaths(events).map((observed): ConsistencyResult => ({
+    status: 'pass',
+    title: 'Observed passively',
+    message: `${observed} was observed passively.`,
+    skill: observed,
+  }))
+}
+
+function checkPassiveReflectionConsistency(
+  events: TraceEventLike[],
+): ConsistencyResult[] {
+  let reflectionResults = checkReflectionFileConsistency(events)
+  if (reflectionResults.length > 0 || latestReflection(events)) {
+    return reflectionResults
+  }
+
+  if (passiveObservedPaths(events).length === 0) return []
+
+  return [{
+    status: 'warning',
+    title: 'Reflection missing',
+    message: 'Passive reads were observed, but no run reflection was declared.',
+    skill: 'run reflection',
+  }]
 }
 
 function checkReflectionFileConsistency(events: TraceEventLike[]) {
@@ -316,16 +362,45 @@ function isInstrumentationPath(value: string) {
   return normalizePath(value).endsWith('.skilltrace/instrumentation.md')
 }
 
-function matrixIssueCount(row: ConsistencyMatrixDraftRow) {
-  return [row.passive, row.semantic, row.reflection].filter((value) => !value)
-    .length
+function matrixIssueCount(
+  row: ConsistencyMatrixDraftRow,
+  expected: ConsistencyMatrixExpectedSources,
+) {
+  return [
+    expected.passive && !row.passive,
+    expected.semantic && !row.semantic,
+    expected.reflection && !row.reflection,
+  ].filter(Boolean).length
 }
 
-function matrixStatus(row: ConsistencyMatrixDraftRow) {
-  let issues = matrixIssueCount(row)
+function matrixStatus(
+  row: ConsistencyMatrixDraftRow,
+  expected: ConsistencyMatrixExpectedSources,
+) {
+  let issues = matrixIssueCount(row, expected)
   if (issues === 0) return 'pass'
   if (issues === 1) return 'warning'
   return 'error'
+}
+
+function expectedSources(traceMode: TraceMode) {
+  return {
+    passive: true,
+    semantic: traceMode === 'full',
+    reflection: traceMode === 'full' || traceMode === 'passive_reflection',
+  } satisfies ConsistencyMatrixExpectedSources
+}
+
+function normalizeTraceMode(value?: string): TraceMode {
+  if (
+    value === 'full' ||
+    value === 'passive_reflection' ||
+    value === 'passive_only'
+  ) {
+    return value
+  }
+
+  return 'full'
 }
 
 function kindOrder(kind: ConsistencyFileKind) {
@@ -344,6 +419,9 @@ export type ConsistencyResult = {
 }
 
 export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
+  passive_expected: boolean
+  semantic_expected: boolean
+  reflection_expected: boolean
   issue_count: number
   status: 'pass' | 'warning' | 'error'
 }
@@ -358,6 +436,14 @@ type ConsistencyMatrixDraftRow = {
 
 type ConsistencyFileKind = 'Skill' | 'Reference'
 type ConsistencyMatrixSource = 'passive' | 'semantic' | 'reflection'
+
+type ConsistencyMatrixExpectedSources = Record<ConsistencyMatrixSource, boolean>
+
+type ConsistencyOptions = {
+  traceMode?: string
+}
+
+type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 
 type SkillEventGroup = {
   label: string

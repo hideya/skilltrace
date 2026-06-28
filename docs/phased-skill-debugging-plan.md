@@ -181,12 +181,14 @@ Current implementation note:
 
 - runs record lightweight trace mode metadata without a database migration
 - current default `traceskill start` records `full`
-- current `traceskill start --no-inject-instructions` records `passive_only`
-- `passive_reflection` is reserved for the next CLI/template step
+- `traceskill start --mode passive_reflection` records `passive_reflection` and
+  injects the reduced reflection template
+- `traceskill start --mode passive_only` and
+  `traceskill start --no-inject-instructions` record `passive_only`
 - the run detail page shows the recorded mode in the top metrics
-- future mode-specific instrumentation should still write the target repo file
-  as `.skilltrace/instrumentation.md`; bundled templates can vary internally
-  while the injected AGENTS.md instruction stays stable
+- mode-specific instrumentation still writes the target repo file as
+  `.skilltrace/instrumentation.md`; bundled templates vary internally while the
+  injected AGENTS.md instruction stays stable
 
 Possible result labels:
 

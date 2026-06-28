@@ -4,7 +4,14 @@ import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 
 const PACKAGE_ROOT = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)))
-const INSTRUMENTATION_TEMPLATE_PATH = path.join(PACKAGE_ROOT, 'scripts/templates/instrumentation.md')
+const INSTRUMENTATION_TEMPLATE_PATH = path.join(
+  PACKAGE_ROOT,
+  'scripts/templates/instrumentation.md',
+)
+const REFLECTION_INSTRUMENTATION_TEMPLATE_PATH = path.join(
+  PACKAGE_ROOT,
+  'scripts/templates/instrumentation-reflection.md',
+)
 const INJECTION_BLOCK =
   'Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.\n\n'
 const INJECTION_MANIFEST_PATH = '.skilltrace/injection.json'
@@ -14,14 +21,18 @@ const PASSIVE_CONFIG = {
   skill_roots: ['.skills'],
 }
 
-export function injectInstructions(targetRoot: string, runId: string) {
+export function injectInstructions(
+  targetRoot: string,
+  runId: string,
+  options: InjectInstructionsOptions = {},
+) {
   let warnings: string[] = []
   let skilltraceDir = path.join(targetRoot, '.skilltrace')
   let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
   let instrumentationPath = path.join(targetRoot, INSTRUMENTATION_PATH)
   let passiveConfigPath = path.join(targetRoot, PASSIVE_CONFIG_PATH)
   let agentsPath = path.join(targetRoot, 'AGENTS.md')
-  let template = fs.readFileSync(INSTRUMENTATION_TEMPLATE_PATH, 'utf8')
+  let template = fs.readFileSync(templatePath(options.traceMode), 'utf8')
 
   if (fs.existsSync(manifestPath)) {
     warnings.push('Existing SkillTrace injection manifest found; leaving existing injected state unchanged.')
@@ -83,6 +94,7 @@ export function injectInstructions(targetRoot: string, runId: string) {
     agents_hash_after: hashFileIfExists(agentsPath),
     instrumentation_hash_after: hashFileIfExists(instrumentationPath),
     passive_config_hash_after: hashFileIfExists(passiveConfigPath),
+    trace_mode: options.traceMode,
   }
 
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
@@ -280,6 +292,18 @@ function findPackageRoot(startDir: string) {
   }
 }
 
+function templatePath(traceMode?: TraceMode) {
+  if (traceMode === 'passive_reflection') {
+    return REFLECTION_INSTRUMENTATION_TEMPLATE_PATH
+  }
+
+  return INSTRUMENTATION_TEMPLATE_PATH
+}
+
+type InjectInstructionsOptions = {
+  traceMode?: TraceMode
+}
+
 type InjectionResultInput = {
   status: string
   manifestPath: string
@@ -307,4 +331,7 @@ type InjectionManifest = {
   agents_hash_after?: string
   instrumentation_hash_after?: string
   passive_config_hash_after?: string
+  trace_mode?: TraceMode
 }
+
+type TraceMode = 'full' | 'passive_reflection' | 'passive_only'

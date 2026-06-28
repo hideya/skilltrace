@@ -54,7 +54,7 @@ codex mcp add skilltrace -- traceskill-dev mcp
 Then start the passive trace session from this sandbox repository:
 
 ```bash
-traceskill-dev start --inject-instructions
+traceskill-dev start --mode full
 ```
 
 This starts the passive probe before you launch command-line Codex for this sandbox repository.
@@ -68,7 +68,7 @@ To remove the SkillTrace MCP server later:
 codex mcp remove skilltrace
 ```
 
-`traceskill-dev start --inject-instructions` prints the generated run ID. It looks like:
+`traceskill-dev start --mode full` prints the generated run ID. It looks like:
 
 ```text
 agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12

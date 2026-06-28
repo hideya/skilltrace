@@ -255,7 +255,19 @@ Run `traceskill-dev start` from the sandbox repo root, or pass
 `AGENTS.md` and `.skills/`, which catches accidental parent-directory runs
 before they create misleading records.
 
-For passive-only troubleshooting, use `traceskill-dev start --no-inject-instructions`.
+For mode comparison trials, use:
+
+```bash
+traceskill-dev start --mode full
+traceskill-dev start --mode passive_reflection
+traceskill-dev start --mode passive_only
+```
+
+`full` is the default. `passive_reflection` skips live skill lifecycle logging
+but still asks for run context and final reflection. `passive_only` skips
+instruction injection entirely. `--no-inject-instructions` remains available as
+a passive-only alias.
+
 When instrumentation is not configured, the CLI prints a warning and the run
 detail timeline shows a warning badge on the `trace_session_started` row so the
 missing semantic tracing setup is visible even after the terminal output is gone.

@@ -149,11 +149,21 @@ accidental parent-directory command does not create misleading trace records.
 
 The injection is experimental but now part of the default local tracing path.
 If existing files or unexpected edits are detected, SkillTrace prints warnings
-and records them in the run timeline. For passive-only troubleshooting, use:
+and records them in the run timeline.
+
+SkillTrace supports three run modes:
 
 ```bash
-traceskill start --no-inject-instructions
+traceskill start --mode full
+traceskill start --mode passive_reflection
+traceskill start --mode passive_only
 ```
+
+`full` is the default and asks for passive, live semantic, and reflection
+evidence. `passive_reflection` asks only for run context and final reflection,
+without live skill lifecycle declarations. `passive_only` skips instruction
+injection and uses only passive file observations. `--no-inject-instructions`
+remains available as an alias for passive-only troubleshooting.
 
 Only one trace session can be active at a time. If a session is already active,
 `traceskill start` refuses and asks you to run `traceskill stop` first.

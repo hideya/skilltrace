@@ -77,7 +77,10 @@ export default function Page({ loaderData }: PageProps) {
 
       <RunContextPanel context={timeline.context} />
 
-      <ConsistencyPanel rows={timeline.consistency_matrix} />
+      <ConsistencyPanel
+        rows={timeline.consistency_matrix}
+        traceMode={timeline.trace_mode}
+      />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
@@ -282,14 +285,16 @@ function RunContextPanel({ context }: RunContextPanelProps) {
   )
 }
 
-function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
+function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
+  let description = consistencyDescription(traceMode)
+
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Consistency</h2>
           <p className="text-sm text-base-content/60">
-            {rows.length} file{rows.length === 1 ? '' : 's'}
+            {rows.length} file{rows.length === 1 ? '' : 's'} · {description}
           </p>
         </div>
       </div>
@@ -324,13 +329,25 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
                     {displayRunFilePath(row.file)}
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.passive} tone="passive" />
+                    <ConsistencyDot
+                      active={row.passive}
+                      expected={row.passive_expected}
+                      tone="passive"
+                    />
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.semantic} tone="semantic" />
+                    <ConsistencyDot
+                      active={row.semantic}
+                      expected={row.semantic_expected}
+                      tone="semantic"
+                    />
                   </td>
                   <td className="text-center">
-                    <ConsistencyDot active={row.reflection} tone="semantic" />
+                    <ConsistencyDot
+                      active={row.reflection}
+                      expected={row.reflection_expected}
+                      tone="semantic"
+                    />
                   </td>
                 </tr>
               ))}
@@ -346,7 +363,21 @@ function ConsistencyPanel({ rows }: ConsistencyPanelProps) {
   )
 }
 
-function ConsistencyDot({ active, tone }: ConsistencyDotProps) {
+function ConsistencyDot({
+  active,
+  expected = true,
+  tone,
+}: ConsistencyDotProps) {
+  if (!expected) {
+    return (
+      <span
+        aria-label="Not expected in this mode"
+        className="inline-block size-3 rounded-full border border-dashed border-base-300"
+        title="Not expected in this mode"
+      />
+    )
+  }
+
   let activeClass = tone === 'semantic' ? 'bg-indigo-500' : 'bg-teal-500'
   let className = active ? activeClass : 'bg-base-300'
 
@@ -357,6 +388,14 @@ function ConsistencyDot({ active, tone }: ConsistencyDotProps) {
       title={active ? 'Observed' : 'Missing'}
     />
   )
+}
+
+function consistencyDescription(mode?: string) {
+  if (mode === 'passive_only') return 'checking passive observations'
+  if (mode === 'passive_reflection') {
+    return 'checking passive observations and reflection'
+  }
+  return 'checking passive, semantic, and reflection evidence'
 }
 
 function consistencyRowClass(row: any) {
@@ -710,6 +749,7 @@ type MetricProps = {
 
 type ConsistencyPanelProps = {
   rows: any[]
+  traceMode?: string
 }
 
 type RunContextPanelProps = {
@@ -742,6 +782,7 @@ type ReflectionMode = (typeof reflectionModes)[number]
 
 type ConsistencyDotProps = {
   active: boolean
+  expected?: boolean
   tone: 'passive' | 'semantic'
 }
 

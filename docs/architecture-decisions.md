@@ -366,11 +366,18 @@ instruction. The mutation is manifest-backed in `.skilltrace/injection.json`,
 and `traceskill stop` removes only the exact inserted instruction block and only
 removes generated files when SkillTrace created them and they are unchanged.
 
-For passive-only troubleshooting, the user can opt out:
+The start command supports explicit trace modes:
 
 ```bash
-traceskill start --no-inject-instructions
+traceskill start --mode full
+traceskill start --mode passive_reflection
+traceskill start --mode passive_only
 ```
+
+`full` is the default and writes the complete instrumentation template.
+`passive_reflection` writes a reduced template that asks only for run context
+and final reflection. `passive_only` skips instruction injection; the older
+`--no-inject-instructions` flag remains a passive-only alias.
 
 Reasons:
 
