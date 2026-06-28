@@ -149,6 +149,7 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
             <tr>
               {isEditing ? <th>Select</th> : null}
               <th>Run</th>
+              <th className="text-center">Mode</th>
               <th className="text-center">Status</th>
               <th className="text-center">Result</th>
               <th className="text-center">Model</th>
@@ -181,7 +182,7 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         <td>
           <input
             className="checkbox checkbox-sm"
-            disabled={run.status === 'active'}
+            disabled={summary.status === 'active'}
             form="delete-runs-form"
             name="run_ids"
             type="checkbox"
@@ -203,7 +204,10 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         ) : null}
       </td>
       <td className="text-center">
-        <span className="badge badge-outline badge-neutral">{run.status}</span>
+        <ModeBadge mode={summary.trace_mode} />
+      </td>
+      <td className="text-center">
+        <StatusBadge status={summary.status ?? run.status} />
       </td>
       <td className="text-center">
         <ResultBadge result={summary.result} />
@@ -237,7 +241,7 @@ function groupSummaries(summaries: any[]) {
         key,
         label: key,
         targetRoot,
-        latestStatus: run.status,
+        latestStatus: summary.status ?? run.status,
         summaries: [],
       }
       groups.set(key, group)
@@ -292,12 +296,46 @@ function ResultBadge({ result }: ResultBadgeProps) {
   return <span className={`badge ${className}`}>{resultLabel(result)}</span>
 }
 
+function StatusBadge({ status }: StatusBadgeProps) {
+  let className = status === 'interrupted'
+    ? 'badge-warning'
+    : status === 'finished'
+      ? 'badge-success'
+      : status === 'active'
+        ? 'badge-info'
+        : 'badge-outline badge-neutral'
+
+  return <span className={`badge ${className}`}>{statusLabel(status)}</span>
+}
+
+function ModeBadge({ mode }: ModeBadgeProps) {
+  return (
+    <span className="badge badge-outline whitespace-nowrap">
+      {traceModeLabel(mode)}
+    </span>
+  )
+}
+
 function resultLabel(result: ResultState) {
   if (result === 'pass') return 'Pass'
   if (result === 'warning') return 'Warning'
   if (result === 'incomplete') return 'Incomplete'
   if (result === 'running') return 'Running'
   return 'Unknown'
+}
+
+function statusLabel(status: string) {
+  if (status === 'active') return 'Active'
+  if (status === 'finished') return 'Finished'
+  if (status === 'interrupted') return 'Interrupted'
+  return status
+}
+
+function traceModeLabel(mode?: string) {
+  if (mode === 'passive_reflection') return 'p + reflection'
+  if (mode === 'passive_only') return 'passive only'
+  if (mode === 'full') return 'full'
+  return 'unknown'
 }
 
 function ModelCell({ context }: ModelCellProps) {
@@ -363,6 +401,14 @@ type RunGroup = {
 
 type ResultBadgeProps = {
   result: ResultState
+}
+
+type StatusBadgeProps = {
+  status: string
+}
+
+type ModeBadgeProps = {
+  mode?: string
 }
 
 type ResultState = 'pass' | 'warning' | 'incomplete' | 'running' | 'unknown'

@@ -102,9 +102,12 @@ export async function listRunSummaries() {
     let lastEvent = runEvents[0]
     let lifecycle = runLifecycleResult(run, runEvents, starts)
     let traceMode = runTraceMode(run, runEvents)
+    let status = runDisplayStatus(run, runEvents, starts)
 
     return {
       run,
+      status,
+      trace_mode: traceMode,
       result: lifecycle ?? summarizeConsistency(checkTraceConsistency(runEvents, {
         traceMode,
       })),
@@ -146,10 +149,16 @@ export async function clearRunEvents(publicId: string) {
 
 export async function deleteRunRecords(publicIds: string[]) {
   let deleted: any[] = []
+  let events = await TraceEvent.newestBy('timestamp')
+  let eventsByRun = groupEventsByRun(events)
+  let starts = sessionStartTimes(events)
 
   for (let publicId of unique(publicIds)) {
     let run = await Run.findBy({ public_id: publicId })
-    if (!run || run.status === 'active') continue
+    if (!run) continue
+
+    let runEvents = eventsByRun.get(run.id) ?? []
+    if (runDisplayStatus(run, runEvents, starts) === 'active') continue
 
     await db.delete(trace_events).where(eq(trace_events.run_id, run.id))
     deleted.push(await Run.delete(run.id))
@@ -210,6 +219,21 @@ function summarizeConsistency(results: ConsistencySummaryResult[]) {
     return 'incomplete'
   }
   return 'pass'
+}
+
+function runDisplayStatus(
+  run: RunLike,
+  events: TraceEventLike[],
+  starts: Date[],
+) {
+  if (
+    run.status === 'active' &&
+    runLifecycleResult(run, events, starts) === 'incomplete'
+  ) {
+    return 'interrupted'
+  }
+
+  return run.status
 }
 
 function latestRunContext(events: any[]) {
