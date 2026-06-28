@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { type KeyboardEvent, useEffect, useState } from 'react'
 import { Form, redirect, useRevalidator } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
@@ -175,9 +175,29 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
 function RunRow({ summary, isEditing }: RunRowProps) {
   let run = summary.run
   let label = run.name || run.public_id
+  let href = `/app/runs/${run.public_id}`
+
+  function navigateToRun() {
+    if (isEditing) return
+    window.location.assign(href)
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTableRowElement>) {
+    if (isEditing) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+
+    event.preventDefault()
+    navigateToRun()
+  }
 
   return (
-    <tr>
+    <tr
+      className={isEditing ? '' : 'cursor-pointer hover:bg-base-200/70'}
+      onClick={navigateToRun}
+      onKeyDown={handleKeyDown}
+      role={isEditing ? undefined : 'link'}
+      tabIndex={isEditing ? undefined : 0}
+    >
       {isEditing ? (
         <td>
           <input
@@ -191,12 +211,9 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         </td>
       ) : null}
       <td className="max-w-64">
-        <a
-          className="inline-block max-w-64 link font-medium link-hover"
-          href={`/app/runs/${run.public_id}`}
-        >
+        <span className="inline-block max-w-64 font-medium">
           <RunLabel label={label} />
-        </a>
+        </span>
         {run.description ? (
           <div className="mt-1 max-w-md truncate text-xs text-base-content/60">
             {run.description}

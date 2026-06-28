@@ -67,7 +67,7 @@ export default function Page({ loaderData }: PageProps) {
         </Form> */}
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-5">
+      <section className="grid grid-cols-3 gap-4 md:grid-cols-[2fr_2fr_1fr_1fr_1fr]">
         <Metric label="Status" value={run.status} />
         <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
         <Metric label="Events" value={timeline.events.length} />
@@ -426,10 +426,10 @@ function traceModeLabel(mode?: string) {
 function Metric({ label, value }: MetricProps) {
   return (
     <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
-      <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
+      <p className="text-left text-xs tracking-[0.2em] text-base-content/50 uppercase">
         {label}
       </p>
-      <p className="mt-2 truncate text-2xl font-bold">{value}</p>
+      <p className="mt-2 truncate text-right text-2xl font-bold">{value}</p>
     </div>
   )
 }
