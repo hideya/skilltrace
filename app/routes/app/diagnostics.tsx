@@ -60,14 +60,14 @@ export default function Page({ loaderData }: PageProps) {
         }`}
       >
         <Metric
-          label="Server"
-          tone={checks.state_matches_server ? 'success' : 'warning'}
-          value={server}
-        />
-        <Metric
           label="Daemon"
           tone={checks.daemon_pid === 'running' ? 'success' : 'warning'}
-          value={checks.daemon_pid}
+          value={daemon?.server ?? 'No daemon state.'}
+        />
+        <Metric
+          label="Server"
+          tone={checks.state_matches_server ? 'success' : 'warning'}
+          value={checks.state_matches_server ? 'running' : 'mismatch'}
         />
         {showSharedProbe ? (
           <Metric
@@ -84,9 +84,7 @@ export default function Page({ loaderData }: PageProps) {
         <Metric
           label="Active Session"
           tone={session ? 'running' : 'neutral'}
-          value={
-            session ? session.target_root : 'No active SkillTrace session.'
-          }
+          value={session ? session.target_root : 'no active session'}
         />
       </section>
 
