@@ -2,11 +2,10 @@
   "name": "skilltrace",
   "version": "0.0.0",
   "description": "Local observability for AI agent skill usage",
-  "license": "MIT",
   "keywords": [
-    "ai-agent",
     "agent",
     "agent-skills",
+    "ai-agent",
     "codex",
     "mcp",
     "observability",
@@ -14,15 +13,16 @@
     "skilltrace",
     "tracing"
   ],
+  "homepage": "https://github.com/hideya/skill-trace#readme",
+  "bugs": {
+    "url": "https://github.com/hideya/skill-trace/issues"
+  },
+  "license": "MIT",
   "author": "hideya kawahara",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hideya/skill-trace.git"
   },
-  "bugs": {
-    "url": "https://github.com/hideya/skill-trace/issues"
-  },
-  "homepage": "https://github.com/hideya/skill-trace#readme",
   "bin": {
     "traceskill": "./bin/traceskill.js"
   },
@@ -34,9 +34,6 @@
     "README.md",
     "react-router.config.ts"
   ],
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "type": "module",
   "scripts": {
     "prep": "node scripts/prep.js",
@@ -67,7 +64,7 @@
     "drizzle-studio": "pnpm drizzle-kit studio",
     "drizzle-studio:prod": "NODE_ENV=production dotenv -- pnpm drizzle-kit studio",
     "ship": "node scripts/ship.js",
-    "clean": "node scripts/clean.js -e .env -e /tmp -e /data"
+    "clean": "node scripts/clean.js -e .env -e data -e tmp"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
@@ -106,6 +103,9 @@
     "typescript": "^5.9.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "packageManager": "pnpm@10.28.2",
   "pnpm": {

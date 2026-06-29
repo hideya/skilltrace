@@ -68,8 +68,11 @@ pnpm publish:do
 
 `publish:test` runs `pnpm clean`, `pnpm install`, and
 `npm publish --access=public --dry-run`. `publish:do` uses the same flow without
-`--dry-run`. Both rely on `prepack`, so the React Router build and package CLI
-entrypoints are rebuilt before npm packs the tarball.
+`--dry-run`. The clean step is intentionally interactive and preserves `.env`,
+`data`, `tmp`, and `agent-sandbox-repo`, so local dogfood state is not removed
+while build artifacts and old tarballs can be regenerated. Both publish scripts
+rely on `prepack`, so the React Router build and package CLI entrypoints are
+rebuilt before npm packs the tarball.
 
 The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
 full production build so the tarball includes:

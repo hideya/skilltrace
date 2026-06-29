@@ -137,9 +137,10 @@ pnpm publish:test
 ```
 
 This follows the same cautious flow used for other small npm packages in this
-workspace: clean untracked build artifacts, reinstall dependencies, run the
-package build through `prepack`, and ask npm to show what would be published
-without uploading it. When the dry run looks right and you are logged in with
+workspace: clean untracked build artifacts while preserving `.env`, `data`,
+`tmp`, and `agent-sandbox-repo`, reinstall dependencies, run the package build
+through `prepack`, and ask npm to show what would be published without
+uploading it. When the dry run looks right and you are logged in with
 `npm whoami`, publish with:
 
 ```bash
