@@ -227,7 +227,7 @@ function RunRow({ summary, isEditing }: RunRowProps) {
         <StatusBadge status={summary.status ?? run.status} />
       </td>
       <td className="text-center">
-        <ResultBadge result={summary.result} />
+        <ResultBadge result={summary.result} mode={summary.trace_mode} />
       </td>
       <td className="text-center">
         <ModelCell context={summary.context} />
@@ -298,19 +298,23 @@ function saveExpandedRunGroups(keys: string[]) {
   window.sessionStorage.setItem(EXPANDED_RUN_GROUPS_KEY, JSON.stringify(keys))
 }
 
-function ResultBadge({ result }: ResultBadgeProps) {
+function ResultBadge({ result, mode }: ResultBadgeProps) {
   let className =
     result === 'running'
       ? 'badge-info'
       : result === 'pass'
-        ? 'badge-success'
+        ? mode === 'passive_only'
+          ? 'badge-outline border-teal-500 text-teal-600'
+          : 'badge-success'
         : result === 'warning'
           ? 'badge-warning'
           : result === 'incomplete'
             ? 'badge-warning'
             : 'badge-ghost'
 
-  return <span className={`badge ${className}`}>{resultLabel(result)}</span>
+  return (
+    <span className={`badge ${className}`}>{resultLabel(result, mode)}</span>
+  )
 }
 
 function StatusBadge({ status }: StatusBadgeProps) {
@@ -346,7 +350,8 @@ function RunLabel({ label }: RunLabelProps) {
   )
 }
 
-function resultLabel(result: ResultState) {
+function resultLabel(result: ResultState, mode?: string) {
+  if (result === 'pass' && mode === 'passive_only') return 'Captured'
   if (result === 'pass') return 'Pass'
   if (result === 'warning') return 'Warning'
   if (result === 'incomplete') return 'Incomplete'
@@ -441,6 +446,7 @@ type RunGroup = {
 
 type ResultBadgeProps = {
   result: ResultState
+  mode?: string
 }
 
 type StatusBadgeProps = {

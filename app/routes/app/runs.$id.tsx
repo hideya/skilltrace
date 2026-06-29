@@ -70,7 +70,10 @@ export default function Page({ loaderData }: PageProps) {
       <section className="grid grid-cols-3 gap-4 md:grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr]">
         <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
         <Metric label="Status" value={statusLabel(timeline.status)} />
-        <Metric label="Result" value={resultLabel(timeline.result)} />
+        <Metric
+          label="Result"
+          value={resultLabel(timeline.result, timeline.trace_mode)}
+        />
         <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
@@ -431,7 +434,8 @@ function statusLabel(status?: string) {
   return status ?? 'unknown'
 }
 
-function resultLabel(result?: string) {
+function resultLabel(result?: string, mode?: string) {
+  if (result === 'pass' && mode === 'passive_only') return 'captured'
   if (result === 'pass') return 'pass'
   if (result === 'warning') return 'warning'
   if (result === 'incomplete') return 'incomplete'
