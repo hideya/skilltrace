@@ -1,6 +1,6 @@
 import { ChevronLeftIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Form, Link, redirect, useRevalidator } from 'react-router'
+import { Form, redirect, useNavigate, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 
@@ -40,12 +40,7 @@ export default function Page({ loaderData }: PageProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-row items-center gap-2">
-              <Link
-                className="link rounded-full bg-primary text-white link-hover"
-                to="/app/runs"
-              >
-                <ChevronLeftIcon className="size-10" />
-              </Link>
+              <BackButton />
               <div className="badge rounded-full badge-outline">
                 Run timeline
               </div>
@@ -94,6 +89,34 @@ export default function Page({ loaderData }: PageProps) {
         </aside>
       </section>
     </main>
+  )
+}
+
+function BackButton() {
+  let navigate = useNavigate()
+
+  function goBack() {
+    let referrer = document.referrer ? new URL(document.referrer) : null
+    let hasLocalReferrer = referrer?.origin === window.location.origin
+    let hasRouterHistory = Number(window.history.state?.idx) > 0
+
+    if (hasLocalReferrer || hasRouterHistory) {
+      navigate(-1)
+      return
+    }
+
+    navigate('/app/runs')
+  }
+
+  return (
+    <button
+      aria-label="Back"
+      className="link rounded-full bg-primary text-white link-hover"
+      onClick={goBack}
+      type="button"
+    >
+      <ChevronLeftIcon className="size-10" />
+    </button>
   )
 }
 
