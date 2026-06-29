@@ -35,7 +35,7 @@ export default function Page({ loaderData }: PageProps) {
   useAutoRefresh(run.status === 'active')
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pt-10 pb-40">
       <header className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-2">
@@ -340,7 +340,6 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     <ConsistencyDot
                       active={row.semantic}
                       expected={row.semantic_expected}
-                      partial={row.semantic_state === 'partial'}
                       tone="semantic"
                     />
                   </td>
@@ -368,7 +367,6 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
 function ConsistencyDot({
   active,
   expected = true,
-  partial = false,
   tone,
 }: ConsistencyDotProps) {
   if (!expected) {
@@ -381,17 +379,7 @@ function ConsistencyDot({
     )
   }
 
-  if (partial) {
-    return (
-      <span
-        aria-label="Partially observed"
-        className="inline-block size-3 rounded-full bg-warning"
-        title="Partially observed"
-      />
-    )
-  }
-
-  let activeClass = tone === 'semantic' ? 'bg-teal-500' : 'bg-indigo-500'
+  let activeClass = tone === 'semantic' ? 'bg-indigo-500' : 'bg-teal-500'
   let className = active ? activeClass : 'bg-base-300'
 
   return (
@@ -520,7 +508,7 @@ function TimelineItem({ event }: TimelineItemProps) {
               {isSemantic ? (
                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                   {event.skill_name ? (
-                    <span className="badge truncate badge-outline border-teal-500 badge-sm text-teal-600">
+                    <span className="badge truncate badge-outline border-indigo-500 badge-sm text-indigo-600">
                       skill: {event.skill_name}
                     </span>
                   ) : null}
@@ -610,8 +598,8 @@ function isSemanticEvent(event: any) {
 }
 
 function eventDotClass(event: any) {
-  if (isSemanticEvent(event)) return 'bg-teal-500'
-  if (isPassiveEvent(event)) return 'bg-indigo-500'
+  if (isSemanticEvent(event)) return 'bg-indigo-500'
+  if (isPassiveEvent(event)) return 'bg-teal-500'
   return 'bg-base-content'
 }
 
@@ -628,8 +616,8 @@ function eventTitleClass(event: any) {
 }
 
 function eventFileNameClass(event: any) {
-  if (isSemanticEvent(event)) return 'text-teal-600'
-  if (isPassiveEvent(event)) return 'text-indigo-600'
+  if (isSemanticEvent(event)) return 'text-indigo-600'
+  if (isPassiveEvent(event)) return 'text-teal-600'
   return 'text-base-content/60'
 }
 
@@ -811,7 +799,6 @@ type ReflectionMode = (typeof reflectionModes)[number]
 type ConsistencyDotProps = {
   active: boolean
   expected?: boolean
-  partial?: boolean
   tone: 'passive' | 'semantic'
 }
 
