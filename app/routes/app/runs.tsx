@@ -203,7 +203,7 @@ function RunGroup({
           {isComparing ? (
             <>
               <button
-                className="btn btn-sm btn-outline"
+                className="btn btn-outline btn-sm"
                 onClick={(event) => {
                   event.preventDefault()
                   event.stopPropagation()
@@ -215,7 +215,7 @@ function RunGroup({
               </button>
               <a
                 aria-disabled={!canCompareSelected}
-                className={`btn btn-sm btn-primary ${canCompareSelected ? '' : 'btn-disabled'}`}
+                className={`btn bg-sky-500 text-white btn-sm ${canCompareSelected ? '' : 'btn-disabled'}`}
                 href={canCompareSelected ? compareHref : undefined}
                 onClick={(event) => event.stopPropagation()}
               >
@@ -224,7 +224,7 @@ function RunGroup({
             </>
           ) : canCompareModes(group) && !isEditing ? (
             <button
-              className="btn btn-sm btn-primary"
+              className="btn bg-sky-400 btn-sm"
               onClick={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
@@ -424,9 +424,7 @@ function readExpandedRunGroups() {
 function canCompareModes(group: RunGroup) {
   let modes = new Set(
     group.summaries
-      .filter(
-        (summary) => isCompareEligible(summary),
-      )
+      .filter((summary) => isCompareEligible(summary))
       .map((summary) => summary.trace_mode)
       .filter((mode) => mode !== 'unknown'),
   )
@@ -438,8 +436,8 @@ function defaultCompareSelection(group: RunGroup) {
   let selected: Record<string, string> = {}
 
   for (let mode of TRACE_MODES) {
-    let summary = group.summaries.find((item) =>
-      item.trace_mode === mode && isCompareEligible(item)
+    let summary = group.summaries.find(
+      (item) => item.trace_mode === mode && isCompareEligible(item),
     )
     if (summary) selected[mode] = summary.run.public_id
   }
