@@ -53,7 +53,7 @@ After completing the user task, call `skill_trace_reflection`:
   ],
   "uncertainties": ["anything not verified"],
   "instrumentation_notes": ["which SkillTrace MCP calls were attempted and whether any failed or were unavailable"],
-  "recommended_skill_changes": ["suggest skill or instrumentation improvements, if any"],
+  "recommended_skill_changes": ["suggest improvement ideas, even trivial ones, or write 'No change recommended' with a brief reason"],
   "summary": "One-sentence reflection summary."
 }
 ```

@@ -279,7 +279,9 @@ Ask the agent to call it after completing the task and after emitting
   "instrumentation_notes": [
     "called skill_trace_context, skill_log_event, and skill_trace_reflection"
   ],
-  "recommended_skill_changes": [],
+  "recommended_skill_changes": [
+    "No change recommended: the skill and checklist were clear for this task."
+  ],
   "summary": "Completed the type fix task and recorded trace alignment."
 }
 ```

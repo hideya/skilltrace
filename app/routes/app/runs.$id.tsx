@@ -379,7 +379,7 @@ function ConsistencyDot({
     )
   }
 
-  let activeClass = tone === 'semantic' ? 'bg-indigo-500' : 'bg-teal-500'
+  let activeClass = tone === 'semantic' ? 'bg-indigo-400' : 'bg-teal-400'
   let className = active ? activeClass : 'bg-base-300'
 
   return (
@@ -598,8 +598,8 @@ function isSemanticEvent(event: any) {
 }
 
 function eventDotClass(event: any) {
-  if (isSemanticEvent(event)) return 'bg-indigo-500'
-  if (isPassiveEvent(event)) return 'bg-teal-500'
+  if (isSemanticEvent(event)) return 'bg-indigo-400'
+  if (isPassiveEvent(event)) return 'bg-teal-400'
   return 'bg-base-content'
 }
 
@@ -616,8 +616,8 @@ function eventTitleClass(event: any) {
 }
 
 function eventFileNameClass(event: any) {
-  if (isSemanticEvent(event)) return 'text-indigo-600'
-  if (isPassiveEvent(event)) return 'text-teal-600'
+  if (isSemanticEvent(event)) return 'text-indigo-500'
+  if (isPassiveEvent(event)) return 'text-teal-500'
   return 'text-base-content/60'
 }
 
