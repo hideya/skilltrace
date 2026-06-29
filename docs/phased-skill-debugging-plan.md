@@ -186,15 +186,20 @@ Current implementation note:
 - `traceskill start --mode passive_only` and
   `traceskill start --no-inject-instructions` record `passive_only`
 - the run detail page shows the recorded mode in the top metrics
+- passive-only runs that capture expected passive evidence are labeled
+  `Captured` in the UI instead of `Pass`
 - mode-specific instrumentation still writes the target repo file as
   `.skilltrace/instrumentation.md`; bundled templates vary internally while the
   injected AGENTS.md instruction stays stable
+- the runs page offers `Compare Modes` when a run group has at least two
+  successful modes; the first report compares the latest successful run per mode
+  by normalized skill/reference files
 
 Possible result labels:
 
 - `aligned`
 - `partially aligned`
-- `passive only`
+- `captured`
 - `reflection mismatch`
 - `semantic mismatch`
 - `insufficient evidence`

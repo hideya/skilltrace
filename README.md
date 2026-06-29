@@ -263,19 +263,26 @@ supervises the passive probe, and receives MCP semantic events.
 See `docs/architecture-decisions.md` for the decisions and complications found
 while building the first local prototype.
 
-The local UI has two primary views:
+The local UI has three primary views:
 
 - `/app/runs` lists grouped trace runs and opens run detail pages.
+- `/app/runs/compare/:group` compares the latest successful runs for a target
+  repo across tracing modes.
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
   process, shared passive probe, active session, and Codex MCP registration.
 
 On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
 Result column intentionally shows `Running` while a trace session is active.
-Final diagnoses such as `Pass` or `Warning` appear only after `traceskill stop`
-records `trace_session_finished`, and are derived from the file-oriented
-consistency matrix. If an unstopped run is superseded by a newer
+Final diagnoses such as `Pass`, `Warning`, or passive-only `Captured` appear
+only after `traceskill stop` records `trace_session_finished`, and are derived
+from the file-oriented consistency matrix. If an unstopped run is superseded by a newer
 `trace_session_started` event, the Status column shows `Interrupted` to make the
 missing cleanup visible.
+
+When a run group has at least two successful modes, the runs page shows
+`Compare Modes`. The comparison report uses the latest successful run per mode
+to show whether skill and reference file usage remains stable as instrumentation
+is reduced from full tracing to passive-only capture.
 
 The runs list and active run detail pages poll lightly while a run is `Running`
 so newly received daemon events appear without a manual refresh. Finished and

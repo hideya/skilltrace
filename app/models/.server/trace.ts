@@ -5,6 +5,7 @@ import { trace_events } from '~/.server/db/schema/trace-events'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
 import {
+  type ConsistencyMatrixRow,
   summarizeConsistencyMatrix,
   traceConsistencyMatrix,
 } from './trace-consistency'
@@ -120,6 +121,54 @@ export async function listRunSummaries() {
   })
 }
 
+export async function getModeComparison(groupKey: string) {
+  let runs = await Run.newestBy('created_at')
+  let events = await TraceEvent.newestBy('timestamp')
+  let eventsByRun = groupEventsByRun(events)
+  let starts = sessionStartTimes(events)
+  let candidates: ModeComparisonRun[] = []
+
+  for (let run of runs) {
+    if (runGroupKey(run) !== groupKey) continue
+
+    let runEvents = eventsByRun.get(run.id) ?? []
+    let traceMode = runTraceMode(run, runEvents)
+    let lifecycle = runLifecycleResult(run, runEvents, starts)
+    let matrix = traceConsistencyMatrix(runEvents, { traceMode })
+    let result = lifecycle ?? summarizeConsistencyMatrix(matrix)
+    let status = runDisplayStatus(run, runEvents, starts)
+
+    if (!isTraceMode(traceMode)) continue
+    if (result !== 'pass') continue
+    if (status !== 'finished') continue
+
+    candidates.push({
+      run,
+      trace_mode: traceMode,
+      result,
+      matrix,
+      event_count: runEvents.length,
+      started_at: run.started_at,
+      finished_at: run.finished_at,
+    })
+  }
+
+  let selected = latestRunByMode(candidates)
+  let modes = TRACE_MODES.filter((mode) =>
+    selected.some((run) => run.trace_mode === mode)
+  )
+
+  return {
+    group_key: groupKey,
+    group_label: groupKey,
+    target_root: selected[0]?.run.bag?.target_root ?? null,
+    runs: selected,
+    rows: comparisonRows(selected),
+    has_enough_runs: selected.length >= 2,
+    modes,
+  }
+}
+
 export async function getRunTimeline(publicId: string) {
   let run = await Run.findByPublicID(publicId)
   let events = await TraceEvent.oldestBy('timestamp', {
@@ -195,6 +244,96 @@ function groupEventsByRun(events: any[]) {
 
 function unique(values: string[]) {
   return [...new Set(values)]
+}
+
+function runGroupKey(run: any) {
+  let targetRoot = run.bag?.target_root || run.description || 'unknown target'
+  let targetName =
+    run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
+  let pathHash =
+    run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
+
+  return `${targetName}-${pathHash}`
+}
+
+function pathHashFromRunId(publicId: string) {
+  let match = publicId.match(
+    /-([A-Za-z0-9_-]{6})-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/,
+  )
+  return match?.[1]
+}
+
+function latestRunByMode(candidates: ModeComparisonRun[]) {
+  let selected: ModeComparisonRun[] = []
+
+  for (let mode of TRACE_MODES) {
+    let run = candidates.find((candidate) => candidate.trace_mode === mode)
+    if (run) selected.push(run)
+  }
+
+  return selected
+}
+
+function comparisonRows(runs: ModeComparisonRun[]) {
+  let rows = new Map<string, ModeComparisonRow>()
+
+  for (let run of runs) {
+    for (let row of run.matrix) {
+      let key = `${row.kind}:${normalizeComparePath(row.file)}`
+      let comparison = rows.get(key) ?? {
+        kind: row.kind,
+        file: displayCompareFile(row.file),
+        modes: {},
+        status: 'aligned',
+      }
+
+      comparison.file = displayCompareFile(row.file)
+      comparison.modes[run.trace_mode] = {
+        present: true,
+        passive: row.passive,
+        semantic: row.semantic,
+        reflection: row.reflection,
+      }
+      rows.set(key, comparison)
+    }
+  }
+
+  return [...rows.values()]
+    .map((row) => ({
+      ...row,
+      status: runs.every((run) => row.modes[run.trace_mode]?.present)
+        ? 'aligned'
+        : 'different',
+    }))
+    .toSorted((left, right) => {
+      let kind = compareKindOrder(left.kind) - compareKindOrder(right.kind)
+      return kind || left.file.localeCompare(right.file)
+    })
+}
+
+function compareKindOrder(kind: string) {
+  return kind === 'Skill' ? 0 : 1
+}
+
+function displayCompareFile(file: string) {
+  let normalized = file.replaceAll('\\', '/')
+  let parts = normalized.split('/').filter(Boolean)
+  let skillIndex = parts.indexOf('.skills')
+
+  if (skillIndex >= 0) return parts.slice(skillIndex).join('/')
+  return file
+}
+
+function normalizeComparePath(file: string) {
+  return displayCompareFile(file)
+    .trim()
+    .replace(/^\.\//, '')
+    .replace(/\/+/g, '/')
+    .toLowerCase()
+}
+
+function isTraceMode(value: string): value is TraceMode {
+  return TRACE_MODES.includes(value as TraceMode)
 }
 
 export function runLifecycleResult(
@@ -281,3 +420,35 @@ type TraceEventLike = {
   event_type: string
   timestamp: Date | string
 }
+
+type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
+
+type ModeComparisonRun = {
+  run: any
+  trace_mode: TraceMode
+  result: string
+  matrix: ConsistencyMatrixRow[]
+  event_count: number
+  started_at: Date | string
+  finished_at: Date | string | null
+}
+
+type ModeComparisonRow = {
+  kind: 'Skill' | 'Reference'
+  file: string
+  modes: Record<string, ModeComparisonCell>
+  status: 'aligned' | 'different'
+}
+
+type ModeComparisonCell = {
+  present: boolean
+  passive: boolean
+  semantic: boolean
+  reflection: boolean
+}
+
+const TRACE_MODES: TraceMode[] = [
+  'full',
+  'passive_reflection',
+  'passive_only',
+]

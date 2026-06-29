@@ -384,19 +384,17 @@ The timeline should show the semantic started, reference-read, and finished
 events. It should also show passive file access for `.skills/type-fix/SKILL.md`
 and `.skills/type-fix/references/checklist.md`.
 
-The consistency panel should show:
+The consistency table should show aligned rows for `.skills/type-fix/SKILL.md`
+and `.skills/type-fix/references/checklist.md`.
 
-```text
-Observed and declared
-```
+After running at least two successful modes for the same sandbox repo, the runs
+page should show `Compare Modes` on that run group. The comparison report should
+show whether the same skill/reference files were captured across the selected
+mode runs.
 
-with a message like:
-
-```text
-type-fix was read, started, and finished.
-```
-
-If the consistency panel says `Declared but not observed`, the MCP semantic path worked but the passive probe did not observe the skill read.
+If the consistency table shows a missing passive dot for a file that was
+declared semantically, the MCP semantic path worked but the passive probe did
+not observe the skill read.
 
 On the runs list, the Result column should show `Running` until
 `traceskill-dev stop` or `traceskill stop` records `trace_session_finished`.

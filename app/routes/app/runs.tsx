@@ -140,7 +140,18 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
             {group.summaries.length === 1 ? '' : 's'} · {group.targetRoot}
           </p>
         </div>
-        <span className="badge badge-outline">{group.latestStatus}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="badge badge-outline">{group.latestStatus}</span>
+          {canCompareModes(group) ? (
+            <a
+              className="btn btn-sm btn-primary"
+              href={`/app/runs/compare/${encodeURIComponent(group.key)}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              Compare Modes
+            </a>
+          ) : null}
+        </div>
       </summary>
 
       <div className="overflow-x-auto">
@@ -246,11 +257,7 @@ function groupSummaries(summaries: any[]) {
   for (let summary of summaries) {
     let run = summary.run
     let targetRoot = run.bag?.target_root || run.description || 'unknown target'
-    let targetName =
-      run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
-    let pathHash =
-      run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
-    let key = `${targetName}-${pathHash}`
+    let key = groupKeyForRun(run)
     let group = groups.get(key)
 
     if (!group) {
@@ -268,6 +275,16 @@ function groupSummaries(summaries: any[]) {
   }
 
   return [...groups.values()]
+}
+
+function groupKeyForRun(run: any) {
+  let targetRoot = run.bag?.target_root || run.description || 'unknown target'
+  let targetName =
+    run.bag?.target_name || targetRoot.split(/[\\/]/).at(-1) || 'repo'
+  let pathHash =
+    run.bag?.path_hash || pathHashFromRunId(run.public_id) || 'unknown'
+
+  return `${targetName}-${pathHash}`
 }
 
 function pathHashFromRunId(publicId: string) {
@@ -291,6 +308,19 @@ function readExpandedRunGroups() {
   } catch {
     return []
   }
+}
+
+function canCompareModes(group: RunGroup) {
+  let modes = new Set(
+    group.summaries
+      .filter(
+        (summary) => summary.status === 'finished' && summary.result === 'pass',
+      )
+      .map((summary) => summary.trace_mode)
+      .filter((mode) => mode !== 'unknown'),
+  )
+
+  return modes.size >= 2
 }
 
 function saveExpandedRunGroups(keys: string[]) {

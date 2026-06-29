@@ -1,0 +1,257 @@
+import { ChevronLeftIcon } from 'lucide-react'
+import { Link } from 'react-router'
+import { notFoundError } from '~/lib/.server/errors'
+import { getModeComparison } from '~/models/.server/trace'
+
+// Remote/auth mode reference:
+// import { requireUser } from '~/.server/auth/middlewares'
+
+export async function loader({ params }) {
+  // Remote/auth mode reference:
+  // requireUser(context)
+  if (!params.key) throw notFoundError()
+
+  let comparison = await getModeComparison(params.key)
+  if (!comparison.has_enough_runs) throw notFoundError()
+
+  return { comparison }
+}
+
+export default function Page({ loaderData }: PageProps) {
+  let { comparison } = loaderData
+  let hasDifferences = comparison.rows.some((row) => row.status === 'different')
+
+  return (
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 pt-10 pb-40">
+      <header className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-row items-center gap-2">
+              <Link
+                className="link rounded-full bg-primary text-white link-hover"
+                to="/app/runs"
+              >
+                <ChevronLeftIcon className="size-10" />
+              </Link>
+              <div className="badge rounded-full badge-outline">
+                Compare Modes
+              </div>
+            </div>
+
+            <h1 className="text-4xl font-bold text-balance break-words">
+              {comparison.group_label}
+            </h1>
+            {comparison.target_root ? (
+              <p className="font-mono text-xs break-all text-base-content/60">
+                {comparison.target_root}
+              </p>
+            ) : null}
+          </div>
+          <span
+            className={`badge badge-lg ${hasDifferences ? 'badge-warning' : 'badge-success'}`}
+          >
+            {hasDifferences ? 'Different' : 'Aligned'}
+          </span>
+        </div>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {comparison.runs.map((run) => (
+          <RunCard item={run} key={run.trace_mode} />
+        ))}
+      </section>
+
+      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Cross-mode files</h2>
+            <p className="text-sm text-base-content/60">
+              Latest successful run per mode, compared by normalized skill and
+              reference files.
+            </p>
+          </div>
+          <p className="text-sm text-base-content/60">
+            {comparison.rows.length} file
+            {comparison.rows.length === 1 ? '' : 's'}
+          </p>
+        </div>
+
+        {comparison.rows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th className="text-center">Kind</th>
+                  {comparison.modes.map((mode) => (
+                    <th className="text-center" key={mode}>
+                      {traceModeLabel(mode)}
+                    </th>
+                  ))}
+                  <th className="text-center">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.rows.map((row) => (
+                  <tr className={rowClass(row)} key={`${row.kind}:${row.file}`}>
+                    <td className="min-w-72 font-mono text-xs break-words">
+                      {row.file}
+                    </td>
+                    <td className="text-center">
+                      <span className="badge badge-outline">{row.kind}</span>
+                    </td>
+                    {comparison.modes.map((mode) => (
+                      <td className="text-center" key={mode}>
+                        <ModeCell cell={row.modes[mode]} mode={mode} />
+                      </td>
+                    ))}
+                    <td className="text-center">
+                      <span
+                        className={`badge ${row.status === 'aligned' ? 'badge-success' : 'badge-warning'}`}
+                      >
+                        {row.status === 'aligned' ? 'Aligned' : 'Different'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
+            No comparable files found.
+          </div>
+        )}
+      </section>
+    </main>
+  )
+}
+
+function RunCard({ item }: RunCardProps) {
+  let run = item.run
+
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="badge badge-outline">
+          {traceModeLabel(item.trace_mode)}
+        </span>
+        <span className={`badge ${resultBadgeClass(item.trace_mode)}`}>
+          {item.trace_mode === 'passive_only' ? 'Captured' : 'Pass'}
+        </span>
+      </div>
+      <Link
+        className="block font-mono text-sm font-semibold break-words link-hover"
+        reloadDocument
+        to={`/app/runs/${run.public_id}`}
+      >
+        {run.name || run.public_id}
+      </Link>
+      <dl className="mt-4 grid gap-2 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-base-content/50">Events</dt>
+          <dd className="font-mono">{item.event_count}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-base-content/50">Started</dt>
+          <dd className="font-mono text-xs">{formatTime(item.started_at)}</dd>
+        </div>
+      </dl>
+    </section>
+  )
+}
+
+function ModeCell({ cell, mode }: ModeCellProps) {
+  if (!cell?.present) {
+    return <span className="text-base-content/40">missing</span>
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      <EvidenceDot active={cell.passive} label="Passive" tone="passive" />
+      {mode === 'full' ? (
+        <EvidenceDot active={cell.semantic} label="Semantic" tone="semantic" />
+      ) : null}
+      {mode !== 'passive_only' ? (
+        <EvidenceDot
+          active={cell.reflection}
+          label="Reflection"
+          tone="semantic"
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function EvidenceDot({ active, label, tone }: EvidenceDotProps) {
+  let className = active
+    ? tone === 'semantic'
+      ? 'bg-teal-500'
+      : 'bg-indigo-500'
+    : 'bg-base-300'
+
+  return (
+    <span
+      aria-label={`${label}: ${active ? 'present' : 'missing'}`}
+      className={`inline-block size-3 rounded-full ${className}`}
+      title={`${label}: ${active ? 'present' : 'missing'}`}
+    />
+  )
+}
+
+function resultBadgeClass(mode: string) {
+  if (mode === 'passive_only') {
+    return 'badge-outline border-teal-500 text-teal-600'
+  }
+
+  return 'badge-success'
+}
+
+function rowClass(row: any) {
+  if (row.status === 'different') return 'bg-warning/20'
+  return ''
+}
+
+function traceModeLabel(mode?: string) {
+  if (mode === 'passive_reflection') return 'p + reflection'
+  if (mode === 'passive_only') return 'passive only'
+  if (mode === 'full') return 'full'
+  return 'unknown'
+}
+
+function formatTime(value?: string | Date | null) {
+  if (!value) return '-'
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+type PageProps = {
+  loaderData: {
+    comparison: any
+  }
+}
+
+type RunCardProps = {
+  item: any
+}
+
+type ModeCellProps = {
+  cell?: {
+    present: boolean
+    passive: boolean
+    semantic: boolean
+    reflection: boolean
+  }
+  mode: string
+}
+
+type EvidenceDotProps = {
+  active: boolean
+  label: string
+  tone: 'passive' | 'semantic'
+}
