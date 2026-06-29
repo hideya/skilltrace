@@ -28,6 +28,7 @@ export async function action({ request }) {
       target_root: input.target_root,
       instrumentation: input.instrumentation,
       trace_mode: input.trace_mode,
+      git_snapshot: input.git_snapshot,
     })
   } catch (error) {
     if (error instanceof Error && error.message.includes('sudo is not ready')) {

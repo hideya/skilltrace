@@ -166,7 +166,11 @@ function RunCard({ item }: RunCardProps) {
   let run = item.run
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
+    <Link
+      className="rounded-box block border border-base-300 bg-base-100 p-4 shadow-sm transition-colors hover:bg-base-200/70 focus:outline-none focus:ring-2 focus:ring-primary"
+      reloadDocument
+      to={`/app/runs/${run.public_id}`}
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="badge badge-outline">
           {traceModeLabel(item.trace_mode)}
@@ -175,13 +179,9 @@ function RunCard({ item }: RunCardProps) {
           {item.trace_mode === 'passive_only' ? 'Captured' : 'Pass'}
         </span>
       </div>
-      <Link
-        className="block font-mono text-sm font-semibold break-words link-hover"
-        reloadDocument
-        to={`/app/runs/${run.public_id}`}
-      >
+      <div className="font-mono text-sm font-semibold break-words">
         {run.name || run.public_id}
-      </Link>
+      </div>
       <dl className="mt-4 grid gap-2 text-sm">
         <div className="flex items-center justify-between gap-3">
           <dt className="text-base-content/50">Events</dt>
@@ -192,7 +192,7 @@ function RunCard({ item }: RunCardProps) {
           <dd className="font-mono text-xs">{formatTime(item.started_at)}</dd>
         </div>
       </dl>
-    </section>
+    </Link>
   )
 }
 

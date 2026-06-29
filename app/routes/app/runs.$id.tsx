@@ -75,6 +75,7 @@ export default function Page({ loaderData }: PageProps) {
       </section>
 
       <RunContextPanel context={timeline.context} />
+      <RunSnapshotPanel snapshot={timeline.git_snapshot} />
 
       <ConsistencyPanel
         rows={timeline.consistency_matrix}
@@ -312,6 +313,142 @@ function RunContextPanel({ context }: RunContextPanelProps) {
   )
 }
 
+function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
+  if (!snapshot) {
+    return (
+      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+        <PanelHeader
+          description="Git state captured at trace start"
+          title="Run snapshot"
+        />
+        <EmptyPanel>No Git snapshot recorded.</EmptyPanel>
+      </section>
+    )
+  }
+
+  if (!snapshot.available) {
+    return (
+      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+        <PanelHeader
+          description="Git state captured at trace start"
+          title="Run snapshot"
+        />
+        <EmptyPanel>
+          {snapshot.reason || 'Target was not inside a Git worktree.'}
+        </EmptyPanel>
+      </section>
+    )
+  }
+
+  let files = Array.isArray(snapshot.files) ? snapshot.files : []
+  let instructionFiles = Array.isArray(snapshot.instruction_files)
+    ? snapshot.instruction_files
+    : []
+  let untracked = Array.isArray(snapshot.untracked_instruction_files)
+    ? snapshot.untracked_instruction_files
+    : []
+
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+      <PanelHeader
+        description="Git state captured at trace start"
+        title="Run snapshot"
+      />
+
+      <div className="grid gap-3 sm:grid-cols-4">
+        <SnapshotStat label="HEAD" value={shortHash(snapshot.head)} />
+        <SnapshotStat label="Branch" value={snapshot.branch || 'detached'} />
+        <SnapshotStat
+          label="State"
+          value={snapshot.dirty ? 'dirty' : 'clean'}
+        />
+        <SnapshotStat label="Changed" value={files.length} />
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className="badge badge-outline">
+          {instructionFiles.length} changed instruction file
+          {instructionFiles.length === 1 ? '' : 's'}
+        </span>
+        {snapshot.instruction_diff ? (
+          <span className="badge badge-outline">instruction diff</span>
+        ) : null}
+        {untracked.length > 0 ? (
+          <span className="badge badge-outline">
+            {untracked.length} untracked instruction file
+            {untracked.length === 1 ? '' : 's'}
+          </span>
+        ) : null}
+        {snapshot.instruction_diff_truncated ? (
+          <span className="badge badge-warning">diff truncated</span>
+        ) : null}
+      </div>
+
+      {files.length > 0 ? (
+        <details className="mt-4 rounded-box border border-base-300">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
+            Changed files
+          </summary>
+          <ul className="border-t border-base-300 p-4">
+            {files.map((file) => (
+              <li
+                className="grid gap-2 py-1 text-xs sm:grid-cols-[4rem_minmax(0,1fr)]"
+                key={`${file.status}:${file.path}:${file.previous_path ?? ''}`}
+              >
+                <span className="font-mono text-base-content/50">
+                  {file.status}
+                </span>
+                <span className="font-mono break-words">
+                  {file.previous_path ? `${file.previous_path} -> ` : null}
+                  {file.path}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
+      {snapshot.instruction_diff ? (
+        <details className="mt-4 rounded-box border border-base-300">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
+            Instruction diff
+          </summary>
+          <pre className="max-h-96 overflow-auto border-t border-base-300 bg-base-200 p-4 text-xs leading-relaxed">
+            {snapshot.instruction_diff}
+          </pre>
+        </details>
+      ) : null}
+
+      {untracked.length > 0 ? (
+        <details className="mt-4 rounded-box border border-base-300">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
+            Untracked instruction files
+          </summary>
+          <div className="space-y-4 border-t border-base-300 p-4">
+            {untracked.map((file) => (
+              <section className="space-y-2" key={file.path}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-mono text-xs font-semibold break-words">
+                    {file.path}
+                  </h3>
+                  {file.truncated ? (
+                    <span className="badge badge-warning badge-xs">
+                      truncated
+                    </span>
+                  ) : null}
+                </div>
+                <pre className="max-h-72 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed">
+                  {file.content}
+                </pre>
+              </section>
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </section>
+  )
+}
+
 function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
   let description = consistencyDescription(traceMode)
 
@@ -390,6 +527,36 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
   )
 }
 
+function PanelHeader({ description, title }: PanelHeaderProps) {
+  return (
+    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <p className="text-sm text-base-content/60">{description}</p>
+      </div>
+    </div>
+  )
+}
+
+function EmptyPanel({ children }: EmptyPanelProps) {
+  return (
+    <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
+      {children}
+    </div>
+  )
+}
+
+function SnapshotStat({ label, value }: SnapshotStatProps) {
+  return (
+    <div className="rounded-box bg-base-200 p-3">
+      <p className="text-xs tracking-[0.16em] text-base-content/50 uppercase">
+        {label}
+      </p>
+      <p className="mt-1 truncate font-mono text-sm font-semibold">{value}</p>
+    </div>
+  )
+}
+
 function ConsistencyDot({
   active,
   expected = true,
@@ -464,6 +631,11 @@ function resultLabel(result?: string, mode?: string) {
   if (result === 'incomplete') return 'incomplete'
   if (result === 'running') return 'running'
   return result ?? 'unknown'
+}
+
+function shortHash(value?: string | null) {
+  if (!value) return 'unknown'
+  return value.slice(0, 8)
 }
 
 function Metric({ label, value }: MetricProps) {
@@ -797,6 +969,50 @@ type ConsistencyPanelProps = {
 
 type RunContextPanelProps = {
   context?: Record<string, any> | null
+}
+
+type RunSnapshotPanelProps = {
+  snapshot?: RunSnapshot | null
+}
+
+type RunSnapshot = {
+  available?: boolean
+  reason?: string
+  root?: string
+  head?: string | null
+  branch?: string | null
+  dirty?: boolean
+  files?: RunSnapshotFile[]
+  instruction_files?: string[]
+  instruction_diff?: string
+  instruction_diff_truncated?: boolean
+  untracked_instruction_files?: RunSnapshotUntrackedFile[]
+}
+
+type RunSnapshotFile = {
+  path: string
+  status: string
+  previous_path?: string
+}
+
+type RunSnapshotUntrackedFile = {
+  path: string
+  content: string
+  truncated?: boolean
+}
+
+type PanelHeaderProps = {
+  title: string
+  description: string
+}
+
+type EmptyPanelProps = {
+  children: any
+}
+
+type SnapshotStatProps = {
+  label: string
+  value: any
 }
 
 type RunReflectionPanelProps = {

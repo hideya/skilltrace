@@ -23,6 +23,7 @@ const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
 const DAEMON_STATE_PATH = path.join(DAEMON_DIR, 'daemon.json')
+const GIT_SNAPSHOT_TEXT_LIMIT = 200_000
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
@@ -66,11 +67,13 @@ async function start(args: string[]) {
   let useSharedProbe = sharedProbe.available
   if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
+  let gitSnapshot = captureGitSnapshot(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
     instrumentation,
     trace_mode: traceMode,
+    git_snapshot: gitSnapshot,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -384,6 +387,126 @@ function assertTraceTarget(targetRoot: string) {
   console.error('')
   console.error('Run traceskill start from the target repo, or pass --target <repo>.')
   process.exit(1)
+}
+
+function captureGitSnapshot(targetRoot: string): GitSnapshot {
+  let root = gitOutput(targetRoot, ['rev-parse', '--show-toplevel'])
+  if (!root.ok) {
+    return {
+      available: false,
+      reason: 'target is not inside a Git worktree',
+    }
+  }
+
+  let gitRoot = root.stdout
+  let head = gitOutput(gitRoot, ['rev-parse', 'HEAD'])
+  let branch = gitOutput(gitRoot, ['branch', '--show-current'])
+  let status = gitOutput(gitRoot, ['status', '--porcelain=v1', '-z'], false)
+  let files = status.ok ? parseGitStatus(status.stdout) : []
+  let instructionFiles = instructionRelevantFiles(files.map((file) => file.path))
+  let untrackedInstructionFiles = files
+    .filter((file) => file.status === '??')
+    .map((file) => file.path)
+    .filter((file) => instructionFiles.includes(file))
+  let instructionDiff = instructionFiles.length > 0
+    ? gitDiff(gitRoot, instructionFiles)
+    : ''
+
+  return {
+    available: true,
+    captured_at: new Date().toISOString(),
+    root: gitRoot,
+    head: head.ok ? head.stdout : null,
+    branch: branch.ok && branch.stdout ? branch.stdout : null,
+    dirty: files.length > 0,
+    files,
+    instruction_files: instructionFiles,
+    instruction_diff: truncateSnapshotText(instructionDiff),
+    instruction_diff_truncated: instructionDiff.length > GIT_SNAPSHOT_TEXT_LIMIT,
+    untracked_instruction_files: captureUntrackedInstructionFiles(
+      gitRoot,
+      untrackedInstructionFiles,
+    ),
+  }
+}
+
+function gitOutput(cwd: string, args: string[], trim = true) {
+  let result = spawnSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 8,
+  })
+
+  return {
+    ok: result.status === 0,
+    stdout: trim ? (result.stdout ?? '').trim() : result.stdout ?? '',
+  }
+}
+
+function gitDiff(cwd: string, files: string[]) {
+  let args = ['diff', 'HEAD', '--', ...files]
+  let result = spawnSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 8,
+  })
+
+  if (result.status === 0 || result.status === 1) return result.stdout ?? ''
+  return ''
+}
+
+function captureUntrackedInstructionFiles(cwd: string, files: string[]) {
+  return files.map((file) => {
+    let absolutePath = path.join(cwd, file)
+    let content = fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()
+      ? fs.readFileSync(absolutePath, 'utf8')
+      : ''
+
+    return {
+      path: file,
+      content: truncateSnapshotText(content),
+      truncated: content.length > GIT_SNAPSHOT_TEXT_LIMIT,
+    }
+  })
+}
+
+function parseGitStatus(output: string) {
+  let entries = output.split('\0').filter(Boolean)
+  let files: GitSnapshotFile[] = []
+
+  for (let index = 0; index < entries.length; index += 1) {
+    let entry = entries[index]
+    let status = entry.slice(0, 2)
+    let filePath = entry.slice(3)
+
+    if (status.includes('R') || status.includes('C')) {
+      let previousPath = entries[++index]
+      files.push({
+        path: filePath,
+        status,
+        previous_path: previousPath,
+      })
+      continue
+    }
+
+    files.push({ path: filePath, status })
+  }
+
+  return files
+}
+
+function instructionRelevantFiles(files: string[]) {
+  return files.filter((file) =>
+    file === 'AGENTS.md' ||
+    file === '.skilltrace.json' ||
+    file.startsWith('.skills/') ||
+    file.startsWith('.skilltrace/')
+  )
+}
+
+function truncateSnapshotText(value: string) {
+  if (value.length <= GIT_SNAPSHOT_TEXT_LIMIT) return value
+  return `${value.slice(0, GIT_SNAPSHOT_TEXT_LIMIT)}\n[SkillTrace truncated snapshot text]\n`
 }
 
 function parseArgs(args: string[]) {
@@ -1219,6 +1342,33 @@ type Options = {
 }
 
 type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
+
+type GitSnapshot = {
+  available: boolean
+  reason?: string
+  captured_at?: string
+  root?: string
+  head?: string | null
+  branch?: string | null
+  dirty?: boolean
+  files?: GitSnapshotFile[]
+  instruction_files?: string[]
+  instruction_diff?: string
+  instruction_diff_truncated?: boolean
+  untracked_instruction_files?: GitSnapshotUntrackedFile[]
+}
+
+type GitSnapshotFile = {
+  path: string
+  status: string
+  previous_path?: string
+}
+
+type GitSnapshotUntrackedFile = {
+  path: string
+  content: string
+  truncated: boolean
+}
 
 type ProbeWorkerOptions = {
   runId: string

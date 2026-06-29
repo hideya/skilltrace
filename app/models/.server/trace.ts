@@ -212,6 +212,7 @@ export async function getRunTimeline(publicId: string) {
     result: lifecycle ?? summarizeConsistencyMatrix(consistencyMatrix),
     trace_mode: traceMode,
     context: latestRunContext(events),
+    git_snapshot: runGitSnapshot(run, events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
@@ -386,6 +387,15 @@ function runDisplayStatus(
 
 function latestRunContext(events: any[]) {
   return latestEventData(events, 'run_context_declared')
+}
+
+function runGitSnapshot(run: any, events: any[]) {
+  if (run.bag?.git_snapshot) return run.bag.git_snapshot
+
+  let started = events.find((event) =>
+    event.event_type === 'trace_session_started'
+  )
+  return started?.payload?.git_snapshot ?? null
 }
 
 function runTraceMode(run: any, events: any[]) {

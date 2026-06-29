@@ -391,6 +391,42 @@ The overlay is tracing policy, not a task skill. Agents should not emit
 `skill_use_started` or `skill_use_finished` for `.skilltrace/instrumentation.md`
 itself.
 
+## Git Run Snapshots
+
+`traceskill start` records a lightweight Git snapshot when the target repo is
+inside a Git worktree.
+
+Captured data:
+
+- HEAD commit and current branch, when available
+- broad `git status --porcelain` changed-file entries for the worktree
+- bounded diffs for instruction-relevant files only
+- bounded contents for untracked instruction-relevant files only
+
+Instruction-relevant paths currently include:
+
+- `AGENTS.md`
+- `.skills/**`
+- `.skilltrace.json`
+- `.skilltrace/**`
+
+Reasons:
+
+- future failure analysis needs to know which skill/instruction state a run saw
+- full-repo snapshots are too noisy and too sensitive for the default local
+  workflow
+- broad status still helps explain surprising runs without storing unrelated
+  source diffs
+- no database migration is needed because the snapshot is stored in the run bag
+  and repeated on the `trace_session_started` event
+
+The snapshot is captured before SkillTrace applies its temporary instruction
+overlay. Injection events and cleanup remain visible in the timeline, while the
+snapshot represents the target repo's authored state at trace start.
+
+If the target is not in Git, SkillTrace records that Git provenance was
+unavailable and continues the run normally.
+
 ## Sandbox Template
 
 `agent-sandbox-repo` is generated from `agent-sandbox-repo-template`.
