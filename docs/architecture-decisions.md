@@ -175,7 +175,7 @@ It currently reports:
 
 - daemon state from `~/.skilltrace/daemon.json`
 - the server process rendering the page
-- shared probe PID and log path when configured
+- shared probe PID and log path on macOS or when shared probe state exists
 - the one active trace session, if present
 - Codex MCP registration from `codex mcp get skilltrace`
 

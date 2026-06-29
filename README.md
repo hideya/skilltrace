@@ -269,7 +269,8 @@ The local UI has three primary views:
 - `/app/runs/compare?runs=...` compares selected successful runs for a target
   repo across tracing modes.
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
-  process, shared passive probe, active session, and Codex MCP registration.
+  process, macOS shared passive probe when applicable, active session, and Codex
+  MCP registration.
 
 On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
 Result column intentionally shows `Running` while a trace session is active.

@@ -30,7 +30,7 @@ export async function loader() {
         ? processStatus(state.shared_probe_pid)
         : 'missing',
       shared_probe: sharedProbeCheck(state),
-      state_matches_server: state?.server === server,
+      state_matches_server: stateMatchesServer(state, server),
       mcp_registration: mcp.status,
     },
   }
@@ -38,6 +38,7 @@ export async function loader() {
 
 export default function Page({ loaderData }: PageProps) {
   let { daemon, server, session, process, checks, mcp } = loaderData
+  let showSharedProbe = sharedProbeVisible(process.platform, daemon)
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pt-10 pb-40">
@@ -51,7 +52,11 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-4">
+      <section
+        className={`grid gap-4 ${
+          showSharedProbe ? 'sm:grid-cols-4' : 'sm:grid-cols-3'
+        }`}
+      >
         <Metric
           label="Server"
           tone={checks.state_matches_server ? 'success' : 'warning'}
@@ -62,11 +67,13 @@ export default function Page({ loaderData }: PageProps) {
           tone={checks.daemon_pid === 'running' ? 'success' : 'warning'}
           value={checks.daemon_pid}
         />
-        <Metric
-          label="Shared Probe"
-          tone={checks.shared_probe.tone}
-          value={checks.shared_probe.label}
-        />
+        {showSharedProbe ? (
+          <Metric
+            label="Shared Probe"
+            tone={checks.shared_probe.tone}
+            value={checks.shared_probe.label}
+          />
+        ) : null}
         <Metric
           label="Codex MCP"
           tone={checks.mcp_registration === 'ok' ? 'success' : 'warning'}
@@ -117,31 +124,33 @@ export default function Page({ loaderData }: PageProps) {
           />
         </Panel>
 
-        <Panel
-          description="Daemon-owned passive probe status."
-          title="Shared Probe"
-        >
-          {daemon?.shared_probe_requested ? (
-            <KeyValues
-              rows={[
-                ['Requested', 'yes'],
-                [
-                  'PID',
-                  daemon.shared_probe_pid
-                    ? `${daemon.shared_probe_pid} ${checks.shared_probe_pid}`
-                    : 'missing',
-                ],
-                ['Platform', daemon.shared_probe_platform ?? 'unknown'],
-                ['Log', daemon.shared_probe_log_path ?? 'none'],
-                ['Warning', daemon.shared_probe_warning ?? 'none'],
-              ]}
-            />
-          ) : (
-            <EmptyState>
-              Shared probe is not configured for this daemon.
-            </EmptyState>
-          )}
-        </Panel>
+        {showSharedProbe ? (
+          <Panel
+            description="Daemon-owned passive probe status."
+            title="Shared Probe"
+          >
+            {daemon?.shared_probe_requested ? (
+              <KeyValues
+                rows={[
+                  ['Requested', 'yes'],
+                  [
+                    'PID',
+                    daemon.shared_probe_pid
+                      ? `${daemon.shared_probe_pid} ${checks.shared_probe_pid}`
+                      : 'missing',
+                  ],
+                  ['Platform', daemon.shared_probe_platform ?? 'unknown'],
+                  ['Log', daemon.shared_probe_log_path ?? 'none'],
+                  ['Warning', daemon.shared_probe_warning ?? 'none'],
+                ]}
+              />
+            ) : (
+              <EmptyState>
+                Shared probe is not configured for this daemon.
+              </EmptyState>
+            )}
+          </Panel>
+        ) : null}
 
         <Panel
           description="Read-only check of codex mcp get skilltrace."
@@ -313,6 +322,44 @@ function sharedProbeCheck(state: DaemonState | null) {
     label: status,
     tone: status === 'running' ? 'success' : 'warning',
   } satisfies MetricCheck
+}
+
+function sharedProbeVisible(platform: string, state: DaemonState | null) {
+  return (
+    platform === 'darwin' ||
+    !!state?.shared_probe_requested ||
+    !!state?.shared_probe_pid ||
+    !!state?.shared_probe_warning
+  )
+}
+
+function stateMatchesServer(state: DaemonState | null, server: string) {
+  if (!state) return false
+  if (state.server === server) return true
+
+  let stateUrl = parseUrl(state.server)
+  let currentUrl = parseUrl(server)
+  if (!stateUrl || !currentUrl) return false
+
+  return (
+    stateUrl.protocol === currentUrl.protocol &&
+    stateUrl.port === currentUrl.port &&
+    loopbackEquivalent(stateUrl.hostname, currentUrl.hostname)
+  )
+}
+
+function parseUrl(value: string) {
+  try {
+    return new URL(value)
+  } catch {
+    return null
+  }
+}
+
+function loopbackEquivalent(left: string, right: string) {
+  if (left === right) return true
+  let loopbacks = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
+  return loopbacks.has(left) && loopbacks.has(right)
 }
 
 function defaultServerUrl() {
