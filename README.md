@@ -104,7 +104,7 @@ For local package trials before publishing to npm, build a tarball from this
 checkout:
 
 ```bash
-npm pack
+pnpm pack
 npm install -g ./skilltrace-0.0.0.tgz
 ```
 
@@ -128,6 +128,22 @@ After publishing, the intended install shape is:
 
 ```bash
 npm install -g skilltrace
+```
+
+Before publishing a candidate, use the dry-run publishing script:
+
+```bash
+pnpm publish:test
+```
+
+This follows the same cautious flow used for other small npm packages in this
+workspace: clean untracked build artifacts, reinstall dependencies, run the
+package build through `prepack`, and ask npm to show what would be published
+without uploading it. When the dry run looks right and you are logged in with
+`npm whoami`, publish with:
+
+```bash
+pnpm publish:do
 ```
 
 By default, `traceskill start` enables the plug-and-play tracing overlay:

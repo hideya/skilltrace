@@ -50,13 +50,26 @@ Reasons:
 Before publishing, the package can be tested with:
 
 ```bash
-npm pack
+pnpm pack
 npm install -g ./skilltrace-0.0.0.tgz
 ```
 
 The explicit local path marker matters. `npm install -g skilltrace-0.0.0.tgz`
 or `npm install -g skill-trace/skilltrace-0.0.0.tgz` can be parsed as a package
 or GitHub spec instead of a local tarball, which makes npm try a remote fetch.
+
+For npm publication, SkillTrace follows the same cautious package flow used in
+nearby npm projects:
+
+```bash
+pnpm publish:test
+pnpm publish:do
+```
+
+`publish:test` runs `pnpm clean`, `pnpm install`, and
+`npm publish --access=public --dry-run`. `publish:do` uses the same flow without
+`--dry-run`. Both rely on `prepack`, so the React Router build and package CLI
+entrypoints are rebuilt before npm packs the tarball.
 
 The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
 full production build so the tarball includes:

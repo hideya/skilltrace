@@ -1,7 +1,28 @@
 {
   "name": "skilltrace",
   "version": "0.0.0",
+  "description": "Local observability for AI agent skill usage",
   "license": "MIT",
+  "keywords": [
+    "ai-agent",
+    "agent",
+    "agent-skills",
+    "codex",
+    "mcp",
+    "observability",
+    "skill",
+    "skilltrace",
+    "tracing"
+  ],
+  "author": "hideya kawahara",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hideya/skill-trace.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hideya/skill-trace/issues"
+  },
+  "homepage": "https://github.com/hideya/skill-trace#readme",
   "bin": {
     "traceskill": "./bin/traceskill.js"
   },
@@ -13,12 +34,17 @@
     "README.md",
     "react-router.config.ts"
   ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "type": "module",
   "scripts": {
     "prep": "node scripts/prep.js",
     "dev": "react-router dev --host 0.0.0.0 --port 5777 --strictPort",
     "build": "react-router build && node scripts/build-package-scripts.js",
     "prepack": "pnpm build",
+    "publish:test": "pnpm clean && pnpm install && npm publish --access=public --dry-run",
+    "publish:do": "pnpm clean && pnpm install && npm publish --access=public",
     "test": "vitest run",
     "tsc": "tsc --noEmit",
     "skilltrace:read": "tsx scripts/skilltrace-read.ts",
