@@ -54,7 +54,9 @@ export default function Page({ loaderData }: PageProps) {
 
       <section
         className={`grid gap-4 ${
-          showSharedProbe ? 'sm:grid-cols-4' : 'sm:grid-cols-3'
+          showSharedProbe
+            ? 'sm:grid-cols-2 lg:grid-cols-5'
+            : 'sm:grid-cols-2 lg:grid-cols-4'
         }`}
       >
         <Metric
@@ -78,6 +80,13 @@ export default function Page({ loaderData }: PageProps) {
           label="Codex MCP"
           tone={checks.mcp_registration === 'ok' ? 'success' : 'warning'}
           value={checks.mcp_registration}
+        />
+        <Metric
+          label="Active Session"
+          tone={session ? 'running' : 'neutral'}
+          value={
+            session ? session.target_root : 'No active SkillTrace session.'
+          }
         />
       </section>
 
@@ -208,7 +217,9 @@ function Metric({ label, value, tone = 'neutral' }: MetricProps) {
       ? 'badge-success'
       : tone === 'warning'
         ? 'badge-warning'
-        : 'badge-outline'
+        : tone === 'running'
+          ? 'badge-info'
+          : 'badge-outline'
 
   return (
     <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
@@ -452,7 +463,7 @@ type PageProps = {
 type MetricProps = {
   label: string
   value: string
-  tone?: 'neutral' | 'success' | 'warning'
+  tone?: 'neutral' | 'success' | 'warning' | 'running'
 }
 
 type PanelProps = {
