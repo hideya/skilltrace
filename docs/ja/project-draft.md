@@ -3,7 +3,7 @@
 ## 失敗履歴を持つ実行可能な集合知へ
 
 > 歴史的な設計ドラフト。現在のセットアップ、パッケージング、MCP
-> tools、dogfooding 手順については、`README.md`、
+> tools、dogfooding 手順については、`README.md`、`README_DEV.md`、
 > `docs/architecture-decisions.md`、`docs/mcp-semantic-logger.md`、
 > `docs/agent-sandbox-mcp-test.md` を優先する。
 

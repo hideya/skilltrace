@@ -3,8 +3,9 @@
 ## Toward Executable Collective Intelligence with Failure Histories
 
 > Historical design draft. For current setup, packaging, MCP tools, and
-> dogfooding instructions, prefer `README.md`, `docs/architecture-decisions.md`,
-> `docs/mcp-semantic-logger.md`, and `docs/agent-sandbox-mcp-test.md`.
+> dogfooding instructions, prefer `README.md`, `README_DEV.md`,
+> `docs/architecture-decisions.md`, `docs/mcp-semantic-logger.md`, and
+> `docs/agent-sandbox-mcp-test.md`.
 
 ## 1. Background
 
