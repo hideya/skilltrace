@@ -121,15 +121,21 @@ export async function listRunSummaries() {
   })
 }
 
-export async function getModeComparison(groupKey: string) {
+export async function getModeComparisonForRuns(publicIds: string[]) {
+  let requestedIds = unique(publicIds.map((id) => id.trim()).filter(Boolean))
   let runs = await Run.newestBy('created_at')
   let events = await TraceEvent.newestBy('timestamp')
   let eventsByRun = groupEventsByRun(events)
   let starts = sessionStartTimes(events)
-  let candidates: ModeComparisonRun[] = []
+  let selected: ModeComparisonRun[] = []
+  let missingIds = requestedIds.filter((id) =>
+    !runs.some((run) => run.public_id === id)
+  )
+  let invalidReasons = [...missingIds.map((id) => `Run not found: ${id}`)]
 
-  for (let run of runs) {
-    if (runGroupKey(run) !== groupKey) continue
+  for (let publicId of requestedIds) {
+    let run = runs.find((item) => item.public_id === publicId)
+    if (!run) continue
 
     let runEvents = eventsByRun.get(run.id) ?? []
     let traceMode = runTraceMode(run, runEvents)
@@ -138,11 +144,16 @@ export async function getModeComparison(groupKey: string) {
     let result = lifecycle ?? summarizeConsistencyMatrix(matrix)
     let status = runDisplayStatus(run, runEvents, starts)
 
-    if (!isTraceMode(traceMode)) continue
-    if (result !== 'pass') continue
-    if (status !== 'finished') continue
+    if (!isTraceMode(traceMode)) {
+      invalidReasons.push(`${publicId} has unknown trace mode.`)
+      continue
+    }
 
-    candidates.push({
+    if (status !== 'finished' || result !== 'pass') {
+      invalidReasons.push(`${publicId} is not a finished successful run.`)
+    }
+
+    selected.push({
       run,
       trace_mode: traceMode,
       result,
@@ -153,19 +164,33 @@ export async function getModeComparison(groupKey: string) {
     })
   }
 
-  let selected = latestRunByMode(candidates)
-  let modes = TRACE_MODES.filter((mode) =>
-    selected.some((run) => run.trace_mode === mode)
-  )
+  let modes = selected.map((run) => run.trace_mode)
+  let distinctModes = unique(modes)
+
+  if (selected.length < 2) {
+    invalidReasons.push('Select at least two runs.')
+  }
+
+  if (distinctModes.length !== selected.length) {
+    invalidReasons.push('Select only one run per mode.')
+  }
+
+  let ordered = TRACE_MODES
+    .map((mode) => selected.find((run) => run.trace_mode === mode))
+    .filter((run): run is ModeComparisonRun => !!run)
 
   return {
-    group_key: groupKey,
-    group_label: groupKey,
+    group_key: selected[0] ? runGroupKey(selected[0].run) : null,
+    group_label: selected[0] ? runGroupKey(selected[0].run) : 'Selected runs',
     target_root: selected[0]?.run.bag?.target_root ?? null,
-    runs: selected,
-    rows: comparisonRows(selected),
-    has_enough_runs: selected.length >= 2,
-    modes,
+    runs: ordered,
+    rows: invalidReasons.length > 0 ? [] : comparisonRows(ordered),
+    has_enough_runs: ordered.length >= 2,
+    modes: TRACE_MODES.filter((mode) =>
+      ordered.some((run) => run.trace_mode === mode)
+    ),
+    is_valid: invalidReasons.length === 0,
+    invalid_reasons: invalidReasons,
   }
 }
 
@@ -261,17 +286,6 @@ function pathHashFromRunId(publicId: string) {
     /-([A-Za-z0-9_-]{6})-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/,
   )
   return match?.[1]
-}
-
-function latestRunByMode(candidates: ModeComparisonRun[]) {
-  let selected: ModeComparisonRun[] = []
-
-  for (let mode of TRACE_MODES) {
-    let run = candidates.find((candidate) => candidate.trace_mode === mode)
-    if (run) selected.push(run)
-  }
-
-  return selected
 }
 
 function comparisonRows(runs: ModeComparisonRun[]) {

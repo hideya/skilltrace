@@ -32,6 +32,8 @@ export async function action({ request }) {
 export default function Page({ loaderData }: PageProps) {
   let { summaries } = loaderData
   let [isEditing, setIsEditing] = useState(false)
+  let [compareGroupKey, setCompareGroupKey] = useState<string | null>(null)
+  let [selectedRunIds, setSelectedRunIds] = useState<Record<string, string>>({})
   let [expandedKeys, setExpandedKeys] = useState<string[]>([])
   let groups = groupSummaries(summaries)
   let hasRunningRun = summaries.some((summary) => summary.result === 'running')
@@ -50,6 +52,35 @@ export default function Page({ loaderData }: PageProps) {
       saveExpandedRunGroups(next)
       return next
     })
+  }
+
+  function startCompare(group: RunGroup) {
+    let selected = defaultCompareSelection(group)
+    setIsEditing(false)
+    setCompareGroupKey(group.key)
+    setSelectedRunIds(selected)
+    setExpandedKeys((current) => {
+      let next = [...new Set([...current, group.key])]
+      saveExpandedRunGroups(next)
+      return next
+    })
+  }
+
+  function cancelCompare() {
+    setCompareGroupKey(null)
+    setSelectedRunIds({})
+  }
+
+  function selectRun(summary: any) {
+    setSelectedRunIds((current) => ({
+      ...current,
+      [summary.trace_mode]: summary.run.public_id,
+    }))
+  }
+
+  function compareSelectedHref() {
+    let runIds = Object.values(selectedRunIds).filter(Boolean)
+    return `/app/runs/compare?runs=${encodeURIComponent(runIds.join(','))}`
   }
 
   return (
@@ -82,7 +113,10 @@ export default function Page({ loaderData }: PageProps) {
           {summaries.length > 0 ? (
             <button
               className={`btn w-24 btn-sm ${isEditing ? 'btn-neutral' : 'btn-outline'}`}
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => {
+                cancelCompare()
+                setIsEditing(!isEditing)
+              }}
               type="button"
             >
               {isEditing ? 'Done' : 'Edit'}
@@ -106,10 +140,20 @@ export default function Page({ loaderData }: PageProps) {
 
           {groups.map((group) => (
             <RunGroup
+              compareHref={compareSelectedHref()}
+              compareSelection={selectedRunIds}
+              isComparing={compareGroupKey === group.key}
               group={group}
               isEditing={isEditing}
-              isOpen={isEditing || expandedKeys.includes(group.key)}
+              isOpen={
+                isEditing ||
+                compareGroupKey === group.key ||
+                expandedKeys.includes(group.key)
+              }
               key={group.key}
+              onCancelCompare={cancelCompare}
+              onSelectRun={selectRun}
+              onStartCompare={startCompare}
               onToggle={handleGroupToggle}
             />
           ))}
@@ -123,7 +167,21 @@ export default function Page({ loaderData }: PageProps) {
   )
 }
 
-function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
+function RunGroup({
+  compareHref,
+  compareSelection,
+  group,
+  isComparing,
+  isEditing,
+  isOpen,
+  onCancelCompare,
+  onSelectRun,
+  onStartCompare,
+  onToggle,
+}: RunGroupProps) {
+  let selectedCount = Object.values(compareSelection).filter(Boolean).length
+  let canCompareSelected = isComparing && selectedCount >= 2
+
   return (
     <details
       className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
@@ -142,14 +200,40 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="badge badge-outline">{group.latestStatus}</span>
-          {canCompareModes(group) ? (
-            <a
+          {isComparing ? (
+            <>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onCancelCompare()
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <a
+                aria-disabled={!canCompareSelected}
+                className={`btn btn-sm btn-primary ${canCompareSelected ? '' : 'btn-disabled'}`}
+                href={canCompareSelected ? compareHref : undefined}
+                onClick={(event) => event.stopPropagation()}
+              >
+                Compare Selected
+              </a>
+            </>
+          ) : canCompareModes(group) && !isEditing ? (
+            <button
               className="btn btn-sm btn-primary"
-              href={`/app/runs/compare/${encodeURIComponent(group.key)}`}
-              onClick={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                onStartCompare(group)
+              }}
+              type="button"
             >
               Compare Modes
-            </a>
+            </button>
           ) : null}
         </div>
       </summary>
@@ -159,6 +243,7 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
           <thead>
             <tr>
               {isEditing ? <th>Select</th> : null}
+              {isComparing ? <th className="text-center">Compare</th> : null}
               <th>Run</th>
               <th className="text-center">Mode</th>
               <th className="text-center">Status</th>
@@ -171,8 +256,11 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
           <tbody>
             {group.summaries.map((summary) => (
               <RunRow
+                compareSelection={compareSelection}
+                isComparing={isComparing}
                 isEditing={isEditing}
                 key={summary.run.id}
+                onSelectRun={onSelectRun}
                 summary={summary}
               />
             ))}
@@ -183,18 +271,26 @@ function RunGroup({ group, isEditing, isOpen, onToggle }: RunGroupProps) {
   )
 }
 
-function RunRow({ summary, isEditing }: RunRowProps) {
+function RunRow({
+  compareSelection,
+  isComparing,
+  isEditing,
+  onSelectRun,
+  summary,
+}: RunRowProps) {
   let run = summary.run
   let label = run.name || run.public_id
   let href = `/app/runs/${run.public_id}`
+  let compareEligible = isCompareEligible(summary)
+  let isSelected = compareSelection[summary.trace_mode] === run.public_id
 
   function navigateToRun() {
-    if (isEditing) return
+    if (isEditing || isComparing) return
     window.location.assign(href)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTableRowElement>) {
-    if (isEditing) return
+    if (isEditing || isComparing) return
     if (event.key !== 'Enter' && event.key !== ' ') return
 
     event.preventDefault()
@@ -203,11 +299,13 @@ function RunRow({ summary, isEditing }: RunRowProps) {
 
   return (
     <tr
-      className={isEditing ? '' : 'cursor-pointer hover:bg-base-200/70'}
+      className={
+        isEditing || isComparing ? '' : 'cursor-pointer hover:bg-base-200/70'
+      }
       onClick={navigateToRun}
       onKeyDown={handleKeyDown}
-      role={isEditing ? undefined : 'link'}
-      tabIndex={isEditing ? undefined : 0}
+      role={isEditing || isComparing ? undefined : 'link'}
+      tabIndex={isEditing || isComparing ? undefined : 0}
     >
       {isEditing ? (
         <td>
@@ -218,6 +316,19 @@ function RunRow({ summary, isEditing }: RunRowProps) {
             name="run_ids"
             type="checkbox"
             value={run.public_id}
+          />
+        </td>
+      ) : null}
+      {isComparing ? (
+        <td className="text-center">
+          <input
+            aria-label={`Select ${run.public_id} for comparison`}
+            checked={isSelected}
+            className="radio radio-sm"
+            disabled={!compareEligible}
+            name={`compare-${summary.trace_mode}`}
+            onChange={() => onSelectRun(summary)}
+            type="radio"
           />
         </td>
       ) : null}
@@ -314,13 +425,34 @@ function canCompareModes(group: RunGroup) {
   let modes = new Set(
     group.summaries
       .filter(
-        (summary) => summary.status === 'finished' && summary.result === 'pass',
+        (summary) => isCompareEligible(summary),
       )
       .map((summary) => summary.trace_mode)
       .filter((mode) => mode !== 'unknown'),
   )
 
   return modes.size >= 2
+}
+
+function defaultCompareSelection(group: RunGroup) {
+  let selected: Record<string, string> = {}
+
+  for (let mode of TRACE_MODES) {
+    let summary = group.summaries.find((item) =>
+      item.trace_mode === mode && isCompareEligible(item)
+    )
+    if (summary) selected[mode] = summary.run.public_id
+  }
+
+  return selected
+}
+
+function isCompareEligible(summary: any) {
+  return (
+    summary.status === 'finished' &&
+    summary.result === 'pass' &&
+    TRACE_MODES.includes(summary.trace_mode)
+  )
 }
 
 function saveExpandedRunGroups(keys: string[]) {
@@ -457,12 +589,21 @@ type PageProps = {
 type RunRowProps = {
   summary: any
   isEditing: boolean
+  isComparing: boolean
+  compareSelection: Record<string, string>
+  onSelectRun: (summary: any) => void
 }
 
 type RunGroupProps = {
+  compareHref: string
+  compareSelection: Record<string, string>
   group: RunGroup
+  isComparing: boolean
   isEditing: boolean
   isOpen: boolean
+  onCancelCompare: () => void
+  onSelectRun: (summary: any) => void
+  onStartCompare: (group: RunGroup) => void
   onToggle: (key: string, isOpen: boolean) => void
 }
 
@@ -503,3 +644,4 @@ type ClientCellProps = {
 
 const EXPANDED_RUN_GROUPS_KEY = 'skilltrace.expandedRunGroups'
 const RUN_REFRESH_MS = 3000
+const TRACE_MODES = ['full', 'passive_reflection', 'passive_only']

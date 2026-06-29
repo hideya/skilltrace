@@ -1,19 +1,20 @@
 import { ChevronLeftIcon } from 'lucide-react'
 import { Link } from 'react-router'
-import { notFoundError } from '~/lib/.server/errors'
-import { getModeComparison } from '~/models/.server/trace'
+import { getModeComparisonForRuns } from '~/models/.server/trace'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
 
-export async function loader({ params }) {
+export async function loader({ request }) {
   // Remote/auth mode reference:
   // requireUser(context)
-  if (!params.key) throw notFoundError()
+  let url = new URL(request.url)
+  let runIds = (url.searchParams.get('runs') ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
 
-  let comparison = await getModeComparison(params.key)
-  if (!comparison.has_enough_runs) throw notFoundError()
-
+  let comparison = await getModeComparisonForRuns(runIds)
   return { comparison }
 }
 
@@ -47,83 +48,117 @@ export default function Page({ loaderData }: PageProps) {
               </p>
             ) : null}
           </div>
-          <span
-            className={`badge badge-lg ${hasDifferences ? 'badge-warning' : 'badge-success'}`}
-          >
-            {hasDifferences ? 'Different' : 'Aligned'}
-          </span>
+          {comparison.is_valid ? (
+            <span
+              className={`badge badge-lg ${hasDifferences ? 'badge-warning' : 'badge-success'}`}
+            >
+              {hasDifferences ? 'Different' : 'Aligned'}
+            </span>
+          ) : (
+            <span className="badge badge-lg badge-warning">Not applicable</span>
+          )}
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {comparison.runs.map((run) => (
-          <RunCard item={run} key={run.trace_mode} />
-        ))}
-      </section>
+      {comparison.is_valid ? (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {comparison.runs.map((run) => (
+              <RunCard item={run} key={run.trace_mode} />
+            ))}
+          </section>
 
-      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Cross-mode files</h2>
-            <p className="text-sm text-base-content/60">
-              Latest successful run per mode, compared by normalized skill and
-              reference files.
-            </p>
-          </div>
-          <p className="text-sm text-base-content/60">
-            {comparison.rows.length} file
-            {comparison.rows.length === 1 ? '' : 's'}
-          </p>
-        </div>
+          <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Cross-mode files</h2>
+                <p className="text-sm text-base-content/60">
+                  Selected successful runs, compared by normalized skill and
+                  reference files.
+                </p>
+              </div>
+              <p className="text-sm text-base-content/60">
+                {comparison.rows.length} file
+                {comparison.rows.length === 1 ? '' : 's'}
+              </p>
+            </div>
 
-        {comparison.rows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>File</th>
-                  <th className="text-center">Kind</th>
-                  {comparison.modes.map((mode) => (
-                    <th className="text-center" key={mode}>
-                      {traceModeLabel(mode)}
-                    </th>
-                  ))}
-                  <th className="text-center">Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparison.rows.map((row) => (
-                  <tr className={rowClass(row)} key={`${row.kind}:${row.file}`}>
-                    <td className="min-w-72 font-mono text-xs break-words">
-                      {row.file}
-                    </td>
-                    <td className="text-center">
-                      <span className="badge badge-outline">{row.kind}</span>
-                    </td>
-                    {comparison.modes.map((mode) => (
-                      <td className="text-center" key={mode}>
-                        <ModeCell cell={row.modes[mode]} mode={mode} />
-                      </td>
-                    ))}
-                    <td className="text-center">
-                      <span
-                        className={`badge ${row.status === 'aligned' ? 'badge-success' : 'badge-warning'}`}
-                      >
-                        {row.status === 'aligned' ? 'Aligned' : 'Different'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
-            No comparable files found.
-          </div>
-        )}
-      </section>
+            {comparison.rows.length > 0 ? (
+              <ComparisonTable comparison={comparison} />
+            ) : (
+              <div className="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
+                No comparable files found.
+              </div>
+            )}
+          </section>
+        </>
+      ) : (
+        <InvalidSelection reasons={comparison.invalid_reasons} />
+      )}
     </main>
+  )
+}
+
+function ComparisonTable({ comparison }: ComparisonTableProps) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th className="text-center">Kind</th>
+            {comparison.modes.map((mode) => (
+              <th className="text-center" key={mode}>
+                {traceModeLabel(mode)}
+              </th>
+            ))}
+            <th className="text-center">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {comparison.rows.map((row) => (
+            <tr className={rowClass(row)} key={`${row.kind}:${row.file}`}>
+              <td className="min-w-72 font-mono text-xs break-words">
+                {row.file}
+              </td>
+              <td className="text-center">
+                <span className="badge badge-outline">{row.kind}</span>
+              </td>
+              {comparison.modes.map((mode) => (
+                <td className="text-center" key={mode}>
+                  <ModeCell cell={row.modes[mode]} mode={mode} />
+                </td>
+              ))}
+              <td className="text-center">
+                <span
+                  className={`badge ${row.status === 'aligned' ? 'badge-success' : 'badge-warning'}`}
+                >
+                  {row.status === 'aligned' ? 'Aligned' : 'Different'}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function InvalidSelection({ reasons }: InvalidSelectionProps) {
+  return (
+    <section className="rounded-box border border-warning/40 bg-warning/10 p-6">
+      <h2 className="text-2xl font-bold">Selection not applicable</h2>
+      <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
+        {reasons.length > 0 ? (
+          reasons.map((reason) => <li key={reason}>{reason}</li>)
+        ) : (
+          <li>Select at least two successful runs with different modes.</li>
+        )}
+      </ul>
+      <Link className="btn mt-5 btn-sm btn-outline" to="/app/runs">
+        Back to runs
+      </Link>
+    </section>
   )
 }
 
@@ -234,6 +269,14 @@ type PageProps = {
   loaderData: {
     comparison: any
   }
+}
+
+type ComparisonTableProps = {
+  comparison: any
+}
+
+type InvalidSelectionProps = {
+  reasons: string[]
 }
 
 type RunCardProps = {

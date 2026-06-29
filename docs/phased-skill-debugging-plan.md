@@ -192,8 +192,9 @@ Current implementation note:
   `.skilltrace/instrumentation.md`; bundled templates vary internally while the
   injected AGENTS.md instruction stays stable
 - the runs page offers `Compare Modes` when a run group has at least two
-  successful modes; the first report compares the latest successful run per mode
-  by normalized skill/reference files
+  successful modes; it preselects the latest successful run per mode, allows
+  one selected run per mode, and compares the selected runs by normalized
+  skill/reference files
 
 Possible result labels:
 

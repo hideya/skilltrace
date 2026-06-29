@@ -388,9 +388,10 @@ The consistency table should show aligned rows for `.skills/type-fix/SKILL.md`
 and `.skills/type-fix/references/checklist.md`.
 
 After running at least two successful modes for the same sandbox repo, the runs
-page should show `Compare Modes` on that run group. The comparison report should
-show whether the same skill/reference files were captured across the selected
-mode runs.
+page should show `Compare Modes` on that run group. It preselects the latest
+successful run for each mode; change the selected runs if needed, then click
+`Compare Selected`. The comparison report should show whether the same
+skill/reference files were captured across the selected mode runs.
 
 If the consistency table shows a missing passive dot for a file that was
 declared semantically, the MCP semantic path worked but the passive probe did

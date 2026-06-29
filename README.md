@@ -266,7 +266,7 @@ while building the first local prototype.
 The local UI has three primary views:
 
 - `/app/runs` lists grouped trace runs and opens run detail pages.
-- `/app/runs/compare/:group` compares the latest successful runs for a target
+- `/app/runs/compare?runs=...` compares selected successful runs for a target
   repo across tracing modes.
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
   process, shared passive probe, active session, and Codex MCP registration.
@@ -280,9 +280,11 @@ from the file-oriented consistency matrix. If an unstopped run is superseded by 
 missing cleanup visible.
 
 When a run group has at least two successful modes, the runs page shows
-`Compare Modes`. The comparison report uses the latest successful run per mode
-to show whether skill and reference file usage remains stable as instrumentation
-is reduced from full tracing to passive-only capture.
+`Compare Modes`. Clicking it selects the latest successful run per mode by
+default; the user can choose a different successful run for each mode before
+opening the report. The comparison report shows whether skill and reference file
+usage remains stable as instrumentation is reduced from full tracing to
+passive-only capture.
 
 The runs list and active run detail pages poll lightly while a run is `Running`
 so newly received daemon events appear without a manual refresh. Finished and
