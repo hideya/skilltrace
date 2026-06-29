@@ -391,7 +391,7 @@ function ConsistencyDot({
     )
   }
 
-  let activeClass = tone === 'semantic' ? 'bg-indigo-500' : 'bg-teal-500'
+  let activeClass = tone === 'semantic' ? 'bg-teal-500' : 'bg-indigo-500'
   let className = active ? activeClass : 'bg-base-300'
 
   return (
@@ -520,7 +520,7 @@ function TimelineItem({ event }: TimelineItemProps) {
               {isSemantic ? (
                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                   {event.skill_name ? (
-                    <span className="badge truncate badge-outline border-indigo-500 badge-sm text-indigo-600">
+                    <span className="badge truncate badge-outline border-teal-500 badge-sm text-teal-600">
                       skill: {event.skill_name}
                     </span>
                   ) : null}
@@ -610,8 +610,8 @@ function isSemanticEvent(event: any) {
 }
 
 function eventDotClass(event: any) {
-  if (isSemanticEvent(event)) return 'bg-indigo-500'
-  if (isPassiveEvent(event)) return 'bg-teal-500'
+  if (isSemanticEvent(event)) return 'bg-teal-500'
+  if (isPassiveEvent(event)) return 'bg-indigo-500'
   return 'bg-base-content'
 }
 
@@ -628,8 +628,8 @@ function eventTitleClass(event: any) {
 }
 
 function eventFileNameClass(event: any) {
-  if (isSemanticEvent(event)) return 'text-indigo-600'
-  if (isPassiveEvent(event)) return 'text-teal-600'
+  if (isSemanticEvent(event)) return 'text-teal-600'
+  if (isPassiveEvent(event)) return 'text-indigo-600'
   return 'text-base-content/60'
 }
 
