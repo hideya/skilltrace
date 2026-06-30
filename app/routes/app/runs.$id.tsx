@@ -82,10 +82,10 @@ export default function Page({ loaderData }: PageProps) {
         traceMode={timeline.trace_mode}
       />
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <section className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
 
-        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+        <aside className="flex min-h-0 flex-col lg:self-stretch">
           <RunReflectionPanel reflection={timeline.reflection} />
         </aside>
       </section>
@@ -125,7 +125,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
   let [mode, setMode] = useState<ReflectionMode>('pretty')
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+    <section className="flex min-h-0 flex-1 flex-col rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Run reflection</h2>
@@ -156,7 +156,13 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
         mode === 'pretty' ? (
           <ReflectionPretty value={reflection} />
         ) : (
-          <JsonBlock value={reflection} />
+          <div className="min-h-0 flex-1">
+            <JsonBlock
+              className="h-full max-h-none"
+              flush
+              value={reflection}
+            />
+          </div>
         )
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
@@ -916,11 +922,13 @@ function SkillMeta({ event }: SkillMetaProps) {
   )
 }
 
-function JsonBlock({ value }: JsonBlockProps) {
+function JsonBlock({ className = '', flush = false, value }: JsonBlockProps) {
   if (!value || Object.keys(value).length === 0) return null
 
   return (
-    <pre className="mt-4 max-h-80 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed">
+    <pre
+      className={`${flush ? '' : 'mt-4'} max-h-80 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed ${className}`}
+    >
       {JSON.stringify(value, null, 2)}
     </pre>
   )
@@ -1222,6 +1230,8 @@ type SkillMetaProps = {
 }
 
 type JsonBlockProps = {
+  className?: string
+  flush?: boolean
   value: Record<string, any> | null
 }
 
