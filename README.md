@@ -7,7 +7,7 @@ through MCP, and reflected on which skill/reference files influenced a run.
 
 SkillTrace is aimed at people developing or debugging agent skills.
 
-<img width="500px" alt="skilltrace-diagram" src="https://raw.githubusercontent.com/hideya/skill-trace/refs/heads/main/docs/images/skilltrace-diagram.png" />
+<img width="500px" alt="skilltrace-diagram" src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.png" />
 
 ## What It Captures
 
