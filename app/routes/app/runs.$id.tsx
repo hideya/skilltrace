@@ -314,6 +314,9 @@ function RunContextPanel({ context }: RunContextPanelProps) {
 }
 
 function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
+  let [selectedFile, setSelectedFile] =
+    useState<RunSnapshotInstructionFile | null>(null)
+
   if (!snapshot) {
     return (
       <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -347,6 +350,11 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
   let untracked = Array.isArray(snapshot.untracked_instruction_files)
     ? snapshot.untracked_instruction_files
     : []
+  let instructionContents = Array.isArray(snapshot.instruction_file_contents)
+    ? snapshot.instruction_file_contents
+    : []
+  let changedInstructionCount =
+    instructionContents.length || instructionFiles.length
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -367,8 +375,8 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="badge badge-outline">
-          {instructionFiles.length} changed instruction file
-          {instructionFiles.length === 1 ? '' : 's'}
+          {changedInstructionCount} changed instruction file
+          {changedInstructionCount === 1 ? '' : 's'}
         </span>
         {snapshot.instruction_diff ? (
           <span className="badge badge-outline">instruction diff</span>
@@ -390,20 +398,20 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
             Changed files
           </summary>
           <ul className="border-t border-base-300 p-4">
-            {files.map((file) => (
-              <li
-                className="grid gap-2 py-1 text-xs sm:grid-cols-[4rem_minmax(0,1fr)]"
-                key={`${file.status}:${file.path}:${file.previous_path ?? ''}`}
-              >
-                <span className="font-mono text-base-content/50">
-                  {file.status}
-                </span>
-                <span className="font-mono break-words">
-                  {file.previous_path ? `${file.previous_path} -> ` : null}
-                  {file.target_relative_path ?? file.path}
-                </span>
-              </li>
-            ))}
+            {files.map((file) => {
+              let instructionFile = instructionContents.find((item) =>
+                item.path === file.path
+              )
+
+              return (
+                <SnapshotFileRow
+                  file={file}
+                  instructionFile={instructionFile}
+                  key={`${file.status}:${file.path}:${file.previous_path ?? ''}`}
+                  onSelect={setSelectedFile}
+                />
+              )
+            })}
           </ul>
         </details>
       ) : null}
@@ -445,7 +453,87 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
           </div>
         </details>
       ) : null}
+
+      <InstructionFileDialog
+        file={selectedFile}
+        onClose={() => setSelectedFile(null)}
+      />
     </section>
+  )
+}
+
+function SnapshotFileRow({
+  file,
+  instructionFile,
+  onSelect,
+}: SnapshotFileRowProps) {
+  let label = file.target_relative_path ?? file.path
+  let className =
+    'grid w-full gap-2 py-1 text-left text-xs sm:grid-cols-[4rem_minmax(0,1fr)]'
+
+  if (instructionFile) {
+    return (
+      <li className="rounded bg-info/10">
+        <button
+          className={`${className} cursor-pointer px-2 hover:bg-info/20`}
+          onClick={() => onSelect(instructionFile)}
+          type="button"
+        >
+          <span className="font-mono text-info">{file.status}</span>
+          <span className="font-mono font-semibold break-words text-info">
+            {file.previous_path ? `${file.previous_path} -> ` : null}
+            {label}
+          </span>
+        </button>
+      </li>
+    )
+  }
+
+  return (
+    <li className={className}>
+      <span className="font-mono text-base-content/50">{file.status}</span>
+      <span className="font-mono break-words">
+        {file.previous_path ? `${file.previous_path} -> ` : null}
+        {label}
+      </span>
+    </li>
+  )
+}
+
+function InstructionFileDialog({ file, onClose }: InstructionFileDialogProps) {
+  if (!file) return null
+
+  return (
+    <dialog className="modal modal-open">
+      <div className="modal-box max-w-5xl">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-xl font-bold">Instruction file content</h3>
+            <p className="mt-1 font-mono text-xs break-words text-base-content/60">
+              {file.target_relative_path ?? file.path}
+            </p>
+          </div>
+          <button
+            className="btn btn-sm btn-outline"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+        {file.truncated ? (
+          <div className="alert alert-warning mb-4">
+            Captured content was truncated.
+          </div>
+        ) : null}
+        <pre className="max-h-[70vh] overflow-auto rounded-box bg-base-200 p-4 text-xs leading-relaxed whitespace-pre-wrap">
+          {file.content || '(empty file)'}
+        </pre>
+      </div>
+      <button className="modal-backdrop" onClick={onClose} type="button">
+        close
+      </button>
+    </dialog>
   )
 }
 
@@ -986,6 +1074,7 @@ type RunSnapshot = {
   instruction_files?: string[]
   instruction_diff?: string
   instruction_diff_truncated?: boolean
+  instruction_file_contents?: RunSnapshotInstructionFile[]
   untracked_instruction_files?: RunSnapshotUntrackedFile[]
 }
 
@@ -996,10 +1085,29 @@ type RunSnapshotFile = {
   target_relative_path?: string
 }
 
+type RunSnapshotInstructionFile = {
+  path: string
+  target_relative_path?: string
+  status: string
+  content: string
+  truncated?: boolean
+}
+
 type RunSnapshotUntrackedFile = {
   path: string
   content: string
   truncated?: boolean
+}
+
+type SnapshotFileRowProps = {
+  file: RunSnapshotFile
+  instructionFile?: RunSnapshotInstructionFile
+  onSelect: (file: RunSnapshotInstructionFile) => void
+}
+
+type InstructionFileDialogProps = {
+  file: RunSnapshotInstructionFile | null
+  onClose: () => void
 }
 
 type PanelHeaderProps = {

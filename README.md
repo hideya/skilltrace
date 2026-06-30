@@ -183,7 +183,9 @@ lightweight run snapshot:
 - bounded contents for untracked instruction-relevant files
 
 This helps compare successful and failed runs against the skill/instruction
-state they used.
+state they used. In the run detail page, changed instruction files are
+highlighted in the Run snapshot panel; click one to inspect the exact captured
+plain-text contents used by that run.
 
 ## Stop And Uninstall
 

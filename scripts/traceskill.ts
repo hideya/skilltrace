@@ -451,6 +451,10 @@ function captureGitSnapshot(targetRoot: string): GitSnapshot {
     instruction_files: instructionFiles,
     instruction_diff: truncateSnapshotText(instructionDiff),
     instruction_diff_truncated: instructionDiff.length > GIT_SNAPSHOT_TEXT_LIMIT,
+    instruction_file_contents: captureInstructionFileContents(
+      gitRoot,
+      files.filter((file) => instructionFiles.includes(file.path)),
+    ),
     untracked_instruction_files: captureUntrackedInstructionFiles(
       gitRoot,
       untrackedInstructionFiles,
@@ -486,9 +490,7 @@ function gitDiff(cwd: string, files: string[]) {
 function captureUntrackedInstructionFiles(cwd: string, files: string[]) {
   return files.map((file) => {
     let absolutePath = path.join(cwd, file)
-    let content = fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()
-      ? fs.readFileSync(absolutePath, 'utf8')
-      : ''
+    let content = readSnapshotFileContent(absolutePath)
 
     return {
       path: file,
@@ -496,6 +498,27 @@ function captureUntrackedInstructionFiles(cwd: string, files: string[]) {
       truncated: content.length > GIT_SNAPSHOT_TEXT_LIMIT,
     }
   })
+}
+
+function captureInstructionFileContents(cwd: string, files: GitSnapshotFile[]) {
+  return files.map((file) => {
+    let absolutePath = path.join(cwd, file.path)
+    let content = readSnapshotFileContent(absolutePath)
+
+    return {
+      path: file.path,
+      target_relative_path: file.target_relative_path,
+      status: file.status,
+      content: truncateSnapshotText(content),
+      truncated: content.length > GIT_SNAPSHOT_TEXT_LIMIT,
+    }
+  })
+}
+
+function readSnapshotFileContent(filePath: string) {
+  if (!fs.existsSync(filePath)) return ''
+  if (!fs.statSync(filePath).isFile()) return ''
+  return fs.readFileSync(filePath, 'utf8')
 }
 
 function parseGitStatus(output: string) {
@@ -1447,6 +1470,7 @@ type GitSnapshot = {
   instruction_files?: string[]
   instruction_diff?: string
   instruction_diff_truncated?: boolean
+  instruction_file_contents?: GitSnapshotInstructionFile[]
   untracked_instruction_files?: GitSnapshotUntrackedFile[]
 }
 
@@ -1459,6 +1483,14 @@ type GitSnapshotFile = {
 
 type GitSnapshotUntrackedFile = {
   path: string
+  content: string
+  truncated: boolean
+}
+
+type GitSnapshotInstructionFile = {
+  path: string
+  target_relative_path?: string
+  status: string
   content: string
   truncated: boolean
 }
