@@ -303,5 +303,6 @@ decisions, see:
 
 - [README_DEV.md](https://github.com/hideya/skill-trace/blob/main/README_DEV.md)
 - [docs/architecture-decisions.md](https://github.com/hideya/skill-trace/blob/main/docs/architecture-decisions.md)
+- [docs/agent-profile-architecture.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-profile-architecture.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skill-trace/blob/main/docs/mcp-semantic-logger.md)
 - [docs/agent-sandbox-mcp-test.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-sandbox-mcp-test.md)

@@ -368,6 +368,12 @@ In testing, Codex via VS Code could see the sandbox skill instructions, and `/mc
 
 For now, SkillTrace MCP dogfooding should use command-line Codex.
 
+Claude Code support is planned as a separate agent-profile extension. The Phase
+0 design is captured in
+[agent-profile-architecture.md](agent-profile-architecture.md), with special
+attention to symlinked instruction surfaces such as `CLAUDE.md -> AGENTS.md`
+and `.claude/skills -> .skills`.
+
 ## Pluggable Instrumentation Overlay
 
 SkillTrace tracing instructions should be reusable outside the sandbox.

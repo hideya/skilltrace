@@ -282,7 +282,9 @@ The local server serves the web UI, owns one active trace session globally,
 supervises the passive probe, and receives MCP semantic events.
 
 See `docs/architecture-decisions.md` for the decisions and complications found
-while building the first local prototype.
+while building the first local prototype. See
+`docs/agent-profile-architecture.md` for the planned Codex/Claude Code profile
+model and symlink-safe instruction surface design.
 
 The local UI has three primary views:
 
