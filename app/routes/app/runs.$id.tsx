@@ -76,6 +76,9 @@ export default function Page({ loaderData }: PageProps) {
 
       <RunContextPanel context={timeline.context} />
       <RunSnapshotPanel snapshot={timeline.git_snapshot} />
+      {timeline.instruction_surfaces ? (
+        <InstructionSurfacesPanel report={timeline.instruction_surfaces} />
+      ) : null}
 
       <ConsistencyPanel
         rows={timeline.consistency_matrix}
@@ -449,6 +452,89 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
   )
 }
 
+function InstructionSurfacesPanel({ report }: InstructionSurfacesPanelProps) {
+  let surfaces = Array.isArray(report?.surfaces) ? report.surfaces : []
+  let aliasGroups = Array.isArray(report?.alias_groups)
+    ? report.alias_groups
+    : []
+
+  return (
+    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+      <PanelHeader
+        description="Agent instruction paths detected at trace start"
+        title="Instruction surfaces"
+      />
+
+      {surfaces.length > 0 ? (
+        <div className="space-y-4">
+          <div className="overflow-x-auto">
+            <table className="table table-sm">
+              <thead>
+                <tr>
+                  <th>Profile</th>
+                  <th>Kind</th>
+                  <th>Logical path</th>
+                  <th>Resolved path</th>
+                  <th>Symlink</th>
+                </tr>
+              </thead>
+              <tbody>
+                {surfaces.map((surface, index) => {
+                  let resolvedPath =
+                    surface.resolved_path ?? surface.realpath_error ?? 'unknown'
+
+                  return (
+                    <tr key={`${surface.profile}:${surface.logical_path}:${index}`}>
+                      <td>
+                        <span className="badge badge-outline badge-sm">
+                          {surfaceProfileLabel(surface.profile)}
+                        </span>
+                      </td>
+                      <td>{surfaceKindLabel(surface.kind)}</td>
+                      <td className="font-mono text-xs break-words">
+                        {surface.logical_path}
+                      </td>
+                      <td className="font-mono text-xs break-words text-base-content/60">
+                        {resolvedPath}
+                      </td>
+                      <td>{surface.is_symlink ? 'yes' : 'no'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {aliasGroups.length > 0 ? (
+            <div className="rounded-box border border-base-300 bg-base-200 p-3">
+              <h3 className="text-sm font-semibold text-base-content/70">
+                Shared resolved targets
+              </h3>
+              <ul className="mt-2 space-y-2">
+                {aliasGroups.map((group, index) => (
+                  <li
+                    className="text-sm"
+                    key={`${group.resolved_path}:${index}`}
+                  >
+                    <div className="font-mono text-xs break-words">
+                      {group.logical_paths.join(' -> ')}
+                    </div>
+                    <div className="mt-1 font-mono text-xs break-words text-base-content/50">
+                      {group.resolved_path}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <EmptyPanel>No instruction surfaces detected.</EmptyPanel>
+      )}
+    </section>
+  )
+}
+
 function SnapshotFileRow({
   file,
   instructionFile,
@@ -752,6 +838,18 @@ function displayRunFilePath(filePath: string) {
   }
 
   return filePath
+}
+
+function surfaceProfileLabel(profile?: string) {
+  if (profile === 'claude_code') return 'Claude Code'
+  if (profile === 'codex') return 'Codex'
+  return profile || 'unknown'
+}
+
+function surfaceKindLabel(kind?: string) {
+  if (kind === 'instruction_file') return 'Instruction'
+  if (kind === 'skill_root') return 'Skill root'
+  return kind || 'unknown'
 }
 
 function traceModeLabel(mode?: string) {
@@ -1119,6 +1217,29 @@ type RunContextPanelProps = {
 
 type RunSnapshotPanelProps = {
   snapshot?: RunSnapshot | null
+}
+
+type InstructionSurfacesPanelProps = {
+  report?: InstructionSurfaceReport | null
+}
+
+type InstructionSurfaceReport = {
+  surfaces?: InstructionSurface[]
+  alias_groups?: InstructionSurfaceAliasGroup[]
+}
+
+type InstructionSurface = {
+  profile?: string
+  kind?: string
+  logical_path?: string
+  resolved_path?: string
+  realpath_error?: string
+  is_symlink?: boolean
+}
+
+type InstructionSurfaceAliasGroup = {
+  resolved_path?: string
+  logical_paths: string[]
 }
 
 type RunSnapshot = {

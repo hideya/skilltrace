@@ -69,12 +69,14 @@ async function start(args: string[]) {
   if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
+  let instructionSurfaces = detectInstructionSurfaces(targetRoot)
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
     instrumentation,
     trace_mode: traceMode,
     git_snapshot: gitSnapshot,
+    instruction_surfaces: instructionSurfaces,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -412,6 +414,109 @@ function assertTraceTarget(targetRoot: string) {
   process.exit(1)
 }
 
+function detectInstructionSurfaces(targetRoot: string): InstructionSurfaceReport {
+  let candidates: InstructionSurfaceCandidate[] = [
+    {
+      profile: 'codex',
+      kind: 'instruction_file',
+      logical_path: 'AGENTS.md',
+    },
+    {
+      profile: 'codex',
+      kind: 'skill_root',
+      logical_path: '.skills',
+    },
+    {
+      profile: 'claude_code',
+      kind: 'instruction_file',
+      logical_path: 'CLAUDE.md',
+    },
+    {
+      profile: 'claude_code',
+      kind: 'instruction_file',
+      logical_path: '.claude/CLAUDE.md',
+    },
+    {
+      profile: 'claude_code',
+      kind: 'skill_root',
+      logical_path: '.claude/skills',
+    },
+  ]
+  let surfaces = candidates
+    .map((candidate) => detectInstructionSurface(targetRoot, candidate))
+    .filter((surface): surface is InstructionSurface => !!surface)
+  let aliasGroups = instructionSurfaceAliasGroups(surfaces)
+
+  return {
+    detected_at: new Date().toISOString(),
+    surfaces,
+    alias_groups: aliasGroups,
+    profiles: unique(surfaces.map((surface) => surface.profile)),
+  }
+}
+
+function detectInstructionSurface(
+  targetRoot: string,
+  candidate: InstructionSurfaceCandidate,
+): InstructionSurface | null {
+  let absolutePath = path.join(targetRoot, candidate.logical_path)
+  let stat = fs.lstatSync(absolutePath, { throwIfNoEntry: false })
+  if (!stat) return null
+  let resolved = resolveInstructionSurfacePath(absolutePath)
+
+  return {
+    profile: candidate.profile,
+    kind: candidate.kind,
+    logical_path: candidate.logical_path,
+    absolute_path: absolutePath,
+    resolved_path: resolved.path,
+    realpath_error: resolved.error,
+    is_symlink: stat.isSymbolicLink(),
+    node_type: instructionSurfaceNodeType(stat),
+  }
+}
+
+function resolveInstructionSurfacePath(absolutePath: string): {
+  path?: string
+  error?: string
+} {
+  try {
+    return { path: fs.realpathSync(absolutePath) }
+  } catch (error) {
+    return {
+      path: undefined,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+function instructionSurfaceNodeType(stat: fs.Stats): InstructionSurfaceNodeType {
+  if (stat.isDirectory()) return 'directory'
+  if (stat.isFile()) return 'file'
+  if (stat.isSymbolicLink()) return 'symlink'
+  return 'other'
+}
+
+function instructionSurfaceAliasGroups(surfaces: InstructionSurface[]) {
+  let byResolvedPath = new Map<string, InstructionSurface[]>()
+
+  for (let surface of surfaces) {
+    if (!surface.resolved_path) continue
+    let group = byResolvedPath.get(surface.resolved_path) ?? []
+    group.push(surface)
+    byResolvedPath.set(surface.resolved_path, group)
+  }
+
+  return [...byResolvedPath.entries()]
+    .filter(([_, group]) => group.length > 1)
+    .map(([resolvedPath, group]) => ({
+      resolved_path: resolvedPath,
+      logical_paths: group.map((surface) => surface.logical_path),
+      profiles: unique(group.map((surface) => surface.profile)),
+      kinds: unique(group.map((surface) => surface.kind)),
+    }))
+}
+
 function captureGitSnapshot(targetRoot: string): GitSnapshot {
   let root = gitOutput(targetRoot, ['rev-parse', '--show-toplevel'])
   if (!root.ok) {
@@ -586,6 +691,10 @@ function isInstructionRelevantFile(file?: string) {
 function truncateSnapshotText(value: string) {
   if (value.length <= GIT_SNAPSHOT_TEXT_LIMIT) return value
   return `${value.slice(0, GIT_SNAPSHOT_TEXT_LIMIT)}\n[SkillTrace truncated snapshot text]\n`
+}
+
+function unique<T>(values: T[]) {
+  return [...new Set(values)]
 }
 
 function parseArgs(args: string[]) {
@@ -1493,6 +1602,40 @@ type GitSnapshotInstructionFile = {
   status: string
   content: string
   truncated: boolean
+}
+
+type AgentProfile = 'codex' | 'claude_code'
+
+type InstructionSurfaceKind = 'instruction_file' | 'skill_root'
+
+type InstructionSurfaceNodeType = 'file' | 'directory' | 'symlink' | 'other'
+
+type InstructionSurfaceCandidate = {
+  profile: AgentProfile
+  kind: InstructionSurfaceKind
+  logical_path: string
+}
+
+type InstructionSurface = InstructionSurfaceCandidate & {
+  absolute_path: string
+  resolved_path?: string
+  realpath_error?: string
+  is_symlink: boolean
+  node_type: InstructionSurfaceNodeType
+}
+
+type InstructionSurfaceAliasGroup = {
+  resolved_path: string
+  logical_paths: string[]
+  profiles: AgentProfile[]
+  kinds: InstructionSurfaceKind[]
+}
+
+type InstructionSurfaceReport = {
+  detected_at: string
+  surfaces: InstructionSurface[]
+  alias_groups: InstructionSurfaceAliasGroup[]
+  profiles: AgentProfile[]
 }
 
 type ProbeWorkerOptions = {

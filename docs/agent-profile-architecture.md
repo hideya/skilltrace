@@ -151,6 +151,10 @@ The first safe behavior can be:
 
 Add surface detection without changing current behavior.
 
+Status: implemented for `traceskill start`. The detected surface report is
+stored as `instruction_surfaces` in the run metadata and repeated on the
+`trace_session_started` event. Current Codex injection behavior is unchanged.
+
 Detect:
 
 - `AGENTS.md`

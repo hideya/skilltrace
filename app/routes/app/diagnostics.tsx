@@ -220,14 +220,14 @@ function Metric({ label, value, tone = 'neutral' }: MetricProps) {
           : 'badge-outline'
 
   return (
-    <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
+    <div className="flex flex-col justify-center rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
       <div className="md: mb-3 flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
           {label}
         </div>
         <div className={`badge badge-sm ${toneClass}`}>{tone}</div>
       </div>
-      <p className="font-mono text-sm break-words">{value}</p>
+      <div className="font-mono text-sm break-words">{value}</div>
     </div>
   )
 }
