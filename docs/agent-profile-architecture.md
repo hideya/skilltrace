@@ -185,8 +185,12 @@ traceskill start --profile claude-code
 traceskill start --profile auto
 ```
 
-The initial default can stay Codex-compatible. `auto` may select the only
-detected surface and warn when both profiles are present.
+Status: metadata selection is implemented. `traceskill start` accepts
+`--profile auto|codex|claude-code` and stores the selected profile as
+`agent_profile` in run metadata and the `trace_session_started` event. `auto`
+selects the only detected profile and records a warning when both profiles are
+present. Current injection and target validation behavior remains
+Codex-compatible.
 
 ### Phase 3: Injection Abstraction
 

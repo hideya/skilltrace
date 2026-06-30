@@ -70,6 +70,7 @@ async function start(args: string[]) {
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
   let instructionSurfaces = detectInstructionSurfaces(targetRoot)
+  let agentProfile = selectAgentProfile(options.profile, instructionSurfaces)
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -77,6 +78,7 @@ async function start(args: string[]) {
     trace_mode: traceMode,
     git_snapshot: gitSnapshot,
     instruction_surfaces: instructionSurfaces,
+    agent_profile: agentProfile,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -517,6 +519,59 @@ function instructionSurfaceAliasGroups(surfaces: InstructionSurface[]) {
     }))
 }
 
+function selectAgentProfile(
+  requested: AgentProfileOption | undefined,
+  report: InstructionSurfaceReport,
+): SelectedAgentProfile {
+  let value = requested ?? 'auto'
+  let profiles = report.profiles
+
+  if (value !== 'auto') {
+    return {
+      selected: value,
+      requested: value,
+      reason: 'explicit_profile',
+    }
+  }
+
+  if (profiles.length === 1) {
+    return {
+      selected: profiles[0],
+      requested: value,
+      reason: 'single_detected_profile',
+    }
+  }
+
+  if (profiles.length === 0) {
+    return {
+      selected: 'codex',
+      requested: value,
+      reason: 'no_profile_detected',
+      warnings: ['No agent instruction surface was detected; defaulting to codex.'],
+    }
+  }
+
+  if (profiles.includes('codex')) {
+    return {
+      selected: 'codex',
+      requested: value,
+      reason: 'ambiguous_detected_profiles',
+      warnings: [
+        `Multiple agent profiles were detected (${profiles.join(', ')}); defaulting to codex.`,
+      ],
+    }
+  }
+
+  return {
+    selected: profiles[0],
+    requested: value,
+    reason: 'first_detected_profile',
+    warnings: [
+      `Multiple non-codex profiles were detected (${profiles.join(', ')}); using ${profiles[0]}.`,
+    ],
+  }
+}
+
 function captureGitSnapshot(targetRoot: string): GitSnapshot {
   let root = gitOutput(targetRoot, ['rev-parse', '--show-toplevel'])
   if (!root.ok) {
@@ -719,6 +774,8 @@ function parseArgs(args: string[]) {
       options.yes = true
     } else if (arg === '--mode') {
       options.mode = parseTraceMode(args[++index])
+    } else if (arg === '--profile') {
+      options.profile = parseAgentProfile(args[++index])
     } else if (arg === '--shared-probe') {
       options.sharedProbe = true
     } else if (arg === '--no-shared-probe') {
@@ -1484,6 +1541,15 @@ function parseTraceMode(value?: string): TraceMode {
   usage(`Unknown trace mode: ${value ?? ''}`)
 }
 
+function parseAgentProfile(value?: string): AgentProfileOption {
+  if (value === 'auto' || value === 'codex' || value === 'claude_code') {
+    return value
+  }
+  if (value === 'claude-code') return 'claude_code'
+
+  usage(`Unknown agent profile: ${value ?? ''}`)
+}
+
 function commandExists(command: string) {
   return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
 }
@@ -1545,7 +1611,7 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only]')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--profile auto|codex|claude-code]')
   console.error('       traceskill stop [--discard] [--yes]')
   console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
@@ -1561,6 +1627,7 @@ type Options = {
   yes?: boolean
   injectInstructions?: boolean
   mode?: TraceMode
+  profile?: AgentProfileOption
   sharedProbe?: boolean
   lines?: number
 }
@@ -1606,6 +1673,8 @@ type GitSnapshotInstructionFile = {
 
 type AgentProfile = 'codex' | 'claude_code'
 
+type AgentProfileOption = AgentProfile | 'auto'
+
 type InstructionSurfaceKind = 'instruction_file' | 'skill_root'
 
 type InstructionSurfaceNodeType = 'file' | 'directory' | 'symlink' | 'other'
@@ -1636,6 +1705,13 @@ type InstructionSurfaceReport = {
   surfaces: InstructionSurface[]
   alias_groups: InstructionSurfaceAliasGroup[]
   profiles: AgentProfile[]
+}
+
+type SelectedAgentProfile = {
+  selected: AgentProfile
+  requested: AgentProfileOption
+  reason: string
+  warnings?: string[]
 }
 
 type ProbeWorkerOptions = {

@@ -214,6 +214,7 @@ export async function getRunTimeline(publicId: string) {
     context: latestRunContext(events),
     git_snapshot: runGitSnapshot(run, events),
     instruction_surfaces: runInstructionSurfaces(run, events),
+    agent_profile: runAgentProfile(run, events),
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
@@ -414,6 +415,15 @@ function runInstructionSurfaces(run: any, events: any[]) {
     event.event_type === 'trace_session_started'
   )
   return started?.payload?.instruction_surfaces ?? null
+}
+
+function runAgentProfile(run: any, events: any[]) {
+  if (run.bag?.agent_profile) return run.bag.agent_profile
+
+  let started = events.find((event) =>
+    event.event_type === 'trace_session_started'
+  )
+  return started?.payload?.agent_profile ?? null
 }
 
 function runTraceMode(run: any, events: any[]) {

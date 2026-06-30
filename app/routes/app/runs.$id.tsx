@@ -77,7 +77,10 @@ export default function Page({ loaderData }: PageProps) {
       <RunContextPanel context={timeline.context} />
       <RunSnapshotPanel snapshot={timeline.git_snapshot} />
       {timeline.instruction_surfaces ? (
-        <InstructionSurfacesPanel report={timeline.instruction_surfaces} />
+        <InstructionSurfacesPanel
+          profile={timeline.agent_profile}
+          report={timeline.instruction_surfaces}
+        />
       ) : null}
 
       <ConsistencyPanel
@@ -452,11 +455,15 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
   )
 }
 
-function InstructionSurfacesPanel({ report }: InstructionSurfacesPanelProps) {
+function InstructionSurfacesPanel({
+  profile,
+  report,
+}: InstructionSurfacesPanelProps) {
   let surfaces = Array.isArray(report?.surfaces) ? report.surfaces : []
   let aliasGroups = Array.isArray(report?.alias_groups)
     ? report.alias_groups
     : []
+  let warnings = Array.isArray(profile?.warnings) ? profile.warnings : []
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -467,6 +474,30 @@ function InstructionSurfacesPanel({ report }: InstructionSurfacesPanelProps) {
 
       {surfaces.length > 0 ? (
         <div className="space-y-4">
+          {profile ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <SurfaceStat
+                label="Selected profile"
+                value={surfaceProfileLabel(profile.selected)}
+              />
+              <SurfaceStat
+                label="Requested"
+                value={profile.requested || 'auto'}
+              />
+              <SurfaceStat label="Reason" value={profile.reason || 'unknown'} />
+            </div>
+          ) : null}
+
+          {warnings.length > 0 ? (
+            <div className="alert alert-warning text-sm">
+              <ul className="list-disc pl-5">
+                {warnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="overflow-x-auto">
             <table className="table table-sm">
               <thead>
@@ -532,6 +563,17 @@ function InstructionSurfacesPanel({ report }: InstructionSurfacesPanelProps) {
         <EmptyPanel>No instruction surfaces detected.</EmptyPanel>
       )}
     </section>
+  )
+}
+
+function SurfaceStat({ label, value }: SurfaceStatProps) {
+  return (
+    <div className="rounded-box bg-base-200 p-3">
+      <p className="text-xs tracking-[0.16em] text-base-content/50 uppercase">
+        {label}
+      </p>
+      <p className="mt-1 truncate font-mono text-sm font-semibold">{value}</p>
+    </div>
   )
 }
 
@@ -1220,7 +1262,15 @@ type RunSnapshotPanelProps = {
 }
 
 type InstructionSurfacesPanelProps = {
+  profile?: SelectedAgentProfile | null
   report?: InstructionSurfaceReport | null
+}
+
+type SelectedAgentProfile = {
+  selected?: string
+  requested?: string
+  reason?: string
+  warnings?: string[]
 }
 
 type InstructionSurfaceReport = {
@@ -1240,6 +1290,11 @@ type InstructionSurface = {
 type InstructionSurfaceAliasGroup = {
   resolved_path?: string
   logical_paths: string[]
+}
+
+type SurfaceStatProps = {
+  label: string
+  value: any
 }
 
 type RunSnapshot = {
