@@ -231,6 +231,11 @@ avoids low-value accidental runs and keeps instruction injection cleanup easy to
 reason about. The user should run `traceskill stop` before starting another
 session.
 
+If the active session was started by mistake, `traceskill stop --discard`
+provides the same cleanup path as normal stop, then deletes that active run's
+record and events after CLI confirmation. Discard is intentionally scoped to the
+current active session; deleting older finished runs remains a UI operation.
+
 The runs page should not show a final consistency diagnosis for an active run.
 While a run is active, the Result column shows `Running`. After
 `trace_session_finished`, the Result column shows the final consistency

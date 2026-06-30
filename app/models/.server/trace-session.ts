@@ -4,6 +4,7 @@ import { createHash } from 'crypto'
 import { spawnSync } from 'child_process'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
+import { discardRunRecord } from './trace'
 
 const DEFAULT_SKILL_ROOTS = ['.skills']
 const SESSION_SOURCE = 'skilltrace_session'
@@ -91,6 +92,14 @@ export async function stopTraceSession(input: StopTraceSessionInput = {}) {
     }
   }
 
+  return session
+}
+
+export async function discardTraceSession() {
+  let session = await stopTraceSession({ reason: 'discarded' })
+  if (!session) return null
+
+  await discardRunRecord(session.run_id)
   return session
 }
 
@@ -244,7 +253,7 @@ type StartTraceSessionInput = {
 }
 
 type StopTraceSessionInput = {
-  reason?: 'ended' | 'replaced'
+  reason?: 'ended' | 'replaced' | 'discarded'
 }
 
 type AttachProbeInput = {

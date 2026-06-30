@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import os from 'os'
 import { spawn, spawnSync } from 'child_process'
+import { createInterface } from 'readline/promises'
 import { fileURLToPath } from 'url'
 import {
   assessInstrumentation,
@@ -154,14 +155,36 @@ async function start(args: string[]) {
 async function end(args: string[]) {
   let options = parseArgs(args)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+
+  if (options.discard) {
+    let active = await getJson(server, '/api/sessions/status')
+    if (!active.session) {
+      console.log('No active SkillTrace session to discard.')
+      return
+    }
+
+    if (!options.yes && !(await confirmDiscard(active.session))) {
+      console.log('Discard cancelled.')
+      return
+    }
+  }
+
   await cleanupActiveInjection(server)
 
-  let result = await postJson(server, '/api/sessions/end', {})
+  let result = await postJson(server, '/api/sessions/end', {
+    discard: options.discard === true,
+  })
 
   if (result.session) {
-    printSession('Ended SkillTrace session', server, result.session)
+    if (options.discard) {
+      printDiscardedSession(result.session)
+    } else {
+      printSession('Ended SkillTrace session', server, result.session)
+    }
   } else {
-    console.log('No active SkillTrace session.')
+    console.log(options.discard
+      ? 'No active SkillTrace session to discard.'
+      : 'No active SkillTrace session.')
   }
 }
 
@@ -558,6 +581,10 @@ function parseArgs(args: string[]) {
       options.injectInstructions = true
     } else if (arg === '--no-inject-instructions') {
       options.injectInstructions = false
+    } else if (arg === '--discard') {
+      options.discard = true
+    } else if (arg === '--yes' || arg === '-y') {
+      options.yes = true
     } else if (arg === '--mode') {
       options.mode = parseTraceMode(args[++index])
     } else if (arg === '--shared-probe') {
@@ -572,6 +599,28 @@ function parseArgs(args: string[]) {
   }
 
   return options
+}
+
+async function confirmDiscard(session: any) {
+  if (!process.stdin.isTTY) {
+    console.error('Refusing to discard without confirmation in a non-interactive terminal.')
+    console.error('Run `traceskill stop --discard --yes` to discard without prompting.')
+    return false
+  }
+
+  console.log('Discard the active SkillTrace session?')
+  console.log(`  run: ${session.run_id}`)
+  console.log(`  repo: ${session.target_root}`)
+  console.log('This will clean up instruction injection and delete the run record.')
+
+  let reader = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+  let answer = await reader.question('Discard this run? [y/N] ')
+  reader.close()
+
+  return answer.trim().toLowerCase() === 'y'
 }
 
 async function getJson(server: string, pathname: string) {
@@ -730,6 +779,13 @@ function printSession(label: string, server: string, session: any) {
     console.log(`  probe log: ${session.probe_log_path}`)
   }
   console.log(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
+}
+
+function printDiscardedSession(session: any) {
+  console.log('Discarded SkillTrace session.')
+  console.log(`  run: ${session.run_id}`)
+  console.log(`  repo: ${session.target_root}`)
+  console.log('  run record: deleted')
 }
 
 function printActiveSessionRefusal(server: string, session: any) {
@@ -1358,6 +1414,7 @@ function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
   console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only]')
+  console.error('       traceskill stop [--discard] [--yes]')
   console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }
@@ -1368,6 +1425,8 @@ type Options = {
   target?: string
   server?: string
   debugProbe?: boolean
+  discard?: boolean
+  yes?: boolean
   injectInstructions?: boolean
   mode?: TraceMode
   sharedProbe?: boolean

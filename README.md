@@ -101,6 +101,15 @@ When the task is finished:
 traceskill stop
 ```
 
+If you realize immediately that the active run was a mistake, discard it:
+
+```bash
+traceskill stop --discard
+```
+
+This cleans up temporary instruction injection and deletes the active run
+record after confirmation. Use `--yes` to skip the prompt.
+
 `traceskill start` expects the target repo to contain `AGENTS.md` and
 `.skills/`. It injects a temporary SkillTrace instruction into `AGENTS.md`,
 writes `.skilltrace/instrumentation.md`, and creates `.skilltrace.json` when

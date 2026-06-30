@@ -226,6 +226,14 @@ export async function clearRunEvents(publicId: string) {
   return run
 }
 
+export async function discardRunRecord(publicId: string) {
+  let run = await Run.findBy({ public_id: publicId })
+  if (!run) return null
+
+  await db.delete(trace_events).where(eq(trace_events.run_id, run.id))
+  return await Run.delete(run.id)
+}
+
 export async function deleteRunRecords(publicIds: string[]) {
   let deleted: any[] = []
   let events = await TraceEvent.newestBy('timestamp')
