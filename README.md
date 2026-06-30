@@ -40,7 +40,7 @@ compared with passive traces, semantic MCP declarations, and human judgment.
 
 ## Why This Matters
 
-The big vision is this:
+The longer-term idea is this:
 
 > The unit of human knowledge accumulation is shifting from documents to
 > executable work units enriched with execution evidence and failure histories.
@@ -59,7 +59,7 @@ that failures can eventually become reusable procedural knowledge.
 
 - Node.js 22+
 - npm
-- Codex CLI for the current MCP-oriented workflow
+- Codex CLI for MCP registration in the current workflow
 - macOS or Linux
   - macOS only: admin password may be required
   - Linux only: `inotify-tools` installation may be required
@@ -70,6 +70,9 @@ Platform notes:
 - Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
   access is not captured.
 
+SkillTrace currently assumes Codex MCP registration through the Codex CLI.
+SkillTrace currently supports Codex CLI MCP workflows. Codex App support is not
+yet available.
 Codex is the first supported agent client. The architecture is intended to
 support other MCP-capable clients later.
 
@@ -92,7 +95,7 @@ http://localhost:7555
 ```
 
 For a Linux container or VM where you want to open the UI from the host
-machine, use the below instead to bind to all interfaces:
+machine, start the daemon like this to bind to all interfaces:
 
 ```bash
 HOST=0.0.0.0 traceskill daemon start
@@ -142,6 +145,8 @@ traceskill stop --discard
 
 This cleans up temporary instruction injection and deletes the active run
 record after confirmation. Use `--yes` to skip the prompt.
+
+Target repo requirements:
 
 `traceskill start` expects the target repo to contain `AGENTS.md` and
 `.skills/`. It injects a temporary SkillTrace instruction into `AGENTS.md`,
@@ -246,28 +251,6 @@ Known limitations include:
 - SkillTrace currently focuses on observability, not automatic postmortem
   generation or skill improvement.
 
-## Stop And Uninstall
-
-Stop the daemon:
-
-```bash
-traceskill daemon stop
-```
-
-Unregister MCP from Codex:
-
-```bash
-codex mcp remove skilltrace
-```
-
-Uninstall the package:
-
-```bash
-npm uninstall -g skilltrace
-```
-
-Local SkillTrace data is stored under `~/.skilltrace`.
-
 ## Privacy And Data
 
 SkillTrace is designed as a local-first tool, but it may capture sensitive
@@ -289,6 +272,29 @@ being recorded. Review captured runs before sharing logs, screenshots, or run
 exports.
 
 Local SkillTrace data is stored under `~/.skilltrace`.
+
+## Stop And Uninstall
+
+Stop the daemon:
+
+```bash
+traceskill daemon stop
+```
+
+Unregister MCP from Codex:
+
+```bash
+codex mcp remove skilltrace
+```
+
+Uninstall the package:
+
+```bash
+npm uninstall -g skilltrace
+```
+
+Uninstalling the package does not remove local SkillTrace data. Remove
+`~/.skilltrace` separately if you want to delete captured runs and logs.
 
 ## Development
 
