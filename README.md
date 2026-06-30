@@ -1,40 +1,29 @@
 # SkillTrace
 
-**SkillTrace is a local observability tool for AI agent skill usage.**
+**SkillTrace is an observability tool for AI agent skill usage.**
 
 It helps you inspect whether an agent read skill files, declared skill usage
 through MCP, and reflected on which skill/reference files influenced a run.
 
-SkillTrace is experimental, local-first, and aimed at people developing or
-debugging agent skills.
+SkillTrace is aimed at people developing or debugging agent skills.
 
-```text
-Target repo
-  AGENTS.md / .skills
-       |
-       | traceskill start injects lightweight instructions
-       v
-Agent / Codex -- MCP semantic events --> SkillTrace daemon
-       |                                      |
-       | file reads                           | stores runs/events
-       v                                      v
-Passive probe -----------------------> Web UI / diagnostics
-```
+<img width="500px" alt="skilltrace-diagram" src="https://raw.githubusercontent.com/hideya/skill-trace/refs/heads/main/docs/images/skilltrace-diagram.png" />
 
 ## What It Captures
 
-SkillTrace combines three evidence streams:
+SkillTrace helps to understand and debug skills by combining three usage
+evidence streams:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
-- **Semantic traces**: agent-declared MCP events such as skill start, reference
-  read, and skill finish.
+- **Semantic traces**: instructed MCP invocations such as skill start,
+  reference read, and skill finish.
 - **Reflection**: post-run agent summary of which skill and reference files
-  influenced the work.
+  influenced the work, and how.
 
-The UI compares those streams so you can see when evidence aligns, when the
-agent skipped a declaration, or when passive probing saw something the
-reflection omitted.
+The UI lists and compares the events obtained from those streams so you can see
+when evidence aligns, when the agent skipped a declaration, or when passive
+probing saw something the reflection omitted.
 
 ## Requirements
 
@@ -42,13 +31,14 @@ reflection omitted.
 - npm
 - Codex CLI for the current MCP-oriented workflow
 - macOS or Linux
+  - macOS only: admin password
+  - Linux only: `inotify-tools` installation
 
 Platform notes:
 
-- macOS uses a shared `fs_usage` passive probe by default and may ask for your
-  admin password once when the daemon starts.
-- Linux uses a per-run `inotifywait` probe. Install `inotify-tools` if passive
-  file access is not captured.
+- macOS uses a `fs_usage` passive probe and may ask for your admin password.
+- Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
+  access is not captured.
 
 ## Installation
 
@@ -65,11 +55,11 @@ traceskill daemon start
 Open the UI:
 
 ```text
-http://localhost:7555/app/runs
+http://localhost:7555
 ```
 
 For a Linux container or VM where you want to open the UI from the host
-machine, bind to all interfaces:
+machine, use the below instead to bind to all interfaces:
 
 ```bash
 HOST=0.0.0.0 traceskill daemon start
@@ -122,6 +112,21 @@ Only one trace session can be active at a time. If a session is active,
 
 ## Trace Modes
 
+For your first run, just type:
+
+```bash
+traceskill start
+```
+
+This enables all the probing methods.
+
+Full probing is useful for understanding agent decisions about skill usage, but
+it can affect how the agent behaves because it asks the agent to think more
+explicitly about skill usage and report it through MCP tool calls.
+
+In that case, you can try less interfering modes to see whether the agent keeps
+working as expected.
+
 SkillTrace supports three modes:
 
 ```bash
@@ -133,8 +138,10 @@ traceskill start --mode passive_only
 - `full`: passive file access, live semantic MCP declarations, and final
   reflection.
 - `passive_reflection`: passive file access plus final reflection, without live
-  skill lifecycle declarations.
-- `passive_only`: passive file access only, with no instruction injection.
+  skill lifecycle declarations. This should interfere less with the agent's
+  thought process.
+- `passive_only`: passive file access only, with no instruction injection,
+  which should not interfere with the agent at all.
 
 The default is `full`.
 
@@ -144,14 +151,17 @@ Useful pages:
 
 - `/app/runs`: grouped trace runs, status, mode, result, model/client context,
   and mode comparison.
-- `/app/runs/<run-id>`: timeline, run context, Git snapshot, consistency table,
-  and reflection.
+- `/app/runs/<run-id>`: timeline, run context, Git snapshot if available,
+  consistency table, and reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and Codex MCP registration.
 
-The run detail page shows a consistency table across passive, semantic, and
-reflection evidence. Passive-only runs are labeled as **Captured** rather than
-**Pass**, because there is no second evidence stream to compare.
+The run detail page checks consistency among the captured probing results.
+
+It shows a consistency table across passive, semantic, and reflection evidence,
+and compares whether there is consistent evidence of skill usage.
+Passive-only runs are labeled as **Captured** rather than **Pass**, because
+there is no second evidence stream to compare.
 
 ## Git Provenance
 
