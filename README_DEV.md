@@ -314,11 +314,13 @@ run snapshot when the target repo is inside a Git worktree. The snapshot stores
 the HEAD commit, branch, broad changed-file status, and bounded
 instruction-relevant provenance for `AGENTS.md`, `.skills/**`,
 `.skilltrace.json`, and `.skilltrace/**`. By default, only
-instruction-relevant diffs and untracked instruction file contents are captured;
-other repo changes are recorded as file status entries. This is the first step
-toward comparing successful and failed runs against the exact
-skill/instruction state they used. If the target is not a Git repo, the run
-simply records that no Git snapshot was available.
+instruction-relevant diffs and plain-text instruction file contents are
+captured; other repo changes are recorded as file status entries. The run
+detail page uses this metadata to open the exact captured instruction contents
+and highlight lines touched by the stored diff. This is the first step toward
+comparing successful and failed runs against the exact skill/instruction state
+they used. If the target is not a Git repo, the run simply records that no Git
+snapshot was available.
 
 The runs list and active run detail pages poll lightly while a run is `Running`
 so newly received daemon events appear without a manual refresh. Finished and

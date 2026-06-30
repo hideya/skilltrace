@@ -387,6 +387,14 @@ and `.skills/type-fix/references/checklist.md`.
 The consistency table should show aligned rows for `.skills/type-fix/SKILL.md`
 and `.skills/type-fix/references/checklist.md`.
 
+If the sandbox repo has local changes to `AGENTS.md`, `.skills/**`,
+`.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a
+Run snapshot panel. Changed instruction files appear in its changed-files list;
+click one to inspect the exact captured plain-text contents used by that run.
+Lines touched by the captured diff are highlighted in the viewer. The snapshot
+is stored with the run metadata, so deleting or discarding the run removes this
+captured provenance too.
+
 After running at least two successful modes for the same sandbox repo, the runs
 page should show `Compare Modes` on that run group. It preselects the latest
 successful run for each mode; change the selected runs if needed, then click

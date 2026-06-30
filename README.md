@@ -2,28 +2,58 @@
 
 **SkillTrace is an observability tool for AI agent skill usage.**
 
-It helps you inspect whether an agent read skill files, declared skill usage
-through MCP, and reflected on which skill/reference files influenced a run.
+It helps you inspect whether an agent read skill files, whether it declared
+skill usage through MCP, and how its post-run reflection attributed the work
+to specific skills, references, files, steps, and uncertainties.
 
-SkillTrace is aimed at people developing or debugging agent skills.
+Skill usage is hard to capture because it is often buried inside the LLM's
+decision-making process. Unlike MCP tool calls, skills do not necessarily cross
+a clear execution boundary.
+
+SkillTrace combines passive file-access probing, dedicated MCP tool invocations,
+and structured post-run reflection so you can compare what was observed, what
+was declared, and what the agent later believed influenced the run.
+
+SkillTrace is aimed at people developing and debugging agent skills.
 
 <img width="500px" alt="skilltrace-diagram" src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.png" />
 
 ## What It Captures
 
-SkillTrace helps to understand and debug skills by combining three usage
+SkillTrace helps you understand and debug agent skills by combining three
 evidence streams:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
 - **Semantic traces**: instructed MCP invocations such as skill start,
   reference read, and skill finish.
-- **Reflection**: post-run agent summary of which skill and reference files
-  influenced the work, and how.
+- **Reflection**: structured post-run attribution by the agent, including which
+  skills, references, files, steps, uncertainties, and recommended skill changes
+  it believes were relevant to the run.
 
 The UI lists and compares the events obtained from those streams so you can see
 when evidence aligns, when the agent skipped a declaration, or when passive
 probing saw something the reflection omitted.
+
+Reflection is a self-report, not ground truth. Its value comes from being
+compared with passive traces, semantic MCP declarations, and human judgment.
+
+## Why This Matters
+
+The big vision is this:
+
+> The unit of human knowledge accumulation is shifting from documents to
+> executable work units enriched with execution evidence and failure histories.
+
+SkillTrace is based on the idea that agent skills should not become trusted
+reusable knowledge merely by being shared. To become trustworthy executable
+units of collective intelligence, skills need evidence of how they were
+activated, how they were used, where they failed, and how those failures
+informed improvement.
+
+SkillTrace is a small but concrete first step in that direction. It is not just
+a skill execution tracer; it is an attempt to make skill usage observable enough
+that failures can eventually become reusable procedural knowledge.
 
 ## Requirements
 
@@ -31,14 +61,17 @@ probing saw something the reflection omitted.
 - npm
 - Codex CLI for the current MCP-oriented workflow
 - macOS or Linux
-  - macOS only: admin password
-  - Linux only: `inotify-tools` installation
+  - macOS only: admin password may be required
+  - Linux only: `inotify-tools` installation may be required
 
 Platform notes:
 
 - macOS uses a `fs_usage` passive probe and may ask for your admin password.
 - Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
   access is not captured.
+
+Codex is the first supported agent client. The architecture is intended to
+support other MCP-capable clients later.
 
 ## Installation
 
@@ -127,14 +160,14 @@ For your first run, just type:
 traceskill start
 ```
 
-This enables all the probing methods.
+This enables all available probing methods.
 
 Full probing is useful for understanding agent decisions about skill usage, but
 it can affect how the agent behaves because it asks the agent to think more
 explicitly about skill usage and report it through MCP tool calls.
 
-In that case, you can try less interfering modes to see whether the agent keeps
-working as expected.
+If you want to reduce instrumentation effects, you can try less interfering
+modes to see whether the agent keeps working as expected.
 
 SkillTrace supports three modes:
 
@@ -148,9 +181,10 @@ traceskill start --mode passive_only
   reflection.
 - `passive_reflection`: passive file access plus final reflection, without live
   skill lifecycle declarations. This should interfere less with the agent's
-  thought process.
-- `passive_only`: passive file access only, with no instruction injection,
-  which should not interfere with the agent at all.
+  normal task flow.
+- `passive_only`: passive file access only, with no instruction injection.
+  This should minimally interfere with the agent, though passive probing may
+  still have platform-specific overhead or blind spots.
 
 The default is `full`.
 
@@ -161,7 +195,7 @@ Useful pages:
 - `/app/runs`: grouped trace runs, status, mode, result, model/client context,
   and mode comparison.
 - `/app/runs/<run-id>`: timeline, run context, Git snapshot if available,
-  consistency table, and reflection.
+  captured instruction contents, consistency table, and reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and Codex MCP registration.
 
@@ -169,6 +203,7 @@ The run detail page checks consistency among the captured probing results.
 
 It shows a consistency table across passive, semantic, and reflection evidence,
 and compares whether there is consistent evidence of skill usage.
+
 Passive-only runs are labeled as **Captured** rather than **Pass**, because
 there is no second evidence stream to compare.
 
@@ -180,12 +215,36 @@ lightweight run snapshot:
 - HEAD commit and branch
 - broad changed-file status
 - bounded diffs for instruction-relevant files
-- bounded contents for untracked instruction-relevant files
+- bounded plain-text contents for changed instruction-relevant files
 
 This helps compare successful and failed runs against the skill/instruction
-state they used. In the run detail page, changed instruction files are
-highlighted in the Run snapshot panel; click one to inspect the exact captured
-plain-text contents used by that run.
+state they used.
+
+In the run detail page, changed instruction files are highlighted in the Run
+snapshot panel; click one to inspect the exact captured plain-text contents used
+by that run. Lines touched by the captured diff are highlighted in the viewer.
+
+The snapshot is stored with the run metadata, so deleting a run also removes
+its captured provenance.
+
+## Known Limitations
+
+SkillTrace is currently pre-alpha.
+
+Known limitations include:
+
+- Codex is the first supported workflow.
+- Passive file access probing is platform-dependent.
+- macOS passive probing may require admin privileges.
+- Linux passive probing depends on `inotifywait`.
+- Semantic traces and reflections depend on agent cooperation.
+- Reflection is not ground truth; it may omit, misattribute, or overstate
+  influence.
+- Instrumentation may change model behavior, especially in `full` mode.
+- Passive-only mode can show that files were accessed, but not whether they were
+  actually used.
+- SkillTrace currently focuses on observability, not automatic postmortem
+  generation or skill improvement.
 
 ## Stop And Uninstall
 
@@ -206,6 +265,28 @@ Uninstall the package:
 ```bash
 npm uninstall -g skilltrace
 ```
+
+Local SkillTrace data is stored under `~/.skilltrace`.
+
+## Privacy And Data
+
+SkillTrace is designed as a local-first tool, but it may capture sensitive
+development context.
+
+Depending on the trace mode and repository state, captured data may include:
+
+- skill files and reference files
+- injected instrumentation instructions
+- Git metadata
+- changed-file status
+- bounded diffs for instruction-relevant files
+- bounded plain-text contents for changed instruction-relevant files
+- agent-declared summaries, uncertainties, and file attribution
+- MCP semantic logging events
+
+Do not run SkillTrace on sensitive repositories unless you understand what is
+being recorded. Review captured runs before sharing logs, screenshots, or run
+exports.
 
 Local SkillTrace data is stored under `~/.skilltrace`.
 

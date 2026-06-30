@@ -422,7 +422,7 @@ Captured data:
 - HEAD commit and current branch, when available
 - broad `git status --porcelain` changed-file entries for the worktree
 - bounded diffs for instruction-relevant files only
-- bounded contents for untracked instruction-relevant files only
+- bounded plain-text contents for changed instruction-relevant files only
 
 Instruction-relevant paths currently include:
 
@@ -438,12 +438,20 @@ Reasons:
   workflow
 - broad status still helps explain surprising runs without storing unrelated
   source diffs
-- no database migration is needed because the snapshot is stored in the run bag
+- no database migration is needed because the snapshot is stored as run metadata
   and repeated on the `trace_session_started` event
+- run deletion removes the captured provenance with the run record, keeping the
+  cleanup model simple
 
 The snapshot is captured before SkillTrace applies its temporary instruction
 overlay. Injection events and cleanup remain visible in the timeline, while the
 snapshot represents the target repo's authored state at trace start.
+
+The run detail page intentionally hides the raw unified diff by default. Changed
+instruction files appear in the Run snapshot panel, and clicking one opens the
+captured file contents with changed lines highlighted. This keeps the default UI
+focused on the file shape the agent actually saw, while retaining enough diff
+context for quick inspection.
 
 If the target is not in Git, SkillTrace records that Git provenance was
 unavailable and continues the run normally.
