@@ -70,7 +70,10 @@ async function start(args: string[]) {
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
   let instructionSurfaces = detectInstructionSurfaces(targetRoot)
-  let agentProfile = selectAgentProfile(options.profile, instructionSurfaces)
+  let instructionProfile = selectInstructionProfile(
+    options.instructionProfile,
+    instructionSurfaces,
+  )
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -78,7 +81,7 @@ async function start(args: string[]) {
     trace_mode: traceMode,
     git_snapshot: gitSnapshot,
     instruction_surfaces: instructionSurfaces,
-    agent_profile: agentProfile,
+    instruction_profile: instructionProfile,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -419,27 +422,27 @@ function assertTraceTarget(targetRoot: string) {
 function detectInstructionSurfaces(targetRoot: string): InstructionSurfaceReport {
   let candidates: InstructionSurfaceCandidate[] = [
     {
-      profile: 'codex',
+      instruction_profile: 'agents_md',
       kind: 'instruction_file',
       logical_path: 'AGENTS.md',
     },
     {
-      profile: 'codex',
+      instruction_profile: 'agents_md',
       kind: 'skill_root',
       logical_path: '.skills',
     },
     {
-      profile: 'claude_code',
+      instruction_profile: 'claude_code',
       kind: 'instruction_file',
       logical_path: 'CLAUDE.md',
     },
     {
-      profile: 'claude_code',
+      instruction_profile: 'claude_code',
       kind: 'instruction_file',
       logical_path: '.claude/CLAUDE.md',
     },
     {
-      profile: 'claude_code',
+      instruction_profile: 'claude_code',
       kind: 'skill_root',
       logical_path: '.claude/skills',
     },
@@ -453,7 +456,9 @@ function detectInstructionSurfaces(targetRoot: string): InstructionSurfaceReport
     detected_at: new Date().toISOString(),
     surfaces,
     alias_groups: aliasGroups,
-    profiles: unique(surfaces.map((surface) => surface.profile)),
+    instruction_profiles: unique(
+      surfaces.map((surface) => surface.instruction_profile),
+    ),
   }
 }
 
@@ -467,7 +472,7 @@ function detectInstructionSurface(
   let resolved = resolveInstructionSurfacePath(absolutePath)
 
   return {
-    profile: candidate.profile,
+    instruction_profile: candidate.instruction_profile,
     kind: candidate.kind,
     logical_path: candidate.logical_path,
     absolute_path: absolutePath,
@@ -514,17 +519,19 @@ function instructionSurfaceAliasGroups(surfaces: InstructionSurface[]) {
     .map(([resolvedPath, group]) => ({
       resolved_path: resolvedPath,
       logical_paths: group.map((surface) => surface.logical_path),
-      profiles: unique(group.map((surface) => surface.profile)),
+      instruction_profiles: unique(group.map((surface) =>
+        surface.instruction_profile
+      )),
       kinds: unique(group.map((surface) => surface.kind)),
     }))
 }
 
-function selectAgentProfile(
-  requested: AgentProfileOption | undefined,
+function selectInstructionProfile(
+  requested: InstructionProfileOption | undefined,
   report: InstructionSurfaceReport,
-): SelectedAgentProfile {
+): SelectedInstructionProfile {
   let value = requested ?? 'auto'
-  let profiles = report.profiles
+  let profiles = report.instruction_profiles
 
   if (value !== 'auto') {
     return {
@@ -544,20 +551,22 @@ function selectAgentProfile(
 
   if (profiles.length === 0) {
     return {
-      selected: 'codex',
+      selected: 'agents_md',
       requested: value,
       reason: 'no_profile_detected',
-      warnings: ['No agent instruction surface was detected; defaulting to codex.'],
+      warnings: [
+        'No instruction surface was detected; defaulting to agents_md.',
+      ],
     }
   }
 
-  if (profiles.includes('codex')) {
+  if (profiles.includes('agents_md')) {
     return {
-      selected: 'codex',
+      selected: 'agents_md',
       requested: value,
       reason: 'ambiguous_detected_profiles',
       warnings: [
-        `Multiple agent profiles were detected (${profiles.join(', ')}); defaulting to codex.`,
+        `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to agents_md.`,
       ],
     }
   }
@@ -567,7 +576,7 @@ function selectAgentProfile(
     requested: value,
     reason: 'first_detected_profile',
     warnings: [
-      `Multiple non-codex profiles were detected (${profiles.join(', ')}); using ${profiles[0]}.`,
+      `Multiple non-agents_md instruction profiles were detected (${profiles.join(', ')}); using ${profiles[0]}.`,
     ],
   }
 }
@@ -774,8 +783,8 @@ function parseArgs(args: string[]) {
       options.yes = true
     } else if (arg === '--mode') {
       options.mode = parseTraceMode(args[++index])
-    } else if (arg === '--profile') {
-      options.profile = parseAgentProfile(args[++index])
+    } else if (arg === '--instruction-profile') {
+      options.instructionProfile = parseInstructionProfile(args[++index])
     } else if (arg === '--shared-probe') {
       options.sharedProbe = true
     } else if (arg === '--no-shared-probe') {
@@ -1541,13 +1550,14 @@ function parseTraceMode(value?: string): TraceMode {
   usage(`Unknown trace mode: ${value ?? ''}`)
 }
 
-function parseAgentProfile(value?: string): AgentProfileOption {
-  if (value === 'auto' || value === 'codex' || value === 'claude_code') {
+function parseInstructionProfile(value?: string): InstructionProfileOption {
+  if (value === 'auto' || value === 'agents_md' || value === 'claude_code') {
     return value
   }
+  if (value === 'agents-md') return 'agents_md'
   if (value === 'claude-code') return 'claude_code'
 
-  usage(`Unknown agent profile: ${value ?? ''}`)
+  usage(`Unknown instruction profile: ${value ?? ''}`)
 }
 
 function commandExists(command: string) {
@@ -1611,7 +1621,7 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--profile auto|codex|claude-code]')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code]')
   console.error('       traceskill stop [--discard] [--yes]')
   console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
@@ -1627,7 +1637,7 @@ type Options = {
   yes?: boolean
   injectInstructions?: boolean
   mode?: TraceMode
-  profile?: AgentProfileOption
+  instructionProfile?: InstructionProfileOption
   sharedProbe?: boolean
   lines?: number
 }
@@ -1671,16 +1681,16 @@ type GitSnapshotInstructionFile = {
   truncated: boolean
 }
 
-type AgentProfile = 'codex' | 'claude_code'
+type InstructionProfile = 'agents_md' | 'claude_code'
 
-type AgentProfileOption = AgentProfile | 'auto'
+type InstructionProfileOption = InstructionProfile | 'auto'
 
 type InstructionSurfaceKind = 'instruction_file' | 'skill_root'
 
 type InstructionSurfaceNodeType = 'file' | 'directory' | 'symlink' | 'other'
 
 type InstructionSurfaceCandidate = {
-  profile: AgentProfile
+  instruction_profile: InstructionProfile
   kind: InstructionSurfaceKind
   logical_path: string
 }
@@ -1696,7 +1706,7 @@ type InstructionSurface = InstructionSurfaceCandidate & {
 type InstructionSurfaceAliasGroup = {
   resolved_path: string
   logical_paths: string[]
-  profiles: AgentProfile[]
+  instruction_profiles: InstructionProfile[]
   kinds: InstructionSurfaceKind[]
 }
 
@@ -1704,12 +1714,12 @@ type InstructionSurfaceReport = {
   detected_at: string
   surfaces: InstructionSurface[]
   alias_groups: InstructionSurfaceAliasGroup[]
-  profiles: AgentProfile[]
+  instruction_profiles: InstructionProfile[]
 }
 
-type SelectedAgentProfile = {
-  selected: AgentProfile
-  requested: AgentProfileOption
+type SelectedInstructionProfile = {
+  selected: InstructionProfile
+  requested: InstructionProfileOption
   reason: string
   warnings?: string[]
 }

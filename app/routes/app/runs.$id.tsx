@@ -78,7 +78,7 @@ export default function Page({ loaderData }: PageProps) {
       <RunSnapshotPanel snapshot={timeline.git_snapshot} />
       {timeline.instruction_surfaces ? (
         <InstructionSurfacesPanel
-          profile={timeline.agent_profile}
+          profile={timeline.instruction_profile}
           report={timeline.instruction_surfaces}
         />
       ) : null}
@@ -477,8 +477,8 @@ function InstructionSurfacesPanel({
           {profile ? (
             <div className="grid gap-3 sm:grid-cols-3">
               <SurfaceStat
-                label="Selected profile"
-                value={surfaceProfileLabel(profile.selected)}
+                label="Instruction profile"
+                value={instructionProfileLabel(profile.selected)}
               />
               <SurfaceStat
                 label="Requested"
@@ -502,7 +502,7 @@ function InstructionSurfacesPanel({
             <table className="table table-sm">
               <thead>
                 <tr>
-                  <th>Profile</th>
+                  <th>Instruction profile</th>
                   <th>Kind</th>
                   <th>Logical path</th>
                   <th>Resolved path</th>
@@ -515,10 +515,14 @@ function InstructionSurfacesPanel({
                     surface.resolved_path ?? surface.realpath_error ?? 'unknown'
 
                   return (
-                    <tr key={`${surface.profile}:${surface.logical_path}:${index}`}>
+                    <tr
+                      key={`${surface.instruction_profile}:${surface.logical_path}:${index}`}
+                    >
                       <td>
                         <span className="badge badge-outline badge-sm">
-                          {surfaceProfileLabel(surface.profile)}
+                          {instructionProfileLabel(
+                            surface.instruction_profile,
+                          )}
                         </span>
                       </td>
                       <td>{surfaceKindLabel(surface.kind)}</td>
@@ -882,9 +886,9 @@ function displayRunFilePath(filePath: string) {
   return filePath
 }
 
-function surfaceProfileLabel(profile?: string) {
+function instructionProfileLabel(profile?: string) {
+  if (profile === 'agents_md') return 'AGENTS.md'
   if (profile === 'claude_code') return 'Claude Code'
-  if (profile === 'codex') return 'Codex'
   return profile || 'unknown'
 }
 
@@ -1262,11 +1266,11 @@ type RunSnapshotPanelProps = {
 }
 
 type InstructionSurfacesPanelProps = {
-  profile?: SelectedAgentProfile | null
+  profile?: SelectedInstructionProfile | null
   report?: InstructionSurfaceReport | null
 }
 
-type SelectedAgentProfile = {
+type SelectedInstructionProfile = {
   selected?: string
   requested?: string
   reason?: string
@@ -1279,7 +1283,7 @@ type InstructionSurfaceReport = {
 }
 
 type InstructionSurface = {
-  profile?: string
+  instruction_profile?: string
   kind?: string
   logical_path?: string
   resolved_path?: string

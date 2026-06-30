@@ -1,16 +1,16 @@
-# Agent Profile Architecture Plan
+# Instruction Profile Architecture Plan
 
 This note records the Phase 0 design for extending SkillTrace beyond the
 current Codex CLI workflow, starting with Claude Code.
 
 The goal is not to make SkillTrace clever about every agent convention at once.
 The goal is to make the next implementation step safe, inspectable, and generic
-enough that Codex and Claude Code can share the same tracing model without
-pretending their repository conventions are identical.
+enough that AGENTS.md-style tools and Claude Code can share the same tracing
+model without pretending their repository conventions are identical.
 
 ## Motivation
 
-SkillTrace currently assumes a Codex-shaped target repo:
+SkillTrace currently assumes an AGENTS.md-shaped target repo:
 
 - `AGENTS.md`
 - `.skills/**`
@@ -33,20 +33,31 @@ resolved file or reporting the same underlying skill as unrelated evidence.
 
 ## Core Concepts
 
-### Agent Profile
+### Instruction Profile
 
-An agent profile describes the client convention SkillTrace is tracing.
+An instruction profile describes the repository convention SkillTrace is
+tracing.
 
 Initial profiles:
 
-- `codex`
+- `agents_md`
 - `claude_code`
 
-Future profiles may cover other MCP-capable agent clients.
+Future instruction profiles may cover other repo instruction conventions.
 
-For the first implementation, one run should use one active profile. Mixed-agent
-or simultaneous multi-profile tracing can wait until the single-profile model is
-boring and reliable.
+For the first implementation, one run should use one active instruction profile.
+Mixed-profile tracing can wait until the single-profile model is boring and
+reliable.
+
+### Agent Client
+
+An agent client describes the tool that actually runs after `traceskill start`,
+such as Codex CLI, Gemini CLI, Claude Code, or another MCP-capable client.
+
+SkillTrace cannot reliably know this at start time because the user runs the
+agent command separately. For now, `agent_client` should remain nullable and be
+filled from later evidence such as `skill_trace_context` self-reporting or
+future client-specific diagnostics.
 
 ### Instruction Surface
 
@@ -96,16 +107,17 @@ Expected behavior:
 AGENTS.md -> CLAUDE.md
 
 detect shared resolved file
-choose one logical path for this profile
+choose one logical path for this instruction profile
 write tracing line once
 record the alias relationship in metadata
 ```
 
-### Follow The Active Profile's Visible Convention
+### Follow The Active Instruction Profile's Visible Convention
 
-SkillTrace should inject through the logical path used by the active profile:
+SkillTrace should inject through the logical path used by the active instruction
+profile:
 
-- `codex` uses `AGENTS.md`
+- `agents_md` uses `AGENTS.md`
 - `claude_code` uses `CLAUDE.md` or `.claude/CLAUDE.md`
 
 If that logical path is a symlink, the write naturally affects the resolved
@@ -118,9 +130,9 @@ Passive probe events, semantic declarations, reflection file lists, Git
 provenance, and cross-run comparison should normalize by resolved path where
 possible.
 
-The UI may still show the logical path most relevant to the selected profile,
-but consistency checks should not treat these as unrelated files when they
-resolve to the same target:
+The UI may still show the logical path most relevant to the selected
+instruction profile, but consistency checks should not treat these as unrelated
+files when they resolve to the same target:
 
 ```text
 CLAUDE.md
@@ -136,14 +148,15 @@ or:
 
 ### Warn On Ambiguous Auto Detection
 
-If both Codex and Claude Code surfaces exist and do not resolve to the same
-files, automatic profile selection should warn instead of guessing silently.
+If both AGENTS.md and Claude Code surfaces exist and do not resolve to the same
+files, automatic instruction profile selection should warn instead of guessing
+silently.
 
 The first safe behavior can be:
 
-- continue to default to the current Codex-compatible profile
+- continue to default to the current AGENTS.md-compatible profile
 - record detected surfaces in run metadata
-- ask the user to pass an explicit profile once profile selection exists
+- ask the user to pass an explicit instruction profile once selection exists
 
 ## Proposed Phases
 
@@ -153,7 +166,8 @@ Add surface detection without changing current behavior.
 
 Status: implemented for `traceskill start`. The detected surface report is
 stored as `instruction_surfaces` in the run metadata and repeated on the
-`trace_session_started` event. Current Codex injection behavior is unchanged.
+`trace_session_started` event. Current AGENTS.md injection behavior is
+unchanged.
 
 Detect:
 
@@ -165,7 +179,7 @@ Detect:
 
 For each detected path, record:
 
-- profile candidate
+- instruction profile candidate
 - logical path
 - absolute path
 - resolved real path
@@ -175,28 +189,28 @@ For each detected path, record:
 Store this in `trace_session_started` metadata and show it in diagnostics or
 run context. This phase should not change injection behavior yet.
 
-### Phase 2: Profile Selection
+### Phase 2: Instruction Profile Selection
 
-Add explicit profile selection:
+Add explicit instruction profile selection:
 
 ```bash
-traceskill start --profile codex
-traceskill start --profile claude-code
-traceskill start --profile auto
+traceskill start --instruction-profile agents-md
+traceskill start --instruction-profile claude-code
+traceskill start --instruction-profile auto
 ```
 
 Status: metadata selection is implemented. `traceskill start` accepts
-`--profile auto|codex|claude-code` and stores the selected profile as
-`agent_profile` in run metadata and the `trace_session_started` event. `auto`
-selects the only detected profile and records a warning when both profiles are
-present. Current injection and target validation behavior remains
-Codex-compatible.
+`--instruction-profile auto|agents-md|claude-code` and stores the selected
+instruction profile as `instruction_profile` in run metadata and the
+`trace_session_started` event. `auto` selects the only detected instruction
+profile and records a warning when both profiles are present. Current injection
+and target validation behavior remains AGENTS.md-compatible.
 
 ### Phase 3: Injection Abstraction
 
 Refactor injection around an instruction surface abstraction:
 
-- profile
+- instruction profile
 - instruction file logical path
 - instrumentation file path
 - SkillTrace config path
@@ -205,9 +219,9 @@ Refactor injection around an instruction surface abstraction:
 
 The resolved mutation target set enforces the "write once" rule.
 
-### Phase 4: Claude Code Profile
+### Phase 4: Claude Code Instruction Profile
 
-Implement the first Claude Code run profile:
+Implement the first Claude Code instruction profile:
 
 - inject into `CLAUDE.md` or `.claude/CLAUDE.md`
 - write `.skilltrace/instrumentation.md`
@@ -228,17 +242,18 @@ registration points to the expected command for the current package/dev mode.
 
 ### Phase 6: Cross-Agent Comparison
 
-Once Codex and Claude Code profiles both work, compare runs across profiles.
+Once AGENTS.md and Claude Code instruction profiles both work, compare runs
+across profiles.
 
 The comparison should show:
 
-- client/profile per run
+- instruction profile and agent client per run
 - logical paths used by each agent
 - resolved paths used for normalization
-- warnings when profiles used different instruction surfaces
+- warnings when instruction profiles used different instruction surfaces
 
 This is the point where SkillTrace becomes a generic skill observability tool
-rather than a Codex-shaped tracer.
+rather than an AGENTS.md-shaped tracer.
 
 ## Non-Goals For The First Claude Code Pass
 
@@ -250,6 +265,6 @@ rather than a Codex-shaped tracer.
 
 The first milestone should be simple:
 
-> SkillTrace can safely detect Codex and Claude Code instruction surfaces,
+> SkillTrace can safely detect AGENTS.md and Claude Code instruction surfaces,
 > record symlink relationships, and prepare for profile-specific injection
-> without changing current Codex behavior.
+> without changing current AGENTS.md behavior.

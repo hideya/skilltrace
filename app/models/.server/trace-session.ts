@@ -40,7 +40,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
       trace_mode: session.trace_mode,
       git_snapshot: input.git_snapshot,
       instruction_surfaces: input.instruction_surfaces,
-      agent_profile: input.agent_profile,
+      instruction_profile: input.instruction_profile,
     },
   })
   await appendSessionEvent(run.id, 'trace_session_started', session, {
@@ -48,7 +48,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
     instrumentation: input.instrumentation,
     git_snapshot: input.git_snapshot,
     instruction_surfaces: input.instruction_surfaces,
-    agent_profile: input.agent_profile,
+    instruction_profile: input.instruction_profile,
   })
 
   return session
@@ -252,7 +252,7 @@ type StartTraceSessionInput = {
   target_root: string
   instrumentation?: Record<string, unknown>
   instruction_surfaces?: Record<string, unknown>
-  agent_profile?: Record<string, unknown>
+  instruction_profile?: Record<string, unknown>
   git_snapshot?: Record<string, unknown>
   trace_mode?: unknown
   now?: Date
