@@ -402,8 +402,13 @@ function captureGitSnapshot(targetRoot: string): GitSnapshot {
   let head = gitOutput(gitRoot, ['rev-parse', 'HEAD'])
   let branch = gitOutput(gitRoot, ['branch', '--show-current'])
   let status = gitOutput(gitRoot, ['status', '--porcelain=v1', '-z'], false)
-  let files = status.ok ? parseGitStatus(status.stdout) : []
-  let instructionFiles = instructionRelevantFiles(files.map((file) => file.path))
+  let targetPrefix = gitRelativeTargetPrefix(gitRoot, targetRoot)
+  let files = status.ok
+    ? parseGitStatus(status.stdout).map((file) =>
+      enrichGitSnapshotFile(file, targetPrefix)
+    )
+    : []
+  let instructionFiles = instructionRelevantFiles(files)
   let untrackedInstructionFiles = files
     .filter((file) => file.status === '??')
     .map((file) => file.path)
@@ -495,12 +500,40 @@ function parseGitStatus(output: string) {
   return files
 }
 
-function instructionRelevantFiles(files: string[]) {
-  return files.filter((file) =>
+function gitRelativeTargetPrefix(gitRoot: string, targetRoot: string) {
+  let relative = path.relative(gitRoot, targetRoot).replaceAll(path.sep, '/')
+  if (!relative || relative === '.') return ''
+  return `${relative.replace(/\/+$/, '')}/`
+}
+
+function enrichGitSnapshotFile(file: GitSnapshotFile, targetPrefix: string) {
+  if (!targetPrefix) {
+    return {
+      ...file,
+      target_relative_path: file.path,
+    }
+  }
+
+  if (!file.path.startsWith(targetPrefix)) return file
+
+  return {
+    ...file,
+    target_relative_path: file.path.slice(targetPrefix.length),
+  }
+}
+
+function instructionRelevantFiles(files: GitSnapshotFile[]) {
+  return files
+    .filter((file) => isInstructionRelevantFile(file.target_relative_path))
+    .map((file) => file.path)
+}
+
+function isInstructionRelevantFile(file?: string) {
+  return (
     file === 'AGENTS.md' ||
     file === '.skilltrace.json' ||
-    file.startsWith('.skills/') ||
-    file.startsWith('.skilltrace/')
+    !!file?.startsWith('.skills/') ||
+    !!file?.startsWith('.skilltrace/')
   )
 }
 
@@ -1362,6 +1395,7 @@ type GitSnapshotFile = {
   path: string
   status: string
   previous_path?: string
+  target_relative_path?: string
 }
 
 type GitSnapshotUntrackedFile = {

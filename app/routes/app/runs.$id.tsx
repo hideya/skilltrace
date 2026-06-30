@@ -400,7 +400,7 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
                 </span>
                 <span className="font-mono break-words">
                   {file.previous_path ? `${file.previous_path} -> ` : null}
-                  {file.path}
+                  {file.target_relative_path ?? file.path}
                 </span>
               </li>
             ))}
@@ -993,6 +993,7 @@ type RunSnapshotFile = {
   path: string
   status: string
   previous_path?: string
+  target_relative_path?: string
 }
 
 type RunSnapshotUntrackedFile = {
