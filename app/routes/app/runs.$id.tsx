@@ -353,8 +353,6 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
   let instructionContents = Array.isArray(snapshot.instruction_file_contents)
     ? snapshot.instruction_file_contents
     : []
-  let changedInstructionCount =
-    instructionContents.length || instructionFiles.length
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -374,13 +372,6 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="badge badge-outline">
-          {changedInstructionCount} changed instruction file
-          {changedInstructionCount === 1 ? '' : 's'}
-        </span>
-        {snapshot.instruction_diff ? (
-          <span className="badge badge-outline">instruction diff</span>
-        ) : null}
         {untracked.length > 0 ? (
           <span className="badge badge-outline">
             {untracked.length} untracked instruction file
@@ -395,7 +386,7 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
       {files.length > 0 ? (
         <details className="mt-4 rounded-box border border-base-300">
           <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-            Changed files
+            {files.length} Changed file{files.length === 1 ? '' : 's'}
           </summary>
           <ul className="border-t border-base-300 p-4">
             {files.map((file) => {
@@ -413,17 +404,6 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
               )
             })}
           </ul>
-        </details>
-      ) : null}
-
-      {snapshot.instruction_diff ? (
-        <details className="mt-4 rounded-box border border-base-300">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-            Instruction diff
-          </summary>
-          <pre className="max-h-96 overflow-auto border-t border-base-300 bg-base-200 p-4 text-xs leading-relaxed">
-            {snapshot.instruction_diff}
-          </pre>
         </details>
       ) : null}
 
@@ -455,6 +435,7 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
       ) : null}
 
       <InstructionFileDialog
+        diff={snapshot.instruction_diff}
         file={selectedFile}
         onClose={() => setSelectedFile(null)}
       />
@@ -500,8 +481,15 @@ function SnapshotFileRow({
   )
 }
 
-function InstructionFileDialog({ file, onClose }: InstructionFileDialogProps) {
+function InstructionFileDialog({
+  diff,
+  file,
+  onClose,
+}: InstructionFileDialogProps) {
   if (!file) return null
+
+  let changedLines = changedLinesForFile(diff, file.path)
+  let lines = file.content ? file.content.split('\n') : ['(empty file)']
 
   return (
     <dialog className="modal modal-open">
@@ -526,14 +514,76 @@ function InstructionFileDialog({ file, onClose }: InstructionFileDialogProps) {
             Captured content was truncated.
           </div>
         ) : null}
-        <pre className="max-h-[70vh] overflow-auto rounded-box bg-base-200 p-4 text-xs leading-relaxed whitespace-pre-wrap">
-          {file.content || '(empty file)'}
-        </pre>
+        <div className="max-h-[70vh] overflow-auto rounded-box bg-base-200 py-4 text-xs leading-relaxed">
+          {lines.map((line, index) => (
+            <div
+              className={`grid grid-cols-[4rem_minmax(0,1fr)] gap-3 px-4 ${
+                changedLines.has(index + 1) ? 'bg-warning/20' : ''
+              }`}
+              key={index}
+            >
+              <span className="select-none text-right font-mono text-base-content/40">
+                {index + 1}
+              </span>
+              <span className="font-mono whitespace-pre-wrap">
+                {line || ' '}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
       <button className="modal-backdrop" onClick={onClose} type="button">
         close
       </button>
     </dialog>
+  )
+}
+
+function changedLinesForFile(diff: string | undefined, filePath: string) {
+  let changedLines = new Set<number>()
+  if (!diff) return changedLines
+
+  let inFile = false
+  let newLine = 0
+
+  for (let line of diff.split('\n')) {
+    if (line.startsWith('diff --git ')) {
+      inFile = diffHeaderMatchesFile(line, filePath)
+      newLine = 0
+      continue
+    }
+
+    if (!inFile) continue
+
+    let hunk = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/)
+    if (hunk) {
+      newLine = Number(hunk[1])
+      continue
+    }
+
+    if (newLine === 0) continue
+    if (line.startsWith('+++') || line.startsWith('---')) continue
+
+    if (line.startsWith('+')) {
+      changedLines.add(newLine)
+      newLine += 1
+      continue
+    }
+
+    if (line.startsWith('-')) continue
+
+    newLine += 1
+  }
+
+  return changedLines
+}
+
+function diffHeaderMatchesFile(line: string, filePath: string) {
+  let normalized = filePath.replaceAll('\\', '/')
+  return (
+    line.includes(` b/${normalized}`) ||
+    line.endsWith(` b/${normalized}`) ||
+    line.includes(` a/${normalized} `)
   )
 }
 
@@ -1106,6 +1156,7 @@ type SnapshotFileRowProps = {
 }
 
 type InstructionFileDialogProps = {
+  diff?: string
   file: RunSnapshotInstructionFile | null
   onClose: () => void
 }
