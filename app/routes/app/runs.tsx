@@ -199,7 +199,7 @@ function RunGroup({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="badge badge-outline">{group.latestStatus}</span>
+          <StatusBadge status={group.latestStatus} />
           {isComparing ? (
             <>
               <button

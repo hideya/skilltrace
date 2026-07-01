@@ -779,6 +779,7 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     <ConsistencyDot
                       active={row.semantic}
                       expected={row.semantic_expected}
+                      state={row.semantic_state}
                       tone="semantic"
                     />
                   </td>
@@ -836,6 +837,7 @@ function SnapshotStat({ label, value }: SnapshotStatProps) {
 function ConsistencyDot({
   active,
   expected = true,
+  state,
   tone,
 }: ConsistencyDotProps) {
   if (!expected) {
@@ -849,13 +851,23 @@ function ConsistencyDot({
   }
 
   let activeClass = tone === 'semantic' ? 'bg-indigo-400' : 'bg-teal-400'
-  let className = active ? activeClass : 'bg-base-300'
+  let isPartial = tone === 'semantic' && state === 'partial'
+  let className = active
+    ? activeClass
+    : isPartial
+      ? 'bg-indigo-400/50'
+      : 'bg-base-300'
+  let label = active
+    ? 'Observed'
+    : isPartial
+      ? 'Started, waiting for finish'
+      : 'Missing'
 
   return (
     <span
-      aria-label={active ? 'Observed' : 'Missing'}
+      aria-label={label}
       className={`inline-block size-3 rounded-full ${className}`}
-      title={active ? 'Observed' : 'Missing'}
+      title={label}
     />
   )
 }
@@ -1412,6 +1424,7 @@ type ReflectionMode = (typeof reflectionModes)[number]
 type ConsistencyDotProps = {
   active: boolean
   expected?: boolean
+  state?: 'complete' | 'partial' | 'missing'
   tone: 'passive' | 'semantic'
 }
 
