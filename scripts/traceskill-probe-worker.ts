@@ -1,5 +1,6 @@
 import { spawn, spawnSync, type ChildProcess } from 'child_process'
 import fs from 'fs'
+import path from 'path'
 import {
   ProbeDeduper,
   buildProbeReadEvent,
@@ -200,15 +201,30 @@ async function handleProbeLine(
   let active = activeProbeOptions(options)
   if (!active) return
   let filePath = parsePath(line)
-  if (!filePath && options.debug && line.includes('.skills')) {
-    console.error(`TraceSkill ${backend} unmatched: ${line}`)
+  if (!filePath) {
+    if (options.debug) {
+      let rootHint = debugRootHintForLine(line, active)
+      if (rootHint) {
+        console.error(`TraceSkill ${backend} unmatched (${rootHint}): ${line}`)
+      }
+    }
+    return
   }
-  if (!filePath) return
   if (options.debug) {
     console.error(`TraceSkill ${backend} matched: ${line}`)
   }
-  if (!isWatchedSkillPath(filePath, active.skillRoots)) return
-  if (!isReadableFile(filePath)) return
+  if (!isWatchedSkillPath(filePath, active.skillRoots)) {
+    if (options.debug) {
+      console.error(`TraceSkill ${backend} outside watched roots: ${filePath}`)
+    }
+    return
+  }
+  if (!isReadableFile(filePath)) {
+    if (options.debug) {
+      console.error(`TraceSkill ${backend} unreadable: ${filePath}`)
+    }
+    return
+  }
   if (deduper.has(`${active.runId}:${filePath}`)) return
   let observedProcess = observedProcessForLine(backend, line)
   if (isIgnoredObservedProcess(observedProcess.observedProcessName)) {
@@ -229,6 +245,32 @@ async function handleProbeLine(
 
   await postJson(options.serverUrl, '/api/passive-events', event)
   console.error(`TraceSkill passive event: ${event.event_type} ${filePath}`)
+}
+
+function debugRootHintForLine(line: string, options: ActiveProbeOptions) {
+  let lowerLine = line.toLowerCase()
+  let matches: string[] = []
+
+  for (let root of options.skillRoots) {
+    let absoluteRoot = path.resolve(root)
+    let relativeRoot = path.relative(options.targetRoot, absoluteRoot)
+    let candidates = unique([
+      absoluteRoot,
+      relativeRoot && !relativeRoot.startsWith('..') ? relativeRoot : '',
+    ].filter(Boolean))
+
+    for (let candidate of candidates) {
+      if (lowerLine.includes(candidate.toLowerCase())) {
+        matches.push(candidate)
+      }
+    }
+  }
+
+  return matches.length > 0 ? unique(matches).join(', ') : null
+}
+
+function unique(values: string[]) {
+  return [...new Set(values)]
 }
 
 function observedProcessForLine(backend: ProbeBackend, line: string) {
@@ -406,6 +448,12 @@ type ProbeOptions = {
   targetRoot: string
   skillRoots: string[]
   debug?: boolean
+}
+
+type ActiveProbeOptions = {
+  runId: string
+  targetRoot: string
+  skillRoots: string[]
 }
 
 type SharedProbeOptions = {

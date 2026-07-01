@@ -97,6 +97,17 @@ describe('skilltrace probe helpers', () => {
     )
   })
 
+  test('parses Claude skill roots from relative fs_usage paths', () => {
+    let targetRoot = '/tmp/skilltrace-test/agent-sandbox-repo-claude'
+    let root = path.join(targetRoot, '.claude/skills')
+    let line =
+      '06:58:31.134215 open F=3 .claude/skills/type-fix/SKILL.md 0.000055 claude.48931538'
+
+    expect(parseOpenSnoopPath(line, [root], targetRoot)).toBe(
+      path.join(targetRoot, '.claude/skills/type-fix/SKILL.md'),
+    )
+  })
+
   test('parses inotifywait absolute paths', () => {
     let filePath = '/tmp/repo/.skills/type-fix/SKILL.md'
 
