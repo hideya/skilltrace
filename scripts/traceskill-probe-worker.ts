@@ -5,6 +5,7 @@ import {
   buildProbeReadEvent,
   discoverProbeConfig,
   isWatchedSkillPath,
+  parseFsUsageProcess,
   parseInotifywaitPath,
   parseOpenSnoopPath,
 } from './lib/skilltrace-probe'
@@ -221,10 +222,24 @@ async function handleProbeLine(
     runId: active.runId,
     targetRoot: active.targetRoot,
     filePath,
+    ...observedProcessForLine(backend, line),
   })
 
   await postJson(options.serverUrl, '/api/passive-events', event)
   console.error(`TraceSkill passive event: ${event.event_type} ${filePath}`)
+}
+
+function observedProcessForLine(backend: ProbeBackend, line: string) {
+  if (backend !== 'fs_usage') return {}
+
+  let process = parseFsUsageProcess(line)
+  if (!process) return {}
+
+  return {
+    observedProcess: process.process,
+    observedProcessName: process.name,
+    observedProcessId: process.pid,
+  }
 }
 
 function activeProbeOptions(options: ProbeOptions | SharedProbeOptions) {

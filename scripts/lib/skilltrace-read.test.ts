@@ -36,6 +36,9 @@ describe('skilltrace-read helpers', () => {
       skillName: 'pr-review',
       filePath: path.join(process.cwd(), 'skills/pr-review/SKILL.md'),
       content: '# PR Review',
+      observedProcess: 'Codex.48931538',
+      observedProcessName: 'Codex',
+      observedProcessId: '48931538',
     })
 
     expect(event.run_id).toBe('run_manual_001')
@@ -43,5 +46,8 @@ describe('skilltrace-read helpers', () => {
     expect(event.skill.name).toBe('pr-review')
     expect(event.skill.file_hash).toBe(sha256('# PR Review'))
     expect(event.payload.reader).toBe('skilltrace-read')
+    expect(event.payload.observed_process).toBe('Codex.48931538')
+    expect(event.payload.observed_process_name).toBe('Codex')
+    expect(event.payload.observed_process_id).toBe('48931538')
   })
 })

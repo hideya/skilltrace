@@ -19,6 +19,9 @@ export function buildSkillReadEvent(options: BuildSkillReadEventOptions) {
       reader,
       file_path: absolutePath,
       size_bytes: Buffer.byteLength(options.content),
+      observed_process: options.observedProcess,
+      observed_process_name: options.observedProcessName,
+      observed_process_id: options.observedProcessId,
     },
   }
 }
@@ -46,4 +49,7 @@ export type BuildSkillReadEventOptions = {
   content: string
   baseDir?: string
   reader?: string
+  observedProcess?: string
+  observedProcessName?: string
+  observedProcessId?: string
 }

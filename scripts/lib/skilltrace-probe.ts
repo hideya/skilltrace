@@ -92,6 +92,24 @@ export function parseInotifywaitPath(line: string, targetRoot?: string) {
   return filePath
 }
 
+export function parseFsUsageProcess(line: string) {
+  let token = line.trim().split(/\s+/).at(-1)
+  if (!token || token.includes('/')) return undefined
+
+  let match = token.match(/^(.+)\.(\d+)$/)
+  if (!match) {
+    return {
+      process: token,
+    }
+  }
+
+  return {
+    process: token,
+    name: match[1],
+    pid: match[2],
+  }
+}
+
 export function isWatchedSkillPath(filePath: string, roots: string[]) {
   let absolutePath = path.resolve(filePath).toLowerCase()
 
@@ -117,6 +135,9 @@ export function buildProbeReadEvent(options: BuildProbeReadEventOptions) {
     content,
     baseDir: options.targetRoot,
     reader: 'skilltrace-probe-mcp',
+    observedProcess: options.observedProcess,
+    observedProcessName: options.observedProcessName,
+    observedProcessId: options.observedProcessId,
   })
 }
 
@@ -166,4 +187,7 @@ export type BuildProbeReadEventOptions = {
   runId: string
   targetRoot: string
   filePath: string
+  observedProcess?: string
+  observedProcessName?: string
+  observedProcessId?: string
 }

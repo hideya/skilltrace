@@ -8,6 +8,7 @@ import {
   findTargetRoot,
   isWatchedSkillPath,
   loadProbeConfig,
+  parseFsUsageProcess,
   parseInotifywaitPath,
   parseOpenSnoopPath,
 } from './skilltrace-probe'
@@ -114,6 +115,17 @@ describe('skilltrace probe helpers', () => {
       ),
     ).toBeUndefined()
     expect(parseInotifywaitPath('Watches established.')).toBeUndefined()
+  })
+
+  test('parses the process token from fs_usage lines', () => {
+    let line =
+      '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 Codex.48931538'
+
+    expect(parseFsUsageProcess(line)).toEqual({
+      process: 'Codex.48931538',
+      name: 'Codex',
+      pid: '48931538',
+    })
   })
 
   test('matches only files inside watched skill roots', () => {
