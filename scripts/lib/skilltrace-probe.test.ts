@@ -6,6 +6,7 @@ import {
   ProbeDeduper,
   discoverProbeConfig,
   findTargetRoot,
+  isFsUsageReadOperation,
   isIgnoredObservedProcess,
   isWatchedSkillPath,
   loadProbeConfig,
@@ -138,6 +139,34 @@ describe('skilltrace probe helpers', () => {
       name: 'Codex',
       pid: '48931538',
     })
+  })
+
+  test('treats fs_usage open operations as passive read evidence', () => {
+    let line =
+      '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 Codex.48931538'
+
+    expect(isFsUsageReadOperation(line)).toBe(true)
+  })
+
+  test('treats fs_usage openat operations as passive read evidence', () => {
+    let line = [
+      '07:45:23.301138',
+      'openat',
+      'F=15',
+      '(R______________)',
+      '[-2]//tmp/repo/.claude/skills/type-fix/SKILL.md',
+      '0.000134',
+      'claude.344155',
+    ].join(' ')
+
+    expect(isFsUsageReadOperation(line)).toBe(true)
+  })
+
+  test('ignores fs_usage stat operations as metadata-only noise', () => {
+    let line =
+      '06:58:31.134215 stat64 .skills/type-fix/SKILL.md 0.000055 node.48931538'
+
+    expect(isFsUsageReadOperation(line)).toBe(false)
   })
 
   test('ignores git as passive probe noise', () => {

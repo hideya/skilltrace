@@ -110,6 +110,11 @@ export function parseFsUsageProcess(line: string) {
   }
 }
 
+export function isFsUsageReadOperation(line: string) {
+  let operation = line.trim().split(/\s+/)[1]
+  return FS_USAGE_READ_OPERATIONS.has(operation)
+}
+
 export function isIgnoredObservedProcess(name?: string) {
   return name === 'git'
 }
@@ -174,6 +179,13 @@ function unique(values: string[]) {
 function firstPathToken(value: string) {
   return value.trim().split(/\s+/)[0]
 }
+
+const FS_USAGE_READ_OPERATIONS = new Set([
+  'open',
+  'open_nocancel',
+  'openat',
+  'openat_nocancel',
+])
 
 export type DiscoverProbeConfigOptions = {
   targetRoot?: string

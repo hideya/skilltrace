@@ -5,6 +5,7 @@ import {
   ProbeDeduper,
   buildProbeReadEvent,
   discoverProbeConfig,
+  isFsUsageReadOperation,
   isIgnoredObservedProcess,
   isWatchedSkillPath,
   parseFsUsageProcess,
@@ -200,6 +201,18 @@ async function handleProbeLine(
 ) {
   let active = activeProbeOptions(options)
   if (!active) return
+  if (backend === 'fs_usage' && !isFsUsageReadOperation(line)) {
+    if (options.debug) {
+      let rootHint = debugRootHintForLine(line, active)
+      if (rootHint) {
+        console.error(
+          `TraceSkill ${backend} metadata ignored (${rootHint}): ${line}`,
+        )
+      }
+    }
+    return
+  }
+
   let filePath = parsePath(line)
   if (!filePath) {
     if (options.debug) {
