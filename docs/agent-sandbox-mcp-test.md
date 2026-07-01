@@ -235,9 +235,11 @@ traceskill-dev start
 For package-style trials, use `traceskill start`.
 
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
-inserts one SkillTrace instruction at the top of `AGENTS.md`, and records
-`.skilltrace/injection.json` so `traceskill-dev stop` can clean up the exact
-injected changes.
+inserts one SkillTrace instruction at the top of the selected instruction file,
+and records `.skilltrace/injection.json` so `traceskill-dev stop` can clean up
+the exact injected changes. For the default `agents_md` profile, the
+instruction file is `AGENTS.md`. For the `claude_code` profile, it is
+`CLAUDE.md` or `.claude/CLAUDE.md`.
 
 This starts a background passive probe worker and prints the run URL.
 It also prints a probe log path under:
@@ -251,9 +253,11 @@ If a session is already active, `traceskill-dev start` refuses and asks you to r
 manifest-backed instruction cleanup predictable.
 
 Run `traceskill-dev start` from the sandbox repo root, or pass
-`--target <repo>`. The command refuses if the target does not contain both
-`AGENTS.md` and `.skills/`, which catches accidental parent-directory runs
-before they create misleading records.
+`--target <repo>`. The command refuses if the target does not contain the
+expected instruction surfaces for the selected profile, which catches
+accidental parent-directory runs before they create misleading records.
+`agents_md` expects `AGENTS.md` and `.skills/`; `claude_code` expects
+`CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`.
 
 For mode comparison trials, use:
 

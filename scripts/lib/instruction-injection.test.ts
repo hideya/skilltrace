@@ -85,6 +85,52 @@ describe('instruction injection', () => {
     expect(content).toContain('call `skill_trace_reflection`')
   })
 
+  test('injects and ejects Claude Code instruction profile', () => {
+    let dir = tempRoot()
+    let claudePath = path.join(dir, 'CLAUDE.md')
+    fs.mkdirSync(path.join(dir, '.claude/skills'), { recursive: true })
+    fs.writeFileSync(claudePath, '# Claude Guidelines\n')
+
+    let injected = injectInstructions(dir, 'run_claude', {
+      instructionProfile: 'claude_code',
+    })
+
+    expect(injected.status).toBe('ok')
+    expect(injected.instruction_path).toBe(claudePath)
+    expect(fs.readFileSync(claudePath, 'utf8')).toContain(
+      'Before starting any task',
+    )
+    expect(fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8')).toContain(
+      '.claude/skills',
+    )
+
+    let ejected = ejectInstructions(dir, 'run_claude')
+
+    expect(ejected?.status).toBe('ok')
+    expect(ejected?.removed_agents_instruction).toBe(true)
+    expect(fs.readFileSync(claudePath, 'utf8')).toBe('# Claude Guidelines\n')
+    expect(fs.existsSync(path.join(dir, '.skilltrace'))).toBe(false)
+    expect(fs.existsSync(path.join(dir, '.skilltrace.json'))).toBe(false)
+  })
+
+  test('adds resolved repo-local skill root for symlinked Claude skills', () => {
+    let dir = tempRoot()
+    fs.mkdirSync(path.join(dir, '.skills/type-fix'), { recursive: true })
+    fs.mkdirSync(path.join(dir, '.claude'), { recursive: true })
+    fs.symlinkSync('../.skills', path.join(dir, '.claude/skills'))
+    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# Claude Guidelines\n')
+
+    injectInstructions(dir, 'run_claude_symlink', {
+      instructionProfile: 'claude_code',
+    })
+
+    let config = JSON.parse(
+      fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8'),
+    )
+
+    expect(config.skill_roots).toEqual(['.claude/skills', '.skills'])
+  })
+
   test('preserves pre-existing passive config and warns', () => {
     let dir = tempRoot()
     let configPath = path.join(dir, '.skilltrace.json')

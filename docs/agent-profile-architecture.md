@@ -203,8 +203,7 @@ Status: metadata selection is implemented. `traceskill start` accepts
 `--instruction-profile auto|agents-md|claude-code` and stores the selected
 instruction profile as `instruction_profile` in run metadata and the
 `trace_session_started` event. `auto` selects the only detected instruction
-profile and records a warning when both profiles are present. Current injection
-behavior remains AGENTS.md-compatible.
+profile and records a warning when both profiles are present.
 
 Target validation is profile-aware:
 
@@ -212,8 +211,8 @@ Target validation is profile-aware:
 - `claude_code` expects `CLAUDE.md` or `.claude/CLAUDE.md`, plus
   `.claude/skills/`
 
-Until Claude Code injection is implemented, `claude_code` starts are supported
-for `--mode passive_only` only.
+Claude Code injection is now supported in the first-pass profile-aware
+implementation.
 
 ### Phase 3: Injection Abstraction
 
@@ -240,6 +239,14 @@ Implement the first Claude Code instruction profile:
 - include Claude instruction paths in Git run snapshots
 - normalize `.claude/skills` and `.skills` evidence when they resolve to the
   same directory
+
+Status: first-pass implementation is in place. `claude_code` injection writes
+the normal SkillTrace instrumentation overlay, inserts the tracing-policy line
+into `CLAUDE.md` or `.claude/CLAUDE.md`, and writes `.skilltrace.json` with
+`.claude/skills` as the logical passive root. If `.claude/skills` resolves to a
+repo-local path such as `.skills`, SkillTrace includes that resolved repo-local
+root as an additional passive root so symlinked setups are observed through
+either spelling.
 
 ### Phase 5: Claude Code Diagnostics
 

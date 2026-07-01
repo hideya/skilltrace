@@ -11,7 +11,8 @@ const SESSION_SOURCE = 'skilltrace_session'
 
 export async function startTraceSession(input: StartTraceSessionInput) {
   let targetRoot = path.resolve(input.target_root)
-  let config = loadTargetConfig(targetRoot)
+  let instructionProfile = selectedInstructionProfile(input.instruction_profile)
+  let config = loadTargetConfig(targetRoot, instructionProfile)
 
   if (state.session) throw new ActiveSessionError(state.session)
 
@@ -170,7 +171,10 @@ export function timestampName(date = new Date()) {
   )}`
 }
 
-export function loadTargetConfig(targetRoot: string) {
+export function loadTargetConfig(
+  targetRoot: string,
+  instructionProfile: InstructionProfile = 'agents_md',
+) {
   let configPath = path.join(targetRoot, '.skilltrace.json')
   let config: SkillTraceConfigFile = {}
 
@@ -178,7 +182,10 @@ export function loadTargetConfig(targetRoot: string) {
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
   }
 
-  let skillRoots = config.skill_roots ?? config.skillRoots ?? DEFAULT_SKILL_ROOTS
+  let defaultSkillRoots = instructionProfile === 'claude_code'
+    ? ['.claude/skills']
+    : DEFAULT_SKILL_ROOTS
+  let skillRoots = config.skill_roots ?? config.skillRoots ?? defaultSkillRoots
 
   return {
     targetRoot,
@@ -186,6 +193,10 @@ export function loadTargetConfig(targetRoot: string) {
       path.resolve(targetRoot, skillRoot),
     ),
   }
+}
+
+function selectedInstructionProfile(value?: Record<string, unknown>) {
+  return value?.selected === 'claude_code' ? 'claude_code' : 'agents_md'
 }
 
 function killProcess(pid: number) {
@@ -298,6 +309,7 @@ type SkillTraceConfigFile = {
 }
 
 type ProbeKind = 'run' | 'shared'
+type InstructionProfile = 'agents_md' | 'claude_code'
 export type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 
 const STATE_KEY = Symbol.for('skilltrace.trace-session-state')

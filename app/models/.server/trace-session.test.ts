@@ -60,6 +60,13 @@ describe('trace session helpers', () => {
     expect(config.skillRoots).toEqual([path.join(root, '.skills')])
   })
 
+  test('defaults to .claude/skills for Claude Code instruction profile', () => {
+    let root = tempRoot()
+    let config = loadTargetConfig(root, 'claude_code')
+
+    expect(config.skillRoots).toEqual([path.join(root, '.claude/skills')])
+  })
+
   test('normalizes trace mode values', () => {
     expect(normalizeTraceMode('full')).toBe('full')
     expect(normalizeTraceMode('passive_reflection')).toBe(

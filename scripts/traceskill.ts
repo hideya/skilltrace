@@ -60,15 +60,11 @@ async function start(args: string[]) {
     instructionSurfaces,
   )
   assertTraceTarget(targetRoot, instructionProfile.selected, instructionSurfaces)
-  assertInstructionProfileStartSupported(
-    instructionProfile.selected,
-    shouldInjectInstructions,
-  )
   let instrumentation = withPassiveProbeWarning(
-    assessStartInstrumentation(
+    assessInstrumentation(
       targetRoot,
-      instructionProfile.selected,
       shouldInjectInstructions,
+      instructionProfile.selected,
     ),
     probe,
   )
@@ -93,7 +89,10 @@ async function start(args: string[]) {
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
-    ? injectInstructions(targetRoot, result.session.run_id, { traceMode })
+    ? injectInstructions(targetRoot, result.session.run_id, {
+      traceMode,
+      instructionProfile: instructionProfile.selected,
+    })
     : null
   if (injection) {
     printInjectionResult('Instruction injection', injection)
@@ -455,40 +454,6 @@ function instructionProfileExpectation(profile: InstructionProfile) {
   return 'AGENTS.md and .skills/'
 }
 
-function assertInstructionProfileStartSupported(
-  profile: InstructionProfile,
-  injectRequested: boolean,
-) {
-  if (profile === 'agents_md' || !injectRequested) return
-
-  console.error('SkillTrace cannot inject instructions for Claude Code repos yet.')
-  console.error('  profile: claude_code')
-  console.error('  supported today: --mode passive_only')
-  console.error('')
-  console.error(
-    'Run `traceskill start --instruction-profile claude-code --mode passive_only` for surface/passive testing.',
-  )
-  process.exit(1)
-}
-
-function assessStartInstrumentation(
-  targetRoot: string,
-  profile: InstructionProfile,
-  injectRequested: boolean,
-) {
-  if (profile === 'agents_md') {
-    return assessInstrumentation(targetRoot, injectRequested)
-  }
-
-  return {
-    inject_requested: injectRequested,
-    instruction_profile: profile,
-    status: injectRequested ? 'unsupported' : 'not_applicable',
-    warnings: [],
-    pending_warnings: [],
-  }
-}
-
 function detectInstructionSurfaces(targetRoot: string): InstructionSurfaceReport {
   let candidates: InstructionSurfaceCandidate[] = [
     {
@@ -816,8 +781,10 @@ function instructionRelevantFiles(files: GitSnapshotFile[]) {
 function isInstructionRelevantFile(file?: string) {
   return (
     file === 'AGENTS.md' ||
+    file === 'CLAUDE.md' ||
     file === '.skilltrace.json' ||
     !!file?.startsWith('.skills/') ||
+    !!file?.startsWith('.claude/') ||
     !!file?.startsWith('.skilltrace/')
   )
 }
@@ -1407,7 +1374,7 @@ function startSharedProbeWorker(options: SharedProbeWorkerOptions) {
 function printInjectionResult(label: string, result: any) {
   console.log(label)
   console.log(`  status: ${result.status}`)
-  console.log(`  AGENTS.md: ${result.agents_path}`)
+  console.log(`  instruction file: ${result.instruction_path ?? result.agents_path}`)
   console.log(`  instrumentation: ${result.instrumentation_path}`)
   if ('inserted_agents_instruction' in result) {
     console.log(`  inserted instruction: ${result.inserted_agents_instruction ? 'yes' : 'no'}`)
