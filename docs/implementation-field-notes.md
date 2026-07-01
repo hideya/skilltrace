@@ -156,6 +156,20 @@ This is one reason SkillTrace compares passive observation, semantic MCP
 events, and run reflection instead of trusting any single signal. In this case,
 the passive and reflection signals made the semantic reporting gap visible.
 
+## Tracing Helps Validate Shared Instructions Across Agent Clients
+
+In Claude Code testing on July 2, 2026, we tested a repository whose Claude
+instruction surface used symlinks to share skill files with another layout. The
+run captured the expected passive skill-file access and semantic declarations.
+
+This was useful because task success alone would not prove that the intended
+skill surface was used. SkillTrace made the configuration visible: the run
+showed which instruction profile was selected, which skill roots were watched,
+which files were passively accessed, and which semantic events were emitted.
+
+This kind of validation matters for real repositories, where teams may use
+symlinks or shared instruction directories to support multiple agent clients.
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:
