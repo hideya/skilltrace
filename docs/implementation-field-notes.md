@@ -1,0 +1,154 @@
+# Implementation Field Notes
+
+These notes capture practical lessons from building and dogfooding SkillTrace.
+They are intentionally concrete. They record behavior that surprised us, the
+shape of the fix, and the current boundary of the solution.
+
+## Codex CLI Works; Codex App Is Not Yet Supported
+
+The first reliable MCP path used command-line Codex with:
+
+```bash
+codex mcp add skilltrace -- traceskill mcp
+```
+
+The Codex App could show MCP registration state, but did not reliably expose
+the custom SkillTrace MCP tools to the agent during our trials. For now,
+SkillTrace documents Codex CLI as the supported Codex workflow and treats Codex
+App support as future work.
+
+## MCP Registration Must Match The Command Surface
+
+Development and packaged installs can coexist:
+
+- `traceskill-dev` uses the development port
+- `traceskill` uses the packaged/default port
+
+It is easy to run the dev daemon while Codex MCP is still registered to the
+packaged command, or the reverse. The diagnostics page checks
+`codex mcp get skilltrace` and compares the registered command with the current
+server mode.
+
+## Daemon And Server Are Not The Same Process
+
+`traceskill daemon start` starts a daemon process, and that daemon starts the
+React Router server process. Users experience this as "the daemon is serving
+the UI," but internally the server process owns the listening port.
+
+The diagnostics page therefore separates:
+
+- daemon state and user-visible UI URL
+- server process PID, host, port, platform, and Node version
+
+## Browser Tabs Can Keep Stale Route Manifests
+
+After rebuilding and reinstalling the packaged app, already-open browser tabs
+can hold stale client-side route discovery state. Direct URLs still work, but
+client-side navigation from the run list can fail.
+
+The run-list links use document navigation for run details. This favors robust
+local diagnostics over preserving SPA-only navigation.
+
+## macOS Passive Probing Needs A Shared Probe Option
+
+macOS `fs_usage` needs elevated privileges and is effectively single-owner in
+this workflow. Asking for a password on every run made dogfooding unpleasant and
+made orphan probes more likely.
+
+Daemon mode starts a shared macOS probe by default. Later runs attach the active
+session to that probe. The daemon owns shared-probe cleanup.
+
+Linux keeps per-run `inotifywait` probing because it is scoped, lightweight,
+and does not need sudo.
+
+## Shared Probes Need Stale-Worker Cleanup
+
+If a daemon state file is missing or stale, an old shared probe can still hold
+the macOS `fs_usage` slot. Daemon start and stop now clean stale shared probe
+workers for the same server, and shared workers exit if they cannot reach the
+daemon for about 30 seconds.
+
+## Passive Probe Events Need Process Attribution
+
+Passive file access alone answers "a file was opened," not "the agent opened
+the file." During testing, `SKILL.md` and `checklist.md` appeared as passive
+reads even when no agent semantic events existed. Adding process attribution
+showed both reads were opened by `git`.
+
+Retained passive read events now include:
+
+- `observed_process`
+- `observed_process_name`
+- `observed_process_id`
+
+The timeline shows this compactly, for example:
+
+```text
+skill_file_read by Codex.12345
+```
+
+This makes future strange reads easier to explain.
+
+## Git Reads Are Filtered As Measurement Noise
+
+SkillTrace ignores passive reads whose observed process name is exactly `git`.
+
+Git may read tracked instruction files during status, diff, index, snapshot, or
+editor-related worktree checks. Those reads are not evidence of agent skill
+activation.
+
+The filter is deliberately narrow. Other process names remain visible in the
+timeline.
+
+## Marker Gating Was Rejected
+
+We considered opening the shared probe only after an intentional
+`.skilltrace.json` marker read. The prototype worked, but process attribution
+showed that the observed noise came from Git. The marker gate added a state
+machine, ack file, and timing surface without solving the root cause better than
+the exact `git` filter.
+
+The current implementation keeps the simpler model:
+
+- attach the active run to the shared probe
+- attribute retained passive reads to opener processes
+- ignore exact `git` passive reads
+
+## Instruction Injection Should Be Manifest-Backed
+
+`traceskill start` can temporarily insert a single instruction into `AGENTS.md`
+and write `.skilltrace/instrumentation.md` plus `.skilltrace.json`. A manifest
+records what SkillTrace created and inserted.
+
+`traceskill stop` removes only the exact inserted block and only removes
+generated files when SkillTrace created them and they were not changed.
+
+This avoids broad backup/restore behavior and keeps cleanup compatible with a
+dirty worktree.
+
+## Only One Active Session Keeps The Mental Model Small
+
+SkillTrace refuses `start` while another session is active. This prevents
+confusing run IDs, lost injection cleanup, and misleading short runs. If a
+newer run exists after an older run missed `trace_session_finished`, the older
+run is shown as interrupted.
+
+## Passive-Only Runs Should Not Say Pass
+
+A passive-only run has one evidence stream. It can show that evidence was
+captured, but it cannot prove semantic agreement. SkillTrace labels successful
+passive-only runs as `Captured`, not `Pass`.
+
+## Instruction Profiles Are Separate From Agent Clients
+
+An instruction profile describes repository surfaces such as:
+
+- `agents_md`: `AGENTS.md` and `.skills/`
+- `claude_code`: `CLAUDE.md` and `.claude/skills/`
+
+An agent client is the program that actually runs the task, such as Codex CLI,
+Gemini CLI, or Claude Code. SkillTrace can detect instruction surfaces before
+the agent starts, but the client is best learned from later context or
+reflection because `traceskill start` does not know which agent command the
+user will launch.
+

@@ -321,6 +321,56 @@ This makes the repeated macOS dogfooding path smoother while preserving the
 simpler per-run probe as an explicit troubleshooting option. Linux keeps the
 per-run `inotifywait` path as its default.
 
+## Passive Probe Process Attribution
+
+Passive `skill_file_read` and `skill_reference_read` events record the process
+that appeared to open the file when the probe backend can provide it.
+
+On macOS, `fs_usage` lines normally end with a process token such as
+`Codex.12345`, `node.12345`, or `git.12345`. SkillTrace stores this in the
+passive event payload as:
+
+- `observed_process`
+- `observed_process_name`
+- `observed_process_id`
+
+The run timeline shows this compactly as `skill_file_read by Codex.12345` for
+retained passive read events. This is diagnostic metadata, not part of the
+consistency identity. Consistency still compares files and evidence streams.
+
+Reasons:
+
+- passive probing observes the operating system, not agent intent
+- unrelated tools can open skill files during a run
+- process attribution makes surprising passive reads explainable without
+  requiring raw probe logs
+- users can file better bug reports when they can see which process triggered a
+  read
+
+Linux `inotifywait` does not expose the opener process in the current probe
+mode, so these fields may be absent on Linux.
+
+## Filtering Git Passive Reads
+
+SkillTrace ignores passive reads when the observed process name is exactly
+`git`.
+
+This filter exists because Git may read tracked instruction files during normal
+worktree or index activity, especially around trace startup, snapshots, editor
+integration, or status checks. Those reads are mechanical repository inspection,
+not evidence that the target agent activated a skill.
+
+The filter is intentionally narrow:
+
+- exact process name `git` is ignored
+- other processes are retained and shown in the timeline
+- the passive event payload still keeps process attribution for retained reads
+
+This decision replaced an earlier marker-gating experiment. The gate opened the
+shared probe only after an intentional `.skilltrace.json` read, but the later
+process attribution showed the noisy reads were from Git. Filtering the known
+Git noise made the implementation simpler and easier to reason about.
+
 ## Use `fs_usage`, Not `opensnoop`
 
 The first probe backend used `opensnoop`, but on the tested macOS environment it failed under System Integrity Protection with DTrace probe errors.
