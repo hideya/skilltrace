@@ -101,7 +101,7 @@ export default function Page({ loaderData }: PageProps) {
           {isEditing ? (
             <div className="flex items-center justify-end gap-2">
               <button
-                className="btn btn-sm btn-error"
+                className="btn bg-pink-500 text-white btn-sm"
                 form="delete-runs-form"
                 type="submit"
               >

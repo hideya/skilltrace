@@ -326,7 +326,7 @@ async function refreshSharedSession(state: SharedProbeState) {
   try {
     let result = await getJson(state.serverUrl, '/api/sessions/status')
     let session = result.session
-    if (!session) {
+    if (!session || session.probe_kind !== 'shared') {
       if (state.session) {
         console.error('TraceSkill shared probe detached from active session')
       }

@@ -49,14 +49,27 @@ async function main() {
 async function start(args: string[]) {
   let options = parseArgs(args)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
-  assertTraceTarget(targetRoot)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
   let sharedProbe = sharedProbeStatus(server)
   let traceMode = traceModeForStart(options)
   let shouldInjectInstructions = traceMode !== 'passive_only'
+  let instructionSurfaces = detectInstructionSurfaces(targetRoot)
+  let instructionProfile = selectInstructionProfile(
+    options.instructionProfile,
+    instructionSurfaces,
+  )
+  assertTraceTarget(targetRoot, instructionProfile.selected, instructionSurfaces)
+  assertInstructionProfileStartSupported(
+    instructionProfile.selected,
+    shouldInjectInstructions,
+  )
   let instrumentation = withPassiveProbeWarning(
-    assessInstrumentation(targetRoot, shouldInjectInstructions),
+    assessStartInstrumentation(
+      targetRoot,
+      instructionProfile.selected,
+      shouldInjectInstructions,
+    ),
     probe,
   )
   let active = await getJson(server, '/api/sessions/status')
@@ -69,11 +82,6 @@ async function start(args: string[]) {
   if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
-  let instructionSurfaces = detectInstructionSurfaces(targetRoot)
-  let instructionProfile = selectInstructionProfile(
-    options.instructionProfile,
-    instructionSurfaces,
-  )
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -398,25 +406,87 @@ function defaultTargetRoot() {
   )
 }
 
-function assertTraceTarget(targetRoot: string) {
-  let agentsPath = path.join(targetRoot, 'AGENTS.md')
-  let skillsPath = path.join(targetRoot, '.skills')
-
-  let hasAgents = fs.existsSync(agentsPath)
-  let hasSkills = fs.statSync(skillsPath, {
-    throwIfNoEntry: false,
-  })?.isDirectory()
-
-  if (hasAgents && hasSkills) {
+function assertTraceTarget(
+  targetRoot: string,
+  profile: InstructionProfile,
+  report: InstructionSurfaceReport,
+) {
+  if (instructionProfileReady(profile, report)) {
     return
   }
 
   console.error('The current directory does not look like a SkillTrace target repo.')
   console.error(`  directory: ${targetRoot}`)
-  console.error('  expected: AGENTS.md and .skills/')
+  console.error(`  profile: ${profile}`)
+  console.error(`  expected: ${instructionProfileExpectation(profile)}`)
   console.error('')
   console.error('Run traceskill start from the target repo, or pass --target <repo>.')
   process.exit(1)
+}
+
+function instructionProfileReady(
+  profile: InstructionProfile,
+  report: InstructionSurfaceReport,
+) {
+  if (profile === 'agents_md') {
+    return hasSurface(report, 'agents_md', 'instruction_file') &&
+      hasSurface(report, 'agents_md', 'skill_root')
+  }
+
+  return hasSurface(report, 'claude_code', 'instruction_file') &&
+    hasSurface(report, 'claude_code', 'skill_root')
+}
+
+function hasSurface(
+  report: InstructionSurfaceReport,
+  profile: InstructionProfile,
+  kind: InstructionSurfaceKind,
+) {
+  return report.surfaces.some((surface) =>
+    surface.instruction_profile === profile && surface.kind === kind
+  )
+}
+
+function instructionProfileExpectation(profile: InstructionProfile) {
+  if (profile === 'claude_code') {
+    return 'CLAUDE.md or .claude/CLAUDE.md, and .claude/skills/'
+  }
+
+  return 'AGENTS.md and .skills/'
+}
+
+function assertInstructionProfileStartSupported(
+  profile: InstructionProfile,
+  injectRequested: boolean,
+) {
+  if (profile === 'agents_md' || !injectRequested) return
+
+  console.error('SkillTrace cannot inject instructions for Claude Code repos yet.')
+  console.error('  profile: claude_code')
+  console.error('  supported today: --mode passive_only')
+  console.error('')
+  console.error(
+    'Run `traceskill start --instruction-profile claude-code --mode passive_only` for surface/passive testing.',
+  )
+  process.exit(1)
+}
+
+function assessStartInstrumentation(
+  targetRoot: string,
+  profile: InstructionProfile,
+  injectRequested: boolean,
+) {
+  if (profile === 'agents_md') {
+    return assessInstrumentation(targetRoot, injectRequested)
+  }
+
+  return {
+    inject_requested: injectRequested,
+    instruction_profile: profile,
+    status: injectRequested ? 'unsupported' : 'not_applicable',
+    warnings: [],
+    pending_warnings: [],
+  }
 }
 
 function detectInstructionSurfaces(targetRoot: string): InstructionSurfaceReport {

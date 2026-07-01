@@ -204,7 +204,16 @@ Status: metadata selection is implemented. `traceskill start` accepts
 instruction profile as `instruction_profile` in run metadata and the
 `trace_session_started` event. `auto` selects the only detected instruction
 profile and records a warning when both profiles are present. Current injection
-and target validation behavior remains AGENTS.md-compatible.
+behavior remains AGENTS.md-compatible.
+
+Target validation is profile-aware:
+
+- `agents_md` expects `AGENTS.md` and `.skills/`
+- `claude_code` expects `CLAUDE.md` or `.claude/CLAUDE.md`, plus
+  `.claude/skills/`
+
+Until Claude Code injection is implemented, `claude_code` starts are supported
+for `--mode passive_only` only.
 
 ### Phase 3: Injection Abstraction
 
