@@ -139,6 +139,23 @@ A passive-only run has one evidence stream. It can show that evidence was
 captured, but it cannot prove semantic agreement. SkillTrace labels successful
 passive-only runs as `Captured`, not `Pass`.
 
+## Multiple Signals Can Reveal Partial Reporting Gaps
+
+In Claude Code testing on July 2, 2026, we observed a concrete case where
+passive tracing captured access to
+`.claude/skills/type-fix/references/checklist.md`, and the run reflection also
+listed that reference file, while the agent's semantic MCP report omitted the
+corresponding `skill_reference_read` event.
+
+A later run with a different model reported all three signals consistently.
+This should not be read as a broad model judgment. It is simply evidence that
+semantic self-reporting can vary by run and model, even when the underlying
+file access and reflection both indicate the reference was used.
+
+This is one reason SkillTrace compares passive observation, semantic MCP
+events, and run reflection instead of trusting any single signal. In this case,
+the passive and reflection signals made the semantic reporting gap visible.
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:
@@ -151,4 +168,3 @@ Gemini CLI, or Claude Code. SkillTrace can detect instruction surfaces before
 the agent starts, but the client is best learned from later context or
 reflection because `traceskill start` does not know which agent command the
 user will launch.
-
