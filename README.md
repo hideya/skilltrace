@@ -59,7 +59,7 @@ that failures can eventually become reusable procedural knowledge.
 
 - Node.js 22+
 - npm
-- Codex CLI for MCP registration in the current workflow
+- Codex CLI or Claude Code for MCP registration in the current workflow
 - macOS or Linux
   - macOS only: admin password may be required
   - Linux only: `inotify-tools` installation may be required
@@ -70,11 +70,8 @@ Platform notes:
 - Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
   access is not captured.
 
-SkillTrace currently assumes Codex MCP registration through the Codex CLI.
-SkillTrace currently supports Codex CLI MCP workflows. Codex App support is not
-yet available.
-Codex is the first supported agent client. The architecture is intended to
-support other MCP-capable clients later.
+SkillTrace currently supports command-line MCP workflows for Codex CLI and
+Claude Code. Codex App support is not yet available.
 
 ## Installation
 
@@ -105,7 +102,9 @@ The daemon output shows the detected UI URL.
 
 ## Register The MCP Server
 
-Register SkillTrace with Codex:
+Register SkillTrace with your agent client.
+
+For Codex CLI:
 
 ```bash
 codex mcp add skilltrace -- traceskill mcp
@@ -117,8 +116,20 @@ Check it:
 codex mcp get skilltrace
 ```
 
+For Claude Code:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill mcp
+```
+
+Check it:
+
+```bash
+claude mcp get skilltrace
+```
+
 The diagnostics page also checks whether Codex MCP registration matches the
-installed command.
+installed command. Claude Code diagnostics are still future work.
 
 ## Quick Start
 
@@ -148,11 +159,19 @@ record after confirmation. Use `--yes` to skip the prompt.
 
 Target repo requirements:
 
-`traceskill start` expects the target repo to contain `AGENTS.md` and
-`.skills/`. It injects a temporary SkillTrace instruction into `AGENTS.md`,
-writes `.skilltrace/instrumentation.md`, and creates `.skilltrace.json` when
-needed. `traceskill stop` removes the temporary instruction and generated files
-when they are unchanged.
+By default, `traceskill start` auto-detects one supported instruction profile:
+
+- `agents_md`: `AGENTS.md` and `.skills/`
+- `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
+
+Use `--instruction-profile agents-md` or
+`--instruction-profile claude-code` when a repo has more than one instruction
+surface or when you want to be explicit.
+
+SkillTrace injects a temporary tracing-policy instruction into the selected
+instruction file, writes `.skilltrace/instrumentation.md`, and creates
+`.skilltrace.json` when needed. `traceskill stop` removes the temporary
+instruction and generated files when they are unchanged.
 
 Only one trace session can be active at a time. If a session is active,
 `traceskill start` refuses until you run `traceskill stop`.
@@ -238,7 +257,9 @@ SkillTrace is currently pre-alpha.
 
 Known limitations include:
 
-- Codex is the first supported workflow.
+- Codex CLI and Claude Code are the first supported command-line MCP workflows.
+- Codex App support is not yet available.
+- Claude Code MCP registration diagnostics are not yet implemented.
 - Passive file access probing is platform-dependent.
 - macOS passive probing may require admin privileges.
 - Linux passive probing depends on `inotifywait`.
@@ -285,6 +306,12 @@ Unregister MCP from Codex:
 
 ```bash
 codex mcp remove skilltrace
+```
+
+Or from Claude Code:
+
+```bash
+claude mcp remove skilltrace -s user
 ```
 
 Uninstall the package:

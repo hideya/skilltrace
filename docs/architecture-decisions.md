@@ -410,16 +410,16 @@ Complications discovered:
   passive `skill_file_read` and `skill_reference_read` events alongside MCP
   semantic declarations
 
-## Command-Line Codex First
+## Command-Line MCP Clients First
 
 The first successful real MCP test used command-line Codex.
 
 In testing, Codex via VS Code could see the sandbox skill instructions, and `/mcp` could show the `skilltrace` server as enabled, but the custom `skill_log_event` tool was not exposed to the agent session.
 
-For now, SkillTrace MCP dogfooding should use command-line Codex.
+For Codex workflows, SkillTrace MCP dogfooding should use command-line Codex.
 
-Claude Code support is planned as a separate agent-profile extension. The Phase
-0 design is captured in
+Claude Code is now supported through the `claude_code` instruction profile and
+Claude's command-line MCP registration. The design is captured in
 [agent-profile-architecture.md](agent-profile-architecture.md), with special
 attention to symlinked instruction surfaces such as `CLAUDE.md -> AGENTS.md`
 and `.claude/skills -> .skills`.

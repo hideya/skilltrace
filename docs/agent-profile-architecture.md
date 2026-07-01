@@ -1,16 +1,17 @@
-# Instruction Profile Architecture Plan
+# Instruction Profile Architecture
 
-This note records the Phase 0 design for extending SkillTrace beyond the
-current Codex CLI workflow, starting with Claude Code.
+This note records the design and current status for extending SkillTrace beyond
+one repository instruction convention. The first non-AGENTS.md profile is
+Claude Code.
 
 The goal is not to make SkillTrace clever about every agent convention at once.
-The goal is to make the next implementation step safe, inspectable, and generic
+The goal is to keep each instruction surface safe, inspectable, and generic
 enough that AGENTS.md-style tools and Claude Code can share the same tracing
 model without pretending their repository conventions are identical.
 
 ## Motivation
 
-SkillTrace currently assumes an AGENTS.md-shaped target repo:
+SkillTrace originally assumed an AGENTS.md-shaped target repo:
 
 - `AGENTS.md`
 - `.skills/**`
@@ -38,16 +39,15 @@ resolved file or reporting the same underlying skill as unrelated evidence.
 An instruction profile describes the repository convention SkillTrace is
 tracing.
 
-Initial profiles:
+Supported profiles:
 
 - `agents_md`
 - `claude_code`
 
 Future instruction profiles may cover other repo instruction conventions.
 
-For the first implementation, one run should use one active instruction profile.
-Mixed-profile tracing can wait until the single-profile model is boring and
-reliable.
+One run uses one active instruction profile. Mixed-profile tracing can wait
+until the single-profile model is boring and reliable.
 
 ### Agent Client
 
@@ -256,9 +256,17 @@ This should stay diagnostic-only, like the current Codex check. SkillTrace
 should report whether Claude Code appears installed and whether its MCP
 registration points to the expected command for the current package/dev mode.
 
+Status: not implemented yet. Claude Code itself can be registered manually with:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill mcp
+```
+
+For checkout trials, use `traceskill-dev mcp` instead.
+
 ### Phase 6: Cross-Agent Comparison
 
-Once AGENTS.md and Claude Code instruction profiles both work, compare runs
+Once AGENTS.md and Claude Code instruction profiles are stable, compare runs
 across profiles.
 
 The comparison should show:
@@ -279,8 +287,9 @@ rather than an AGENTS.md-shaped tracer.
 - no broad support for every possible agent-specific skill convention
 - no manager UI for registering Claude Code MCP servers
 
-The first milestone should be simple:
+The first milestone is now in place:
 
 > SkillTrace can safely detect AGENTS.md and Claude Code instruction surfaces,
-> record symlink relationships, and prepare for profile-specific injection
-> without changing current AGENTS.md behavior.
+> record symlink relationships, inject profile-specific tracing instructions,
+> passively observe profile-specific skill roots, and preserve AGENTS.md
+> behavior.

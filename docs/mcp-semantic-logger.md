@@ -118,12 +118,12 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-That starts a passive probe before Codex reads the target repo. On macOS the
-probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks the
-SkillTrace server for the one active session ID when the model calls one of the
-SkillTrace MCP tools. On macOS, `traceskill-dev start` prompts for sudo from
-your terminal before launching the probe worker. On Linux, the `inotifywait`
-probe does not need sudo.
+That starts a passive probe before the agent reads the target repo. On macOS
+the probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks
+the SkillTrace server for the one active session ID when the model calls one of
+the SkillTrace MCP tools. On macOS, `traceskill-dev start` prompts for sudo
+from your terminal before launching the probe worker. On Linux, the
+`inotifywait` probe does not need sudo.
 
 ## Start Command
 
@@ -176,6 +176,29 @@ registered command with the current SkillTrace mode:
 Use this page when switching between dogfooding the checkout and testing the
 packaged command; a mismatched MCP registration is easy to overlook from the
 terminal alone.
+
+## Claude Code MCP Registration
+
+For Claude Code, register the checkout command with:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill-dev mcp
+```
+
+For package-style trials, register the packaged command instead:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill mcp
+```
+
+Then confirm the server is registered:
+
+```bash
+claude mcp get skilltrace
+```
+
+SkillTrace does not yet show Claude Code MCP registration in
+`/app/diagnostics`; use the Claude CLI check for now.
 
 When `traceskill-dev start` or `traceskill start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use

@@ -1,6 +1,8 @@
 # Agent Sandbox MCP Test
 
-This runbook explains how to test SkillTrace with a real Codex session using the local MCP server.
+This runbook explains how to test SkillTrace with a real command-line agent
+session using the local MCP server. The main path uses Codex CLI; Claude Code
+profile checks are included where they differ.
 
 The goal is to verify that an agent working in a separate fake repository can:
 
@@ -13,17 +15,17 @@ This is the main end-to-end MCP-path experiment. It is stronger than the CLI
 fixture because semantic events come from MCP tool calls made by the agent while
 the passive probe observes skill and reference file access.
 
-Use command-line Codex for this experiment. In early testing, Codex via VS Code
-saw the sandbox skill instructions but did not expose the custom SkillTrace MCP
-tools to the agent session, even though `/mcp` showed the `skilltrace` server as
-enabled.
+Use command-line Codex for the default experiment. In early testing, Codex via
+VS Code saw the sandbox skill instructions but did not expose the custom
+SkillTrace MCP tools to the agent session, even though `/mcp` showed the
+`skilltrace` server as enabled.
 
 The current recommended checkout flow uses `traceskill-dev start`. It asks the
 local SkillTrace server to create an active session, then launches a passive
-probe worker for the current repo before Codex starts. The probe uses `fs_usage`
-on macOS and `inotifywait` on Linux. The MCP server resolves the one active
-session from the server, so passive skill reads and semantic declarations share
-the same run ID.
+probe worker for the current repo before the agent starts reading the target
+repo. The probe uses `fs_usage` on macOS and `inotifywait` on Linux. The MCP
+server resolves the one active session from the server, so passive skill reads
+and semantic declarations share the same run ID.
 
 ## Pieces
 
@@ -33,7 +35,7 @@ the same run ID.
 - Local checkout CLI: `traceskill-dev`.
 - Local checkout MCP server command: `traceskill-dev mcp`.
 - Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
-- MCP tools exposed to Codex: `skill_trace_context`, `skill_log_event`, and
+- MCP tools exposed to the agent: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
 
 `agent-sandbox-repo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
@@ -223,6 +225,22 @@ You can also confirm this from the SkillTrace UI at `/app/diagnostics`. This is
 especially useful when switching between checkout and package trials because
 the page compares the registered Codex command against the current UI mode.
 
+For Claude Code checkout trials, register the same MCP server with Claude:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill-dev mcp
+claude mcp get skilltrace
+```
+
+For package-style Claude Code trials, use:
+
+```bash
+claude mcp add skilltrace --scope user -- traceskill mcp
+```
+
+SkillTrace does not yet show Claude Code MCP registration in `/app/diagnostics`;
+use `claude mcp get skilltrace` for now.
+
 ## Run The Experiment
 
 Start the trace session from the sandbox repo:
@@ -283,6 +301,21 @@ traceskill-dev start --debug-probe
 ```
 
 Then inspect the printed probe log.
+
+For Claude Code profile trials, start from a repo with `CLAUDE.md` or
+`.claude/CLAUDE.md` plus `.claude/skills/`:
+
+```bash
+traceskill-dev start --instruction-profile claude-code
+claude
+traceskill-dev stop
+```
+
+The `claude_code` profile injects into the Claude instruction file and writes
+`.skilltrace.json` with `.claude/skills` as the logical passive skill root. If
+`.claude/skills` is a symlink to another repo-local skill directory,
+SkillTrace also records a resolved repo-local root so passive probing can match
+either spelling.
 
 Then start command-line Codex from the same sandbox repo:
 
@@ -420,10 +453,12 @@ missing cleanup visible.
 
 This test verifies:
 
-- Codex can launch the local SkillTrace MCP server through stdio.
-- Codex can see and call the SkillTrace MCP tools.
+- A command-line MCP client can launch the local SkillTrace MCP server through
+  stdio.
+- Codex CLI and Claude Code can see and call the SkillTrace MCP tools when
+  registered to the correct command.
 - A reusable `.skilltrace/instrumentation.md` overlay can drive SkillTrace MCP calls.
-- The local probe worker can observe skill file reads before Codex starts reading the target repo.
+- The local probe worker can observe skill file reads before the agent starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
 - The active session ID correlates passive probe events and MCP semantic events.
@@ -435,6 +470,7 @@ This test does not yet verify:
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Windows passive probing
+- Claude Code MCP registration diagnostics in the SkillTrace UI
 - production deployment behavior
 
 ## Trying A Real Repository
@@ -526,7 +562,8 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.
 - The MCP server command is `traceskill-dev mcp`.
-- `/app/diagnostics` shows the expected daemon mode and Codex MCP registration.
+- `/app/diagnostics` shows the expected daemon mode and, for Codex trials,
+  Codex MCP registration.
 - You ran `traceskill-dev start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called the SkillTrace MCP tools.
