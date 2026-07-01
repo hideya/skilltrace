@@ -112,6 +112,14 @@ function startSharedProbe(backend: ProbeBackend, options: SharedProbeOptions) {
   return handleProbeOutput(probe, options, 'fs_usage', (line) => {
     let session = options.sharedState.session
     if (!session) return undefined
+    if (session.gatePath && !session.gateOpen) {
+      let gatePath = parseOpenSnoopPath(line, [session.gatePath])
+      if (gatePath) {
+        session.gateOpen = true
+        console.error(`TraceSkill shared probe gate opened: ${session.gatePath}`)
+      }
+      return undefined
+    }
     return parseOpenSnoopPath(line, session.skillRoots, session.targetRoot)
   })
 }
@@ -338,11 +346,18 @@ async function refreshSharedSession(state: SharedProbeState) {
       runId: session.run_id,
       targetRoot: session.target_root,
       skillRoots: session.skill_roots ?? [],
+      gatePath: session.probe_gate_path ?? '',
+      gateAckPath: session.probe_gate_ack_path ?? '',
+      gateOpen: state.session?.runId === session.run_id
+        ? state.session.gateOpen
+        : !session.probe_gate_path,
     }
     if (state.session?.runId !== next.runId) {
       console.error(`TraceSkill shared probe attached to run: ${next.runId}`)
       console.error(`TraceSkill target root: ${next.targetRoot}`)
       console.error(`TraceSkill skill roots: ${next.skillRoots.join(', ')}`)
+      console.error(`TraceSkill shared probe gate: ${next.gatePath}`)
+      acknowledgeSharedProbeGate(next)
     }
     state.session = next
     return true
@@ -350,6 +365,17 @@ async function refreshSharedSession(state: SharedProbeState) {
     let message = error instanceof Error ? error.message : String(error)
     console.error(`TraceSkill shared session poll failed: ${message}`)
     return false
+  }
+}
+
+function acknowledgeSharedProbeGate(session: SharedProbeSession) {
+  if (!session.gateAckPath) return
+
+  try {
+    fs.writeFileSync(session.gateAckPath, `${new Date().toISOString()}\n`)
+  } catch (error) {
+    let message = error instanceof Error ? error.message : String(error)
+    console.error(`TraceSkill shared probe gate ack failed: ${message}`)
   }
 }
 
@@ -400,6 +426,9 @@ type SharedProbeSession = {
   runId: string
   targetRoot: string
   skillRoots: string[]
+  gatePath: string
+  gateAckPath: string
+  gateOpen: boolean
 }
 
 type ProbeBackend = 'fs_usage' | 'inotifywait'

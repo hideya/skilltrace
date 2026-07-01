@@ -61,6 +61,8 @@ export async function attachTraceSessionProbe(input: AttachProbeInput) {
   session.probe_pid = input.probe_pid
   session.probe_log_path = input.probe_log_path
   session.probe_kind = input.probe_kind ?? 'run'
+  session.probe_gate_path = input.probe_gate_path
+  session.probe_gate_ack_path = input.probe_gate_ack_path
   return session
 }
 
@@ -267,6 +269,8 @@ type AttachProbeInput = {
   probe_pid: number
   probe_log_path?: string
   probe_kind?: ProbeKind
+  probe_gate_path?: string
+  probe_gate_ack_path?: string
 }
 
 type SessionEventInput = {
@@ -290,6 +294,8 @@ type TraceSession = {
   probe_pid?: number
   probe_log_path?: string
   probe_kind?: ProbeKind
+  probe_gate_path?: string
+  probe_gate_ack_path?: string
 }
 
 type SkillTraceConfigFile = {

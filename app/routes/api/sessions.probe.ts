@@ -37,6 +37,12 @@ export async function action({ request }) {
       ? input.probe_log_path
       : undefined,
     probe_kind: input.probe_kind,
+    probe_gate_path: typeof input.probe_gate_path === 'string'
+      ? input.probe_gate_path
+      : undefined,
+    probe_gate_ack_path: typeof input.probe_gate_ack_path === 'string'
+      ? input.probe_gate_ack_path
+      : undefined,
   })
   if (!session) throw notFoundError()
 

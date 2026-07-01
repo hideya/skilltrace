@@ -127,15 +127,23 @@ async function start(args: string[]) {
   }
 
   if (useSharedProbe && sharedProbe.state?.shared_probe_pid) {
+    let gate = sharedProbeGate(result.session.run_id, targetRoot)
     await postJson(server, '/api/sessions/probe', {
       run_id: result.session.run_id,
       probe_pid: sharedProbe.state.shared_probe_pid,
       probe_log_path: sharedProbe.state.shared_probe_log_path,
       probe_kind: 'shared',
+      probe_gate_path: gate.path,
+      probe_gate_ack_path: gate.ackPath,
     })
+    let gateReady = await waitForSharedProbeGateAck(gate.ackPath)
+    openSharedProbeGate(gate.path)
     await postSessionEvent(server, result.session.run_id, 'trace_probe_shared_attached', {
       probe_pid: sharedProbe.state.shared_probe_pid,
       probe_log_path: sharedProbe.state.shared_probe_log_path,
+      probe_gate_path: gate.path,
+      probe_gate_ack_path: gate.ackPath,
+      probe_gate_ready: gateReady,
       target_root: targetRoot,
     })
   } else if (worker) {
@@ -991,6 +999,32 @@ function cleanupTargetInjection(targetRoot: string) {
   if (!injection) return
 
   printInjectionResult('Previous instruction injection cleanup', injection)
+}
+
+function sharedProbeGate(runId: string, targetRoot: string) {
+  let ackDir = path.join(DAEMON_DIR, 'run')
+  let ackPath = path.join(ackDir, `${runId}.shared-probe-gate`)
+  fs.mkdirSync(ackDir, { recursive: true })
+  fs.rmSync(ackPath, { force: true })
+
+  return {
+    path: path.join(targetRoot, '.skilltrace.json'),
+    ackPath,
+  }
+}
+
+async function waitForSharedProbeGateAck(ackPath: string) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (fs.existsSync(ackPath)) return true
+    await sleep(100)
+  }
+
+  return false
+}
+
+function openSharedProbeGate(gatePath: string) {
+  if (!fs.existsSync(gatePath)) return
+  fs.readFileSync(gatePath, 'utf8')
 }
 
 async function waitForDaemon(pid: number, server: string) {
