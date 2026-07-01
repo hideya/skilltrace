@@ -110,6 +110,10 @@ export function parseFsUsageProcess(line: string) {
   }
 }
 
+export function isIgnoredObservedProcess(name?: string) {
+  return name === 'git'
+}
+
 export function isWatchedSkillPath(filePath: string, roots: string[]) {
   let absolutePath = path.resolve(filePath).toLowerCase()
 

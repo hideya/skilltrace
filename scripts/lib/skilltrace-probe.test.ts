@@ -6,6 +6,7 @@ import {
   ProbeDeduper,
   discoverProbeConfig,
   findTargetRoot,
+  isIgnoredObservedProcess,
   isWatchedSkillPath,
   loadProbeConfig,
   parseFsUsageProcess,
@@ -126,6 +127,11 @@ describe('skilltrace probe helpers', () => {
       name: 'Codex',
       pid: '48931538',
     })
+  })
+
+  test('ignores git as passive probe noise', () => {
+    expect(isIgnoredObservedProcess('git')).toBe(true)
+    expect(isIgnoredObservedProcess('Codex')).toBe(false)
   })
 
   test('matches only files inside watched skill roots', () => {

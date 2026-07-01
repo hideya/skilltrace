@@ -976,6 +976,7 @@ function TimelineItem({ event }: TimelineItemProps) {
   let name = fileNameForEvent(event)
   let isSemantic = isSemanticEvent(event)
   let warning = eventWarning(event)
+  let process = observedProcessForEvent(event)
 
   return (
     <details className="group rounded-box border border-base-300 bg-base-100">
@@ -1008,8 +1009,14 @@ function TimelineItem({ event }: TimelineItemProps) {
               ) : null}
             </div>
           ) : null}
-          <div className={`truncate ${eventTitleClass(event)}`}>
+          <div className={`min-w-0 truncate ${eventTitleClass(event)}`}>
             {event.event_type}
+            {process ? (
+              <span className="font-mono font-normal text-base-content/50">
+                {' '}
+                by {process}
+              </span>
+            ) : null}
           </div>
         </div>
         <span className="font-mono text-xs text-base-content/50">
@@ -1153,6 +1160,21 @@ function referencePathForEvent(event: any) {
 
   if (!referencePath || typeof referencePath !== 'string') return null
   return referencePath
+}
+
+function observedProcessForEvent(event: any) {
+  if (!isPassiveReadEvent(event)) return null
+
+  let process = event.payload?.observed_process
+  if (typeof process === 'string' && process) return process
+
+  let name = event.payload?.observed_process_name
+  let pid = event.payload?.observed_process_id
+  if (typeof name === 'string' && typeof pid === 'string') {
+    return `${name}.${pid}`
+  }
+
+  return null
 }
 
 function extraContext(context?: Record<string, any> | null) {
