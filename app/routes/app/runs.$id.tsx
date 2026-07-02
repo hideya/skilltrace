@@ -54,7 +54,7 @@ export default function Page({ loaderData }: PageProps) {
               <p className="text-base-content/70">{run.description}</p>
             ) : null}
             {note ? (
-              <p className="rounded-box border border-info/20 bg-info/10 px-3 py-2 text-sm font-medium text-info">
+              <p className="rounded-box bg-info/10 px-3 py-2 font-medium text-info">
                 {note}
               </p>
             ) : null}
@@ -174,11 +174,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
           <ReflectionPretty value={reflection} />
         ) : (
           <div className="min-h-0 flex-1">
-            <JsonBlock
-              className="h-full max-h-none"
-              flush
-              value={reflection}
-            />
+            <JsonBlock className="h-full max-h-none" flush value={reflection} />
           </div>
         )
       ) : (
@@ -312,10 +308,10 @@ function RunContextPanel({ context }: RunContextPanelProps) {
       {rows.length > 0 || Object.keys(extra).length > 0 ? (
         <div className="space-y-4">
           {rows.length > 0 ? (
-            <dl className="grid gap-2 text-sm">
+            <dl className="grid gap-x-6 gap-y-3 text-sm lg:grid-cols-2">
               {rows.map(([label, value]) => (
                 <div
-                  className="grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]"
+                  className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]"
                   key={label}
                 >
                   <dt className="text-base-content/50">{label}</dt>
@@ -342,10 +338,7 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
 
   if (!snapshot) {
     return (
-      <CompactDetailsPanel
-        summary="not recorded"
-        title="Run snapshot"
-      >
+      <CompactDetailsPanel summary="not recorded" title="Run snapshot">
         <EmptyPanel>No Git snapshot recorded.</EmptyPanel>
       </CompactDetailsPanel>
     )
@@ -406,8 +399,8 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
           </summary>
           <ul className="border-t border-base-300 p-4">
             {files.map((file) => {
-              let instructionFile = instructionContents.find((item) =>
-                item.path === file.path
+              let instructionFile = instructionContents.find(
+                (item) => item.path === file.path,
               )
 
               return (
@@ -436,7 +429,7 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
                     {file.path}
                   </h3>
                   {file.truncated ? (
-                    <span className="badge badge-warning badge-xs">
+                    <span className="badge badge-xs badge-warning">
                       truncated
                     </span>
                   ) : null}
@@ -473,9 +466,7 @@ function CompactDetailsPanel({
         </div>
         <span className="badge badge-outline">details</span>
       </summary>
-      <div className="border-t border-base-300 p-5">
-        {children}
-      </div>
+      <div className="border-t border-base-300 p-5">{children}</div>
     </details>
   )
 }
@@ -512,7 +503,7 @@ function InstructionSurfacesPanel({
           ) : null}
 
           {warnings.length > 0 ? (
-            <div className="alert alert-warning text-sm">
+            <div className="alert text-sm alert-warning">
               <ul className="list-disc pl-5">
                 {warnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
@@ -543,9 +534,7 @@ function InstructionSurfacesPanel({
                     >
                       <td>
                         <span className="badge badge-outline badge-sm">
-                          {instructionProfileLabel(
-                            surface.instruction_profile,
-                          )}
+                          {instructionProfileLabel(surface.instruction_profile)}
                         </span>
                       </td>
                       <td>{surfaceKindLabel(surface.kind)}</td>
@@ -678,7 +667,7 @@ function InstructionFileDialog({
   let lines = file.content ? file.content.split('\n') : ['(empty file)']
 
   return (
-    <dialog className="modal modal-open">
+    <dialog className="modal-open modal">
       <div className="modal-box max-w-5xl">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -688,7 +677,7 @@ function InstructionFileDialog({
             </p>
           </div>
           <button
-            className="btn btn-sm btn-outline"
+            className="btn btn-outline btn-sm"
             onClick={onClose}
             type="button"
           >
@@ -696,7 +685,7 @@ function InstructionFileDialog({
           </button>
         </div>
         {file.truncated ? (
-          <div className="alert alert-warning mb-4">
+          <div className="mb-4 alert alert-warning">
             Captured content was truncated.
           </div>
         ) : null}
@@ -708,7 +697,7 @@ function InstructionFileDialog({
               }`}
               key={index}
             >
-              <span className="select-none text-right font-mono text-base-content/40">
+              <span className="text-right font-mono text-base-content/40 select-none">
                 {index + 1}
               </span>
               <span className="font-mono whitespace-pre-wrap">
