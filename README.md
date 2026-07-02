@@ -16,7 +16,18 @@ was declared, and what the agent later believed influenced the run.
 
 SkillTrace is aimed at people developing and debugging agent skills.
 
-<img width="500px" alt="skilltrace-diagram" src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.png" />
+<table>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"><br>
+      <sub>SkillTrace diagram</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-screenshot.webp" height="250px"><br>
+      <sub>SkillTrace screenshot</sub>
+    </td>
+  </tr>
+</table>
 
 ## What It Captures
 
@@ -37,6 +48,23 @@ probing saw something the reflection omitted.
 
 Reflection is a self-report, not ground truth. Its value comes from being
 compared with passive traces, semantic MCP declarations, and human judgment.
+
+<table>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
+      <sub>SkillTrace runs page</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <sub>Run Details Page</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <sub>Run Timeline</sub>
+    </td>
+  </tr>
+</table>
 
 ## Why This Matters
 
@@ -164,7 +192,7 @@ available.
 
 ## Quick Start
 
-From the target repo you want to trace.
+From the target repo you want to trace:
 
 SkillTrace expects the repo to have an agent instruction surface, such as
 `AGENTS.md` with `.skills/`, or `CLAUDE.md` with `.claude/skills/`.
@@ -319,6 +347,53 @@ and compares whether there is consistent evidence of skill usage.
 Passive-only runs are labeled as **Captured** rather than **Pass**, because
 there is no second evidence stream to compare.
 
+<table>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
+      <sub>SkillTrace runs page</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <sub>Run Details Page</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <sub>Run Timeline</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagnostics.webp" height="250px"><br>
+      <sub>Diagnostics Page</sub>
+    </td>
+  </tr>
+</table>
+
+### Compare Modes
+
+After you have successful runs for the same target repo in different trace
+modes, the runs page can compare them.
+
+This is useful when developing a skill:
+
+1. Start with `full` mode to debug whether the agent reads and declares the
+   expected skill usage.
+2. Try `passive_reflection` to reduce live semantic reporting.
+3. Try `passive_only` to observe skill file access with minimal intervention.
+
+Compare Modes checks whether the same skill and reference files appear across
+those runs. Since instrumentation may affect an agent's decisions, Compare
+Modes helps you gain confidence that the target skills still appear to be used
+when tracing becomes less intrusive.
+
+<table>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
+      <sub>Run mode comparison page</sub>
+    </td>
+  </tr>
+</table>
+
 ## Git Provenance
 
 When the target repo is inside a Git worktree, `skilltrace start` records a
@@ -338,6 +413,18 @@ by that run. Lines touched by the captured diff are highlighted in the viewer.
 
 The snapshot is stored with the run metadata, so deleting a run also removes
 its captured provenance.
+
+<table>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
+      <sub>Git Info Section</sub>
+    </td>
+    <td>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
+      <sub>File Diff Dialog</sub>
+    </td>
+</table>
 
 ## Troubleshooting
 
