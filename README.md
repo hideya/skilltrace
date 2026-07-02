@@ -142,8 +142,9 @@ Check it:
 gemini mcp list
 ```
 
-The diagnostics page also checks whether Codex, Claude Code, and Gemini CLI MCP
-registrations match the installed command when those CLIs are available.
+The `/app/diagnostics` page also checks whether Codex, Claude Code, and Gemini
+CLI MCP registrations match the installed command when those CLIs are
+available.
 
 ## Quick Start
 
@@ -162,8 +163,8 @@ traceskill start --note "trying to simplify AGENTS.md"
 
 `-n` is accepted as a short alias.
 
-Then run your agent task as normal using the 'codex', 'claude' or 'gemini'
-commands.
+Then run your agent task as normal using the `codex`, `claude`, or `gemini`
+command.
 
 When the task is finished:
 
@@ -180,9 +181,10 @@ traceskill stop --discard
 This cleans up temporary instruction injection and deletes the active run
 record after confirmation. Use `--yes` to skip the prompt.
 
-Target repo requirements:
+### Target Repo Requirements
 
-By default, `traceskill start` auto-detects one supported instruction profile:
+By default, `traceskill start` auto-detects one of these supported instruction
+profiles:
 
 - `agents_md`: `AGENTS.md` and `.skills/`
 - `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
@@ -301,7 +303,8 @@ If no passive events appear:
 If no semantic events or run reflection appear:
 
 - Confirm the MCP server is registered to the same command you are testing.
-  For example, `codex mcp get skilltrace` or `claude mcp get skilltrace`.
+  For example, `codex mcp get skilltrace`, `claude mcp get skilltrace`, or
+  `gemini mcp list`.
 - Restart the agent after changing MCP registration.
 - Confirm the run mode is `full` or `passive_reflection`; `passive_only`
   intentionally records no semantic declarations or reflection.
