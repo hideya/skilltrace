@@ -73,8 +73,8 @@ pnpm publish:do
 `publish:test` runs `pnpm clean`, `pnpm install`, and
 `npm publish --access=public --dry-run`. `publish:do` uses the same flow without
 `--dry-run`. The clean step is intentionally interactive and preserves `.env`,
-`data`, `tmp`, and `agent-sandbox-repo`, so local dogfood state is not removed
-while build artifacts and old tarballs can be regenerated. Both publish scripts
+`data` and `tmp`, so local dogfood state is not removed while build artifacts
+and old tarballs can be regenerated. Both publish scripts
 rely on `prepack`, so the React Router build and package CLI entrypoints are
 rebuilt before npm packs the tarball.
 
@@ -525,20 +525,22 @@ context for quick inspection.
 If the target is not in Git, SkillTrace records that Git provenance was
 unavailable and continues the run normally.
 
-## Sandbox Template
+## Demo Working Copy
 
-`agent-sandbox-repo` is generated from `examples/type-fix-demo`.
+`tmp/type-fix-demo` is generated from `examples/type-fix-demo`.
 
 Reasons:
 
-- the test agent modifies the sandbox repo
+- the test agent modifies the demo repo
 - the intentionally broken fixture must remain reproducible
-- the generated sandbox should not be committed by accident
+- the generated working copy should not be committed by accident
+- future demos can use the same `tmp/<demo-name>` shape
 
 Run before each experiment:
 
 ```bash
-pnpm sandbox:reset
+pnpm demo:reset type-fix-demo
 ```
 
-If a terminal was inside the old generated sandbox when it was reset, `cd` into the sandbox again before running commands.
+If a terminal was inside the old generated copy when it was reset, `cd` into
+the demo again before running commands.

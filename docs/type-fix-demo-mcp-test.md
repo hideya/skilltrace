@@ -1,10 +1,10 @@
-# Agent Sandbox MCP Test
+# Type Fix Demo MCP Test
 
 This runbook explains how to test SkillTrace with a real command-line agent
 session using the local MCP server. The main path uses Codex CLI; Claude Code
 and Gemini CLI checks are included where they differ.
 
-The goal is to verify that an agent working in a separate fake repository can:
+The goal is to verify that an agent working in a disposable demo repository can:
 
 1. load a local skill-like instruction file
 2. call SkillTrace MCP tools
@@ -16,7 +16,7 @@ fixture because semantic events come from MCP tool calls made by the agent while
 the passive probe observes skill and reference file access.
 
 Use command-line Codex for the default experiment. In early testing, Codex via
-VS Code saw the sandbox skill instructions but did not expose the custom
+VS Code saw the demo skill instructions but did not expose the custom
 SkillTrace MCP tools to the agent session, even though `/mcp` showed the
 `skilltrace` server as enabled.
 
@@ -31,14 +31,14 @@ and semantic declarations share the same run ID.
 
 - Main SkillTrace app: this repository.
 - Demo template: `examples/type-fix-demo`.
-- Generated sandbox repo: `agent-sandbox-repo`.
+- Generated demo working copy: `tmp/type-fix-demo`.
 - Local checkout CLI: `skilltrace-dev`.
 - Local checkout MCP server command: `skilltrace-dev mcp`.
 - Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
 - MCP tools exposed to the agent: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
 
-`agent-sandbox-repo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
+`tmp/type-fix-demo` is generated from the template and ignored by Git. Reset it before each experiment so fixes made by the test agent do not accidentally become the next starting state.
 
 ## Prerequisites
 
@@ -181,15 +181,15 @@ To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
 From the main SkillTrace repo:
 
 ```bash
-pnpm sandbox:reset
+pnpm demo:reset type-fix-demo
 ```
 
-This recreates `agent-sandbox-repo` from `examples/type-fix-demo`.
+This recreates `tmp/type-fix-demo` from `examples/type-fix-demo`.
 
 The generated repo intentionally contains TypeScript errors in:
 
 ```text
-agent-sandbox-repo/src/profile.ts
+tmp/type-fix-demo/src/profile.ts
 ```
 
 ## Register SkillTrace MCP
@@ -262,10 +262,10 @@ in `/app/diagnostics` when the `gemini` CLI is available to the server process.
 
 ## Run The Experiment
 
-Start the trace session from the sandbox repo:
+Start the trace session from the demo working copy:
 
 ```bash
-cd agent-sandbox-repo
+cd tmp/type-fix-demo
 traceskill-dev start
 ```
 
@@ -292,7 +292,7 @@ If a session is already active, `traceskill-dev start` refuses and asks you to r
 `traceskill-dev stop` first. This avoids accidental low-value runs and keeps
 manifest-backed instruction cleanup predictable.
 
-Run `traceskill-dev start` from the sandbox repo root, or pass
+Run `traceskill-dev start` from the demo working copy root, or pass
 `--target <repo>`. The command refuses if the target does not contain the
 expected instruction surfaces for the selected profile, which catches
 accidental parent-directory runs before they create misleading records.
@@ -352,7 +352,7 @@ As with other clients, smaller or faster models may vary in how precisely they
 follow the semantic logging schema, so compare passive, semantic, and
 reflection evidence rather than trusting one stream alone.
 
-Then start command-line Codex from the same sandbox repo:
+Then start command-line Codex from the same demo working copy:
 
 ```bash
 codex
@@ -437,7 +437,7 @@ host-reachable URL printed by `HOST=0.0.0.0 traceskill daemon start`.
 Look for a run ID like:
 
 ```text
-agent-sandbox-repo-r0dpQT-2026-06-19-04-39-12
+type-fix-demo-r0dpQT-2026-06-19-04-39-12
 ```
 
 Open the run detail page. The timeline should show semantic events from:
@@ -459,7 +459,7 @@ and `.skills/type-fix/references/checklist.md`.
 The consistency table should show aligned rows for `.skills/type-fix/SKILL.md`
 and `.skills/type-fix/references/checklist.md`.
 
-If the sandbox repo has local changes to `AGENTS.md`, `.skills/**`,
+If the demo working copy has local changes to `AGENTS.md`, `.skills/**`,
 `.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a
 Run snapshot panel. Changed instruction files appear in its changed-files list;
 click one to inspect the exact captured plain-text contents used by that run.
@@ -467,7 +467,7 @@ Lines touched by the captured diff are highlighted in the viewer. The snapshot
 is stored with the run metadata, so deleting or discarding the run removes this
 captured provenance too.
 
-After running at least two successful modes for the same sandbox repo, the runs
+After running at least two successful modes for the same demo working copy, the runs
 page should show `Compare Modes` on that run group. It preselects the latest
 successful run for each mode; change the selected runs if needed, then click
 `Compare Selected`. The comparison report should show whether the same
@@ -571,7 +571,7 @@ pnpm skilltrace:read \
   --run <generated_run_id> \
   --skill type-fix \
   --server http://localhost:5777 \
-  agent-sandbox-repo/.skills/type-fix/SKILL.md
+  tmp/type-fix-demo/.skills/type-fix/SKILL.md
 ```
 
 Then refresh the run detail page. The consistency panel can compare the passive skill read with the semantic MCP declarations.
@@ -587,7 +587,7 @@ codex mcp remove skilltrace
 Reset the sandbox before the next experiment:
 
 ```bash
-pnpm sandbox:reset
+pnpm demo:reset type-fix-demo
 ```
 
 ## Troubleshooting
@@ -604,7 +604,7 @@ If no run appears, check that:
 - The run may be under the generated path-hash timestamped ID.
 
 If Codex says a SkillTrace MCP tool is not available, verify that you are
-running the command-line Codex session from `agent-sandbox-repo`. In observed
+running the command-line Codex session from `tmp/type-fix-demo`. In observed
 testing, Codex via VS Code could show the `skilltrace` MCP server as enabled
 but still not expose the custom SkillTrace tools to the agent.
 
@@ -658,7 +658,7 @@ preserve symlinks when copying fixtures, such as with `cp -RP`.
 If the sandbox starts already fixed, run:
 
 ```bash
-pnpm sandbox:reset
+pnpm demo:reset type-fix-demo
 ```
 
 If the consistency panel says `Declared but not observed`, the semantic MCP part worked, but the passive probe did not catch the skill file read. Add the optional passive read event if you want a pass state for the same run.

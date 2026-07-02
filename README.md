@@ -204,8 +204,10 @@ Before tracing sensitive repositories, read
 
 ```bash
 git clone https://github.com/hideya/skill-trace.git
-cp -RP skill-trace/examples/type-fix-demo type-fix-demo
-cd type-fix-demo
+cd skill-trace
+mkdir -p tmp
+cp -RP examples/type-fix-demo tmp/type-fix-demo
+cd tmp/type-fix-demo
 npm install
 
 # If the daemon is not already running:
@@ -226,10 +228,10 @@ Open `http://localhost:7555` in your browser.
 To retry the toy demo from a clean copy:
 
 ```bash
-cd ..
-rm -rf type-fix-demo
-cp -RP skill-trace/examples/type-fix-demo type-fix-demo
-cd type-fix-demo
+cd ../..
+rm -rf tmp/type-fix-demo
+cp -RP examples/type-fix-demo tmp/type-fix-demo
+cd tmp/type-fix-demo
 npm install
 ```
 
@@ -467,4 +469,4 @@ decisions, see:
 - [docs/architecture-decisions.md](https://github.com/hideya/skill-trace/blob/main/docs/architecture-decisions.md)
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-profile-architecture.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skill-trace/blob/main/docs/mcp-semantic-logger.md)
-- [docs/agent-sandbox-mcp-test.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-sandbox-mcp-test.md)
+- [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skill-trace/blob/main/docs/type-fix-demo-mcp-test.md)

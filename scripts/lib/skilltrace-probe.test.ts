@@ -74,10 +74,10 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses lowercase fs_usage absolute paths case-insensitively', () => {
-    let targetRoot = '/tmp/SkillTraceTest/agent-sandbox-repo'
+    let targetRoot = '/tmp/SkillTraceTest/type-fix-demo'
     let root = path.join(targetRoot, '.skills')
     let lowercasePath =
-      '/tmp/skilltracetest/agent-sandbox-repo/.skills/type-fix/SKILL.md'
+      '/tmp/skilltracetest/type-fix-demo/.skills/type-fix/SKILL.md'
     let line = [
       '06:58:28.416967 open F=19',
       lowercasePath,
@@ -88,7 +88,7 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses relative fs_usage paths from the target root', () => {
-    let targetRoot = '/tmp/skilltrace-test/agent-sandbox-repo'
+    let targetRoot = '/tmp/skilltrace-test/type-fix-demo'
     let root = path.join(targetRoot, '.skills')
     let line =
       '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 cat.48931538'
@@ -99,7 +99,7 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses Claude skill roots from relative fs_usage paths', () => {
-    let targetRoot = '/tmp/skilltrace-test/agent-sandbox-repo-claude'
+    let targetRoot = '/tmp/skilltrace-test/type-fix-demo-claude'
     let root = path.join(targetRoot, '.claude/skills')
     let line =
       '06:58:31.134215 open F=3 .claude/skills/type-fix/SKILL.md 0.000055 claude.48931538'

@@ -282,7 +282,7 @@ It accepts:
   "model": "gpt-5-codex (uncertain)",
   "client": "Codex CLI (uncertain)",
   "cwd": "/path/to/repo",
-  "task_summary": "Repair TypeScript errors in the sandbox repo.",
+  "task_summary": "Repair TypeScript errors in the demo repo.",
   "notes": "Model and client are self-declared metadata.",
   "data": {
     "mode": "dogfood"

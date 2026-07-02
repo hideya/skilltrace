@@ -5,7 +5,7 @@
 > 歴史的な設計ドラフト。現在のセットアップ、パッケージング、MCP
 > tools、dogfooding 手順については、`README.md`、`README_DEV.md`、
 > `docs/architecture-decisions.md`、`docs/mcp-semantic-logger.md`、
-> `docs/agent-sandbox-mcp-test.md` を優先する。
+> `docs/type-fix-demo-mcp-test.md` を優先する。
 
 ## 1. 背景
 
