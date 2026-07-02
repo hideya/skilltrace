@@ -28,6 +28,8 @@ Reasons:
   routes remain in the codebase
 - route-level auth references are kept as comments near the local-mode changes
   to make a future remote mode easy to restore
+- normal local tracing must not require `.env`, login, OAuth, SMTP, or remote
+  database setup
 
 ## Package And Development Installers
 

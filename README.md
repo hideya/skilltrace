@@ -493,8 +493,8 @@ Known limitations include:
 
 ## Privacy And Data
 
-SkillTrace is designed as a local-first tool, but it may capture sensitive
-development context.
+SkillTrace is designed as a local-first, unauthenticated tool. It does not
+require a hosted account, but it may capture sensitive development context.
 
 Depending on the trace mode and repository state, captured data may include:
 
