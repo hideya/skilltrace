@@ -251,6 +251,7 @@ function RunGroup({
               <th className="text-center">Model</th>
               <th className="text-center">Client</th>
               <th>Events</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
@@ -358,6 +359,9 @@ function RunRow({
         <ClientCell context={summary.context} />
       </td>
       <td className="text-right">{summary.event_count}</td>
+      <td className="max-w-52">
+        <RunNote note={run.bag?.note} />
+      </td>
     </tr>
   )
 }
@@ -510,6 +514,21 @@ function RunLabel({ label }: RunLabelProps) {
   )
 }
 
+function RunNote({ note }: RunNoteProps) {
+  if (!note || typeof note !== 'string') {
+    return <span className="text-base-content/40">—</span>
+  }
+
+  return (
+    <span
+      className="line-clamp-2 text-xs leading-snug text-base-content/70"
+      title={note}
+    >
+      {note}
+    </span>
+  )
+}
+
 function resultLabel(result: ResultState, mode?: string) {
   if (result === 'pass' && mode === 'passive_only') return 'Captured'
   if (result === 'pass') return 'Pass'
@@ -628,6 +647,10 @@ type ModeBadgeProps = {
 
 type RunLabelProps = {
   label: string
+}
+
+type RunNoteProps = {
+  note?: string
 }
 
 type ResultState = 'pass' | 'warning' | 'incomplete' | 'running' | 'unknown'

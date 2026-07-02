@@ -95,6 +95,7 @@ async function start(args: string[]) {
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
     instrumentation,
+    note: options.note,
     trace_mode: traceMode,
     git_snapshot: gitSnapshot,
     instruction_surfaces: instructionSurfaces,
@@ -630,6 +631,8 @@ function parseArgs(args: string[]) {
       options.server = args[++index]
     } else if (arg === '--debug-probe') {
       options.debugProbe = true
+    } else if (arg === '--note' || arg === '-n') {
+      options.note = args[++index]
     } else if (arg === '--inject-instructions') {
       options.injectInstructions = true
     } else if (arg === '--no-inject-instructions') {
@@ -812,6 +815,9 @@ function printSession(label: string, server: string, session: any) {
   console.log(`  repo: ${session.target_root}`)
   if (session.trace_mode) {
     console.log(`  mode: ${session.trace_mode}`)
+  }
+  if (session.note) {
+    console.log(`  note: ${session.note}`)
   }
   console.log(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
   let probeLabel = session.probe_kind === 'shared' ? 'shared probe' : 'probe'
@@ -1464,7 +1470,7 @@ function removeDaemonState() {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code]')
+  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
   console.error('       traceskill stop [--discard] [--yes]')
   console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
@@ -1495,6 +1501,7 @@ type Options = {
   instructionProfile?: InstructionProfileOption
   sharedProbe?: boolean
   lines?: number
+  note?: string
 }
 
 type TraceMode = 'full' | 'passive_reflection' | 'passive_only'

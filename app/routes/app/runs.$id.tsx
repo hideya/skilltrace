@@ -1,5 +1,5 @@
 import { ChevronLeftIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Form, redirect, useNavigate, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
@@ -32,6 +32,7 @@ export default function Page({ loaderData }: PageProps) {
   let { timeline } = loaderData
   let run = timeline.run
   let title = run.name || run.public_id
+  let note = runNote(run)
   useAutoRefresh(run.status === 'active')
 
   return (
@@ -51,6 +52,11 @@ export default function Page({ loaderData }: PageProps) {
             </h1>
             {run.description ? (
               <p className="text-base-content/70">{run.description}</p>
+            ) : null}
+            {note ? (
+              <p className="rounded-box border border-info/20 bg-info/10 px-3 py-2 text-sm font-medium text-info">
+                {note}
+              </p>
             ) : null}
           </div>
         </div>
@@ -97,6 +103,11 @@ export default function Page({ loaderData }: PageProps) {
       </section>
     </main>
   )
+}
+
+function runNote(run: any) {
+  let note = run.bag?.note
+  return typeof note === 'string' && note.trim() ? note.trim() : ''
 }
 
 function BackButton() {
@@ -331,34 +342,29 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
 
   if (!snapshot) {
     return (
-      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-        <PanelHeader
-          description="Git state captured at trace start"
-          title="Run snapshot"
-        />
+      <CompactDetailsPanel
+        summary="not recorded"
+        title="Run snapshot"
+      >
         <EmptyPanel>No Git snapshot recorded.</EmptyPanel>
-      </section>
+      </CompactDetailsPanel>
     )
   }
 
   if (!snapshot.available) {
     return (
-      <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-        <PanelHeader
-          description="Git state captured at trace start"
-          title="Run snapshot"
-        />
+      <CompactDetailsPanel
+        summary={snapshot.reason || 'not in Git worktree'}
+        title="Run snapshot"
+      >
         <EmptyPanel>
           {snapshot.reason || 'Target was not inside a Git worktree.'}
         </EmptyPanel>
-      </section>
+      </CompactDetailsPanel>
     )
   }
 
   let files = Array.isArray(snapshot.files) ? snapshot.files : []
-  let instructionFiles = Array.isArray(snapshot.instruction_files)
-    ? snapshot.instruction_files
-    : []
   let untracked = Array.isArray(snapshot.untracked_instruction_files)
     ? snapshot.untracked_instruction_files
     : []
@@ -367,12 +373,10 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
     : []
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <PanelHeader
-        description="Git state captured at trace start"
-        title="Run snapshot"
-      />
-
+    <CompactDetailsPanel
+      summary={runSnapshotSummary(snapshot, files.length)}
+      title="Run snapshot"
+    >
       <div className="grid gap-3 sm:grid-cols-4">
         <SnapshotStat label="HEAD" value={shortHash(snapshot.head)} />
         <SnapshotStat label="Branch" value={snapshot.branch || 'detached'} />
@@ -451,7 +455,28 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
         file={selectedFile}
         onClose={() => setSelectedFile(null)}
       />
-    </section>
+    </CompactDetailsPanel>
+  )
+}
+
+function CompactDetailsPanel({
+  children,
+  summary,
+  title,
+}: CompactDetailsPanelProps) {
+  return (
+    <details className="rounded-box border border-base-300 bg-base-100 shadow-sm">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <p className="truncate text-sm text-base-content/60">{summary}</p>
+        </div>
+        <span className="badge badge-outline">details</span>
+      </summary>
+      <div className="border-t border-base-300 p-5">
+        {children}
+      </div>
+    </details>
   )
 }
 
@@ -466,12 +491,10 @@ function InstructionSurfacesPanel({
   let warnings = Array.isArray(profile?.warnings) ? profile.warnings : []
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <PanelHeader
-        description="Agent instruction paths detected at trace start"
-        title="Instruction surfaces"
-      />
-
+    <CompactDetailsPanel
+      summary={instructionSurfaceSummary(profile, surfaces)}
+      title="Instruction surfaces"
+    >
       {surfaces.length > 0 ? (
         <div className="space-y-4">
           {profile ? (
@@ -566,7 +589,7 @@ function InstructionSurfacesPanel({
       ) : (
         <EmptyPanel>No instruction surfaces detected.</EmptyPanel>
       )}
-    </section>
+    </CompactDetailsPanel>
   )
 }
 
@@ -579,6 +602,31 @@ function SurfaceStat({ label, value }: SurfaceStatProps) {
       <p className="mt-1 truncate font-mono text-sm font-semibold">{value}</p>
     </div>
   )
+}
+
+function runSnapshotSummary(snapshot: RunSnapshot, changedCount: number) {
+  let parts = [
+    shortHash(snapshot.head),
+    snapshot.branch || 'detached',
+    snapshot.dirty ? 'dirty' : 'clean',
+  ]
+
+  if (changedCount > 0) {
+    parts.push(`${changedCount} changed`)
+  }
+
+  return parts.filter(Boolean).join(' / ')
+}
+
+function instructionSurfaceSummary(
+  profile?: SelectedInstructionProfile | null,
+  surfaces: InstructionSurface[] = [],
+) {
+  let profileLabel = instructionProfileLabel(profile?.selected)
+  let requested = profile?.requested || 'auto'
+  let suffix = surfaces.length === 0 ? ' / no surfaces' : ''
+
+  return `${profileLabel} / ${requested}${suffix}`
 }
 
 function SnapshotFileRow({
@@ -1302,6 +1350,12 @@ type RunSnapshotPanelProps = {
 type InstructionSurfacesPanelProps = {
   profile?: SelectedInstructionProfile | null
   report?: InstructionSurfaceReport | null
+}
+
+type CompactDetailsPanelProps = {
+  children: ReactNode
+  summary: string
+  title: string
 }
 
 type SelectedInstructionProfile = {

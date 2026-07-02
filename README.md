@@ -153,6 +153,14 @@ cd <repo>
 traceskill start
 ```
 
+Add a short note when you want the run list to show what you were trying:
+
+```bash
+traceskill start --note "trying to simplify AGENTS.md"
+```
+
+`-n` is accepted as a short alias.
+
 Then run your agent task normally.
 
 When the task is finished:
@@ -263,6 +271,43 @@ by that run. Lines touched by the captured diff are highlighted in the viewer.
 
 The snapshot is stored with the run metadata, so deleting a run also removes
 its captured provenance.
+
+## Troubleshooting
+
+If `traceskill start` cannot connect to the server, start the daemon first:
+
+```bash
+traceskill daemon start
+```
+
+Then open `/app/diagnostics` and confirm the daemon, server, and active session
+state before launching the agent.
+
+If no passive events appear:
+
+- Make sure `traceskill start` was run before launching the agent.
+- On macOS, check `/app/diagnostics` or `traceskill daemon status` and confirm
+  the shared probe is running. Starting the daemon may ask for your admin
+  password once because the macOS passive probe uses `fs_usage`.
+- On Linux, install `inotify-tools` and confirm the run status says the probe is
+  running.
+- Confirm the target repo has the expected instruction surface, such as
+  `AGENTS.md` with `.skills/` or `CLAUDE.md` with `.claude/skills/`.
+- If events still do not appear, restart the daemon and inspect the probe log
+  printed by `traceskill daemon status`.
+
+If no semantic events or run reflection appear:
+
+- Confirm the MCP server is registered to the same command you are testing.
+  For example, `codex mcp get skilltrace` or `claude mcp get skilltrace`.
+- Restart the agent after changing MCP registration.
+- Confirm the run mode is `full` or `passive_reflection`; `passive_only`
+  intentionally records no semantic declarations or reflection.
+- Check the first timeline item for an instrumentation warning. A run started
+  without instruction injection can still capture passive events, but the agent
+  may never see the MCP reporting instructions.
+- Try a stronger model or rerun the same scenario. Semantic reporting and
+  reflection depend on the agent following the injected instructions.
 
 ## Known Limitations
 

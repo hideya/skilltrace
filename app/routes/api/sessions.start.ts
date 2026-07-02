@@ -27,6 +27,7 @@ export async function action({ request }) {
     session = await startTraceSession({
       target_root: input.target_root,
       instrumentation: input.instrumentation,
+      note: input.note,
       trace_mode: input.trace_mode,
       git_snapshot: input.git_snapshot,
       instruction_surfaces: input.instruction_surfaces,

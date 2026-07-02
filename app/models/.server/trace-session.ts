@@ -24,6 +24,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
     path_hash: pathHash(targetRoot),
     skill_roots: config.skillRoots,
     trace_mode: normalizeTraceMode(input.trace_mode),
+    note: normalizedNote(input.note),
     started_at: new Date().toISOString(),
   }
 
@@ -39,6 +40,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
       path_hash: session.path_hash,
       skill_roots: config.skillRoots,
       trace_mode: session.trace_mode,
+      note: session.note,
       git_snapshot: input.git_snapshot,
       instruction_surfaces: input.instruction_surfaces,
       instruction_profile: input.instruction_profile,
@@ -47,6 +49,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
   await appendSessionEvent(run.id, 'trace_session_started', session, {
     reason: 'started',
     instrumentation: input.instrumentation,
+    note: session.note,
     git_snapshot: input.git_snapshot,
     instruction_surfaces: input.instruction_surfaces,
     instruction_profile: input.instruction_profile,
@@ -266,6 +269,7 @@ type StartTraceSessionInput = {
   instruction_profile?: Record<string, unknown>
   git_snapshot?: Record<string, unknown>
   trace_mode?: unknown
+  note?: unknown
   now?: Date
 }
 
@@ -297,6 +301,7 @@ type TraceSession = {
   path_hash: string
   skill_roots: string[]
   trace_mode: TraceMode
+  note?: string
   started_at: string
   probe_pid?: number
   probe_log_path?: string
@@ -311,6 +316,10 @@ type SkillTraceConfigFile = {
 type ProbeKind = 'run' | 'shared'
 type InstructionProfile = 'agents_md' | 'claude_code'
 export type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
+
+function normalizedNote(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
 
 const STATE_KEY = Symbol.for('skilltrace.trace-session-state')
 const state = ((globalThis as any)[STATE_KEY] ??= {}) as TraceSessionState

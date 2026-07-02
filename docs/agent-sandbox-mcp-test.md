@@ -269,6 +269,9 @@ traceskill-dev start
 
 For package-style trials, use `traceskill start`.
 
+Add `--note <text>` or `-n <text>` if you want the runs page to show the
+purpose of a particular trial.
+
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
 inserts one SkillTrace instruction at the top of the selected instruction file,
 and records `.skilltrace/injection.json` so `traceskill-dev stop` can clean up
@@ -603,6 +606,18 @@ If Codex says a SkillTrace MCP tool is not available, verify that you are
 running the command-line Codex session from `agent-sandbox-repo`. In observed
 testing, Codex via VS Code could show the `skilltrace` MCP server as enabled
 but still not expose the custom SkillTrace tools to the agent.
+
+If passive events appear but semantic events or reflection do not, verify that
+the MCP registration points at the same command you are testing:
+
+```bash
+codex mcp get skilltrace
+claude mcp get skilltrace
+```
+
+For dev trials, the command should usually be `traceskill-dev mcp`. For package
+trials, it should usually be `traceskill mcp`. Restart the agent after changing
+MCP registration, and confirm the run mode is not `passive_only`.
 
 If the MCP server fails to start, run:
 
