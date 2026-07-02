@@ -601,6 +601,16 @@ pnpm demo:reset type-fix-demo
 
 ## Troubleshooting
 
+Start with the compact diagnostics check:
+
+```bash
+skilltrace-dev diagnostics
+```
+
+Use `skilltrace-dev diagnostics --verbose` when it reports a warning. It shows
+daemon/server state, active session, shared probe status when applicable, and
+per-client MCP registration.
+
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.

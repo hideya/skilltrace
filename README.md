@@ -436,6 +436,17 @@ its captured provenance.
 
 ## Troubleshooting
 
+Run a quick preflight before launching an agent:
+
+```bash
+skilltrace diagnostics
+```
+
+Use `skilltrace diagnostics --verbose` when the compact output shows a warning.
+It reports daemon/server state, active session, shared probe status when
+applicable, and MCP registration for Codex CLI, Claude Code, and Gemini CLI
+separately.
+
 If `skilltrace start` cannot connect to the server, start the daemon first:
 
 ```bash
