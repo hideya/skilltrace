@@ -39,7 +39,7 @@ export default function Page({ loaderData }: PageProps) {
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold text-balance break-words">
+            <h1 className="page-title break-words">
               {comparison.group_label}
             </h1>
             {comparison.target_root ? (
@@ -71,7 +71,7 @@ export default function Page({ loaderData }: PageProps) {
           <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-1.5xl font-bold">Cross-mode files</h2>
+                <h2 className="section-title">Cross-mode files</h2>
                 <p className="text-sm text-base-content/60">
                   Selected successful runs, compared by normalized skill and
                   reference files.
@@ -147,7 +147,7 @@ function ComparisonTable({ comparison }: ComparisonTableProps) {
 function InvalidSelection({ reasons }: InvalidSelectionProps) {
   return (
     <section className="rounded-box border border-warning/40 bg-warning/10 p-6">
-      <h2 className="text-1.5xl font-bold">Selection not applicable</h2>
+      <h2 className="section-title">Selection not applicable</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
         {reasons.length > 0 ? (
           reasons.map((reason) => <li key={reason}>{reason}</li>)

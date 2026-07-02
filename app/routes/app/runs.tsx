@@ -89,7 +89,7 @@ export default function Page({ loaderData }: PageProps) {
         <div className="space-y-3">
           <p className="badge rounded-full badge-outline">{appName}</p>
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-balance">Runs</h1>
+            <h1 className="page-title">Runs</h1>
             <p className="text-base-content/70">
               {summaries.length} observed run
               {summaries.length === 1 ? '' : 's'} in {groups.length} group

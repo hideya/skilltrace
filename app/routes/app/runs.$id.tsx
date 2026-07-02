@@ -47,7 +47,7 @@ export default function Page({ loaderData }: PageProps) {
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-wider text-balance break-words">
+            <h1 className="page-title tracking-wider break-words">
               {title}
             </h1>
             {run.description ? (
@@ -145,7 +145,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
     <section className="flex min-h-0 flex-1 flex-col rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-1.5xl font-bold">Run reflection</h2>
+          <h2 className="section-title">Run reflection</h2>
           <p className="text-sm text-base-content/60">
             Declared post-run diagnostic summary
           </p>
@@ -298,7 +298,7 @@ function RunContextPanel({ context }: RunContextPanelProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-1.5xl font-bold">Run context</h2>
+          <h2 className="section-title">Run context</h2>
           <p className="text-sm text-base-content/60">
             Declared execution metadata
           </p>
@@ -461,7 +461,7 @@ function CompactDetailsPanel({
     <details className="rounded-box border border-base-300 bg-base-100 shadow-sm">
       <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4">
         <div className="min-w-0">
-          <h2 className="text-1.5xl font-bold">{title}</h2>
+          <h2 className="section-title">{title}</h2>
           <p className="truncate text-sm text-base-content/60">{summary}</p>
         </div>
         <span className="badge badge-outline">details</span>
@@ -769,7 +769,7 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-1.5xl font-bold">Consistency</h2>
+          <h2 className="section-title">Consistency</h2>
           <p className="text-sm text-base-content/60">
             {rows.length} file{rows.length === 1 ? '' : 's'} · {description}
           </p>
@@ -845,7 +845,7 @@ function PanelHeader({ description, title }: PanelHeaderProps) {
   return (
     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-1.5xl font-bold">{title}</h2>
+        <h2 className="section-title">{title}</h2>
         <p className="text-sm text-base-content/60">{description}</p>
       </div>
     </div>
@@ -991,7 +991,7 @@ function Timeline({ events }: TimelineProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-5">
         <div>
-          <h2 className="text-1.5xl font-bold">Timeline</h2>
+          <h2 className="section-title">Timeline</h2>
           <p className="text-sm text-base-content/60">
             {events.length} event
             {events.length === 1 ? '' : 's'}

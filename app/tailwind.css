@@ -29,6 +29,16 @@
   }
 }
 
+@layer components {
+  .page-title {
+    @apply text-3xl font-bold text-balance;
+  }
+
+  .section-title {
+    @apply text-1.5xl font-bold;
+  }
+}
+
 @layer utilities {
   .btn {
     --btn-shadow: none;

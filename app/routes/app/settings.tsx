@@ -47,7 +47,7 @@ export default function Page({ loaderData: { user } }) {
       <header className="space-y-3">
         <p className="badge rounded-full badge-outline">Protected</p>
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-balance">Settings</h1>
+          <h1 className="page-title">Settings</h1>
           <p className="text-base-content/70">
             Update the name and email tied to your account.
           </p>
