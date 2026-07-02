@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process'
+import { spawn } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -16,7 +16,7 @@ export async function loader() {
   let server = process.env.SKILLTRACE_SERVER || defaultServerUrl()
   let session = getTraceSession() ?? null
   let mode = process.env.SKILLTRACE_DEV === '1' ? 'dev' : 'package'
-  let mcp = readMcpStatuses(mode)
+  let mcp = await readMcpStatuses(mode)
 
   return {
     daemon: state,
@@ -284,7 +284,9 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
 
 function mcpStatusBadge(client: McpClientStatus) {
   if (client.status === 'ok') return 'badge-success'
-  if (client.status === 'missing') return 'badge-outline'
+  if (client.status === 'missing' || client.status === 'timeout') {
+    return 'badge-outline'
+  }
   return 'badge-warning'
 }
 
@@ -424,12 +426,12 @@ function defaultServerUrl() {
   return `http://${displayHost}:${port}`
 }
 
-function readMcpStatuses(mode: string): McpStatusReport {
-  let clients = [
+async function readMcpStatuses(mode: string): Promise<McpStatusReport> {
+  let clients = await Promise.all([
     readCodexMcpStatus(mode),
     readClaudeMcpStatus(mode),
     readGeminiMcpStatus(mode),
-  ]
+  ])
 
   return {
     clients,
@@ -441,6 +443,7 @@ function summarizeMcpStatuses(clients: McpClientStatus[]) {
   let installed = clients.filter((client) => client.cli_installed)
   let ok = installed.filter((client) => client.status === 'ok')
   let warnings = installed.filter((client) => client.status === 'warning')
+  let timeouts = installed.filter((client) => client.status === 'timeout')
 
   if (warnings.length > 0) {
     return {
@@ -458,6 +461,14 @@ function summarizeMcpStatuses(clients: McpClientStatus[]) {
     } satisfies McpSummary
   }
 
+  if (timeouts.length > 0) {
+    return {
+      status: 'timeout',
+      label: `${ok.length}/${installed.length} ok, ${timeouts.length} timeout`,
+      tone: 'neutral',
+    } satisfies McpSummary
+  }
+
   return {
     status: 'ok',
     label: `${ok.length}/${installed.length} ok`,
@@ -465,12 +476,21 @@ function summarizeMcpStatuses(clients: McpClientStatus[]) {
   } satisfies McpSummary
 }
 
-function readCodexMcpStatus(mode: string) {
+async function readCodexMcpStatus(mode: string) {
   let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
-  let result = runMcpCheck('codex', ['mcp', 'get', 'skilltrace'])
+  let result = await runMcpCheck('codex', ['mcp', 'get', 'skilltrace'])
   let base = mcpStatusBase('codex', 'Codex', expectedCommand, result)
 
   if (result.error) {
+    if (result.timed_out) {
+      return {
+        ...base,
+        status: 'timeout',
+        message: 'MCP registration check timed out; run the check manually',
+        cli_installed: true,
+      } satisfies McpClientStatus
+    }
+
     return {
       ...base,
       status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
@@ -505,12 +525,21 @@ function readCodexMcpStatus(mode: string) {
   } satisfies McpClientStatus
 }
 
-function readClaudeMcpStatus(mode: string) {
+async function readClaudeMcpStatus(mode: string) {
   let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
-  let result = runMcpCheck('claude', ['mcp', 'get', 'skilltrace'])
+  let result = await runMcpCheck('claude', ['mcp', 'get', 'skilltrace'])
   let base = mcpStatusBase('claude', 'Claude Code', expectedCommand, result)
 
   if (result.error) {
+    if (result.timed_out) {
+      return {
+        ...base,
+        status: 'timeout',
+        message: 'MCP registration check timed out; run the check manually',
+        cli_installed: true,
+      } satisfies McpClientStatus
+    }
+
     return {
       ...base,
       status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
@@ -545,12 +574,21 @@ function readClaudeMcpStatus(mode: string) {
   } satisfies McpClientStatus
 }
 
-function readGeminiMcpStatus(mode: string) {
+async function readGeminiMcpStatus(mode: string) {
   let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
-  let result = runMcpCheck('gemini', ['mcp', 'list'])
+  let result = await runMcpCheck('gemini', ['mcp', 'list'])
   let base = mcpStatusBase('gemini', 'Gemini CLI', expectedCommand, result)
 
   if (result.error) {
+    if (result.timed_out) {
+      return {
+        ...base,
+        status: 'timeout',
+        message: 'MCP registration check timed out; run `gemini mcp list` manually',
+        cli_installed: true,
+      } satisfies McpClientStatus
+    }
+
     return {
       ...base,
       status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
@@ -597,18 +635,61 @@ function readGeminiMcpStatus(mode: string) {
   } satisfies McpClientStatus
 }
 
-function runMcpCheck(command: string, args: string[]) {
-  let result = spawnSync(command, args, {
-    encoding: 'utf8',
-    timeout: MCP_CHECK_TIMEOUT_MS,
-  })
-  let output = [result.stderr, result.stdout].filter(Boolean).join('\n').trim()
+function runMcpCheck(command: string, args: string[]): Promise<McpCheckResult> {
+  return new Promise((resolve) => {
+    let stdout = ''
+    let stderr = ''
+    let settled = false
+    let child = spawn(command, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      child.kill('SIGTERM')
+      resolve({
+        error: new Error(`Command timed out after ${MCP_CHECK_TIMEOUT_MS}ms`),
+        status: null,
+        timed_out: true,
+        output: mcpCheckOutput(stderr, stdout),
+        check_command: [command, ...args].join(' '),
+      })
+    }, MCP_CHECK_TIMEOUT_MS)
 
-  return {
-    ...result,
-    output,
-    check_command: [command, ...args].join(' '),
-  }
+    child.stdout?.setEncoding('utf8')
+    child.stderr?.setEncoding('utf8')
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk
+    })
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk
+    })
+    child.on('error', (error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve({
+        error,
+        status: null,
+        output: mcpCheckOutput(stderr, stdout),
+        check_command: [command, ...args].join(' '),
+      })
+    })
+    child.on('close', (code) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve({
+        status: code,
+        output: mcpCheckOutput(stderr, stdout),
+        check_command: [command, ...args].join(' '),
+      })
+    })
+  })
+}
+
+function mcpCheckOutput(stderr: string, stdout: string) {
+  return [stderr, stdout].filter(Boolean).join('\n').trim()
 }
 
 function mcpStatusBase(
@@ -725,7 +806,7 @@ type McpStatusReport = {
 }
 
 type McpSummary = {
-  status: 'ok' | 'warning' | 'missing'
+  status: 'ok' | 'warning' | 'missing' | 'timeout'
   label: string
   tone: 'neutral' | 'success' | 'warning'
 }
@@ -733,7 +814,7 @@ type McpSummary = {
 type McpClientStatus = {
   key: string
   name: string
-  status: 'ok' | 'warning' | 'missing'
+  status: 'ok' | 'warning' | 'missing' | 'timeout'
   message: string
   cli_installed: boolean
   registered: boolean
@@ -747,6 +828,7 @@ type McpClientStatus = {
 type McpCheckResult = {
   error?: Error
   status: number | null
+  timed_out?: boolean
   output: string
   check_command: string
 }
