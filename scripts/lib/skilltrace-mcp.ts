@@ -46,7 +46,7 @@ export function buildMcpSkillLogEvent(
   input: SkillLogEventInput,
   env: SkillTraceMcpEnv,
 ) {
-  let runId = input.run_id || mcpRunId(env)
+  let runId = mcpRunId(env) || input.run_id
   if (!runId) {
     throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
   }
@@ -69,7 +69,7 @@ export function buildMcpSkillTraceContextEvent(
   input: SkillTraceContextInput,
   env: SkillTraceMcpEnv,
 ) {
-  let runId = input.run_id || mcpRunId(env)
+  let runId = mcpRunId(env) || input.run_id
   if (!runId) {
     throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
   }
@@ -95,7 +95,7 @@ export function buildMcpSkillTraceReflectionEvent(
   input: SkillTraceReflectionInput,
   env: SkillTraceMcpEnv,
 ) {
-  let runId = input.run_id || mcpRunId(env)
+  let runId = mcpRunId(env) || input.run_id
   if (!runId) {
     throw new Error('Missing run_id, SKILLTRACE_RUN_ID, or SKILLTRACE_RUN_STEM')
   }

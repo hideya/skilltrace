@@ -243,7 +243,9 @@ When `SKILLTRACE_RUN_STEM` is set, the MCP server generates one run ID at startu
 run_mcp_fixture_20260619_001530
 ```
 
-All tool calls in that MCP server process use the generated run ID unless the tool input explicitly provides `run_id`.
+All tool calls in that MCP server process use the generated run ID. Tool input
+`run_id` is only a fallback when no active session, `SKILLTRACE_RUN_ID`, or
+`SKILLTRACE_RUN_STEM` is available.
 
 Use `SKILLTRACE_RUN_ID` when you want a fixed run ID instead:
 

@@ -83,11 +83,7 @@ export default function Page({ loaderData }: PageProps) {
             value={checks.shared_probe.label}
           />
         ) : null}
-        <Metric
-          label="MCP"
-          tone={mcp.summary.tone}
-          value={mcp.summary.label}
-        />
+        <Metric label="MCP" tone={mcp.summary.tone} value={mcp.summary.label} />
         <Metric
           label="Active Session"
           tone={session ? 'running' : 'neutral'}
@@ -240,22 +236,27 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
     >
       <div className="space-y-3">
         {mcp.clients.map((client) => (
-          <details className="rounded-box border border-base-300" key={client.key}>
+          <details
+            className="rounded-box border border-base-300"
+            key={client.key}
+          >
             <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 marker:hidden">
               <div className="min-w-0">
                 <h3 className="font-semibold">{client.name}</h3>
-                <p className="truncate text-xs text-base-content/60">
+                {/* <p className="truncate text-xs text-base-content/60">
                   {client.message}
-                </p>
+                </p> */}
               </div>
               <span className={`badge badge-sm ${mcpStatusBadge(client)}`}>
                 {client.status}
               </span>
             </summary>
             <div className="space-y-3 border-t border-base-300 p-3">
+              <p className="text-sm font-semibold text-base-content/70">
+                {client.message}
+              </p>
               <KeyValues
                 rows={[
-                  ['Status', client.message],
                   ['Check', client.check_command],
                   ['Expected', `${client.expected_command} mcp`],
                   ['CLI installed', client.cli_installed ? 'yes' : 'no'],
@@ -510,14 +511,19 @@ async function readCodexMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
-  let matches = command ? expectedCommands.includes(command) && args === 'mcp' : false
+  let matches = command
+    ? expectedCommands.includes(command) && args === 'mcp'
+    : false
+  let wrapperWarning = devWrapperWarning(mode, command)
 
   return {
     ...base,
-    status: matches ? 'ok' : 'warning',
-    message: matches
-      ? 'skilltrace MCP registration matches this mode'
-      : 'skilltrace MCP registration does not match this mode',
+    status: matches && !wrapperWarning ? 'ok' : 'warning',
+    message: wrapperWarning
+      ? wrapperWarning
+      : matches
+        ? 'skilltrace MCP registration matches this mode'
+        : 'skilltrace MCP registration does not match this mode',
     cli_installed: true,
     registered: true,
     command,
@@ -559,14 +565,19 @@ async function readClaudeMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
-  let matches = command ? expectedCommands.includes(command) && args === 'mcp' : false
+  let matches = command
+    ? expectedCommands.includes(command) && args === 'mcp'
+    : false
+  let wrapperWarning = devWrapperWarning(mode, command)
 
   return {
     ...base,
-    status: matches ? 'ok' : 'warning',
-    message: matches
-      ? 'skilltrace MCP registration matches this mode'
-      : 'skilltrace MCP registration does not match this mode',
+    status: matches && !wrapperWarning ? 'ok' : 'warning',
+    message: wrapperWarning
+      ? wrapperWarning
+      : matches
+        ? 'skilltrace MCP registration matches this mode'
+        : 'skilltrace MCP registration does not match this mode',
     cli_installed: true,
     registered: true,
     command,
@@ -584,7 +595,8 @@ async function readGeminiMcpStatus(mode: string) {
       return {
         ...base,
         status: 'timeout',
-        message: 'MCP registration check timed out; run `gemini mcp list` manually',
+        message:
+          'MCP registration check timed out; run `gemini mcp list` manually',
         cli_installed: true,
       } satisfies McpClientStatus
     }
@@ -616,19 +628,24 @@ async function readGeminiMcpStatus(mode: string) {
     } satisfies McpClientStatus
   }
 
-  let command = parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
-  let args = parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
+  let command =
+    parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
+  let args =
+    parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
   let matches =
     ((command ? expectedCommands.includes(command) : false) ||
       expectedCommands.some((item) => result.output.includes(item))) &&
     (args === 'mcp' || /\bmcp\b/.test(result.output))
+  let wrapperWarning = devWrapperWarning(mode, command)
 
   return {
     ...base,
-    status: matches ? 'ok' : 'warning',
-    message: matches
-      ? 'skilltrace MCP registration appears to match this mode'
-      : 'skilltrace MCP registration could not be confirmed for this mode',
+    status: matches && !wrapperWarning ? 'ok' : 'warning',
+    message: wrapperWarning
+      ? wrapperWarning
+      : matches
+        ? 'skilltrace MCP registration appears to match this mode'
+        : 'skilltrace MCP registration could not be confirmed for this mode',
     cli_installed: true,
     registered: true,
     command,
@@ -697,6 +714,32 @@ function expectedMcpCommands(mode: string) {
   return mode === 'dev'
     ? ['skilltrace-dev', 'traceskill-dev']
     : ['skilltrace', 'traceskill']
+}
+
+function devWrapperWarning(mode: string, command: string | null) {
+  if (mode !== 'dev' || !command) return null
+  if (!['skilltrace-dev', 'traceskill-dev'].includes(command)) return null
+
+  let filePath = path.join(os.homedir(), '.skilltrace/bin', command)
+  if (!fs.existsSync(filePath)) {
+    return `${command} wrapper is missing; run pnpm skilltrace:install`
+  }
+
+  let content = fs.readFileSync(filePath, 'utf8')
+  if (!isCurrentDevWrapper(content)) {
+    return `${command} wrapper looks stale; run pnpm skilltrace:install`
+  }
+
+  return null
+}
+
+function isCurrentDevWrapper(content: string) {
+  return (
+    content.includes('# Generated by SkillTrace.') &&
+    content.includes('SKILLTRACE_TARGET_ROOT="$(pwd -P') &&
+    content.includes(process.cwd()) &&
+    content.includes('scripts/traceskill.ts')
+  )
 }
 
 function mcpStatusBase(

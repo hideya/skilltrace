@@ -32,7 +32,7 @@ describe('skilltrace MCP helpers', () => {
     expect(event.data.why_applicable).toBe('manual test')
   })
 
-  test('prefers explicit run_id over environment run ID', () => {
+  test('prefers environment run ID over explicit tool run_id', () => {
     let event = buildMcpSkillLogEvent(
       {
         run_id: 'run_explicit',
@@ -41,7 +41,7 @@ describe('skilltrace MCP helpers', () => {
       { runId: 'run_env' },
     )
 
-    expect(event.run_id).toBe('run_explicit')
+    expect(event.run_id).toBe('run_env')
   })
 
   test('builds a run context event from MCP input', () => {

@@ -125,6 +125,9 @@ For Codex CLI:
 codex mcp add skilltrace -- skilltrace mcp
 ```
 
+As of June 2026, Codex CLI stores MCP registration globally by default and does
+not expose a `--scope` flag.
+
 Check it:
 
 ```bash

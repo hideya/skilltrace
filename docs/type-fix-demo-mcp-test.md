@@ -206,6 +206,9 @@ For package-style trials, use:
 codex mcp add skilltrace -- skilltrace mcp
 ```
 
+As of June 2026, Codex CLI stores MCP registration globally by default and does
+not expose a `--scope` flag.
+
 Then confirm it is registered:
 
 ```bash
