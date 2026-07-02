@@ -36,12 +36,21 @@ export default function Page({ loaderData }: PageProps) {
   let [selectedRunIds, setSelectedRunIds] = useState<Record<string, string>>({})
   let [expandedKeys, setExpandedKeys] = useState<string[]>([])
   let groups = groupSummaries(summaries)
+  let hasRuns = summaries.length > 0
   let hasRunningRun = summaries.some((summary) => summary.result === 'running')
   useAutoRefresh(hasRunningRun)
 
   useEffect(() => {
     setExpandedKeys(readExpandedRunGroups())
   }, [])
+
+  useEffect(() => {
+    if (hasRuns) return
+
+    setIsEditing(false)
+    setCompareGroupKey(null)
+    setSelectedRunIds({})
+  }, [hasRuns])
 
   function handleGroupToggle(key: string, isOpen: boolean) {
     setExpandedKeys((current) => {
@@ -98,7 +107,7 @@ export default function Page({ loaderData }: PageProps) {
           </div>
         </div>
         <div className="flex flex-row gap-4">
-          {isEditing ? (
+          {isEditing && hasRuns ? (
             <div className="flex items-center justify-end gap-2">
               <button
                 className="btn bg-pink-500 text-white btn-sm"
@@ -110,7 +119,7 @@ export default function Page({ loaderData }: PageProps) {
             </div>
           ) : null}
 
-          {summaries.length > 0 ? (
+          {hasRuns ? (
             <button
               className={`btn w-24 btn-sm ${isEditing ? 'btn-neutral' : 'btn-outline'}`}
               onClick={() => {
@@ -125,7 +134,7 @@ export default function Page({ loaderData }: PageProps) {
         </div>
       </header>
 
-      {summaries.length > 0 ? (
+      {hasRuns ? (
         <section className="space-y-4">
           <Form
             id="delete-runs-form"
