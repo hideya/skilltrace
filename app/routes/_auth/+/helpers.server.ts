@@ -33,14 +33,21 @@ export async function sendAuthEmail(
 }
 
 function logAuthLink(path: string) {
-  let origin = process.env.ORIGIN || 'http://localhost:7555'
+  let origin = defaultOrigin()
   let url = new URL(path, origin)
   console.log(`[auth-link] ${url.toString()}`)
 }
 
 function buildAuthUrl(link: string) {
-  let origin = process.env.ORIGIN || 'http://localhost:7555'
+  let origin = defaultOrigin()
   return new URL(link, origin).toString()
+}
+
+function defaultOrigin() {
+  return (
+    process.env.SKILLTRACE_SERVER ||
+    `http://localhost:${process.env.PORT || '7555'}`
+  )
 }
 
 function renderAuthEmail(subject: string, url: string) {

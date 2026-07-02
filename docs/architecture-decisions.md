@@ -137,9 +137,9 @@ Packaging complications found:
 - The package server initializes the local tables on startup, including the
   scaffolded `users` table, so friend installs do not need to run
   `pnpm db:init-local`.
-- A local-only fallback `COOKIE_SECRET` is set for packaged local mode because
-  the v0 local UI does not require login, but the scaffolded auth modules still
-  validate cookie configuration at import time.
+- A local-only fallback `COOKIE_SECRET` is set because the v0 local UI does not
+  require login, but the scaffolded auth modules still need cookie
+  configuration at import time.
 - The packaged server binds to `127.0.0.1` by default for local safety. Container
   or VM trials can use `HOST=0.0.0.0 skilltrace daemon start`; the server log and
   daemon output should show the actual bind host and detected IPv4 UI URLs.

@@ -1,7 +1,7 @@
 import { login } from '~/.server/auth/cookie'
 import { User } from '~/models/.server/user'
 import { getCallbackParams, handleOauthRedirect } from './+/callback'
-import { auth } from './+/google'
+import { googleAuth } from './+/google'
 
 export async function loader({ request }) {
   let params = await getCallbackParams(request, true)
@@ -10,6 +10,7 @@ export async function loader({ request }) {
   }
   let { code, oauth_verifier, redirect_to } = params
 
+  let auth = googleAuth(request)
   let tokens = await auth.validateAuthorizationCode(code, oauth_verifier!)
 
   let response = await fetch(

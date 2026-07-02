@@ -1,7 +1,7 @@
 import { login } from '~/.server/auth/cookie'
 import { User } from '~/models/.server/user'
 import { getCallbackParams, handleOauthRedirect } from './+/callback'
-import { auth } from './+/github'
+import { githubAuth } from './+/github'
 
 export async function loader({ request }) {
   let params = await getCallbackParams(request)
@@ -10,6 +10,7 @@ export async function loader({ request }) {
   }
   let { code, redirect_to } = params
 
+  let auth = githubAuth(request)
   let tokens = await auth.validateAuthorizationCode(code)
   let headers = {
     Authorization: `Bearer ${tokens.accessToken()}`,

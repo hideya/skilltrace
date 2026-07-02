@@ -1,7 +1,10 @@
 import { GitHub } from 'arctic'
 
-export const auth = new GitHub(
-  process.env.GITHUB_CLIENT_ID!,
-  process.env.GITHUB_CLIENT_SECRET!,
-  `${process.env.ORIGIN!}/oauth/github/callback`,
-)
+export function githubAuth(request: Request) {
+  let origin = new URL(request.url).origin
+  return new GitHub(
+    process.env.GITHUB_CLIENT_ID!,
+    process.env.GITHUB_CLIENT_SECRET!,
+    `${origin}/oauth/github/callback`,
+  )
+}

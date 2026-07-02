@@ -2,7 +2,7 @@ import { generateCodeVerifier, generateState } from 'arctic'
 import { redirect } from 'react-router'
 import { getUser, setCookie } from '~/.server/auth/cookie'
 import { getSearchParam } from '~/lib/.server/url'
-import { auth } from './+/google'
+import { googleAuth } from './+/google'
 
 export async function loader({ request }) {
   let user = await getUser(request)
@@ -10,6 +10,7 @@ export async function loader({ request }) {
 
   let state = generateState()
   let codeVerifier = generateCodeVerifier()
+  let auth = googleAuth(request)
   let url = auth.createAuthorizationURL(state, codeVerifier, [
     'openid',
     'profile',
