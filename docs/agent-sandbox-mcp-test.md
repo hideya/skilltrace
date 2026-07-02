@@ -647,6 +647,14 @@ the target repo has `.skilltrace.json` and `.skills`, and that
 `traceskill-dev status` or `traceskill status` and confirm the probe says
 `running`. If it is not running, inspect the printed probe log.
 
+For Claude Code trials, also check the selected instruction profile and copied
+fixture shape. If a repo has both `AGENTS.md`/`.skills/` and
+`CLAUDE.md`/`.claude/skills/`, auto-selection may choose `agents_md` while
+Claude reads its native `.claude/skills/` files. That can make the passive probe
+look like it missed `SKILL.md` even though it was watching the other copied
+surface. Use `--instruction-profile claude-code` for Claude-specific runs, or
+preserve symlinks when copying fixtures, such as with `cp -RP`.
+
 If the sandbox starts already fixed, run:
 
 ```bash

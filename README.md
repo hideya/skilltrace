@@ -202,13 +202,15 @@ Before tracing sensitive repositories, read
 
 ```bash
 git clone <this-repo>
-cp -r skill-trace/examples/type-fix-demo type-fix-demo
+cp -RP skill-trace/examples/type-fix-demo type-fix-demo
 cd type-fix-demo
+
+skilltrace daemon start
+open http://localhost:5777
 codex mcp add skilltrace -- skilltrace mcp
 # claude mcp add skilltrace --scope user -- skilltrace mcp
 # gemini mcp add skilltrace skilltrace mcp --scope user
-skilltrace daemon start
-open http://localhost:5777
+
 skilltrace start --note "demo type-fix run"
 codex "Fix the TypeScript error using the available skill"
 # claude "Fix the TypeScript error using the available skill"
@@ -332,6 +334,12 @@ If no passive events appear:
   running.
 - Confirm the target repo has the expected instruction surface, such as
   `AGENTS.md` with `.skills/` or `CLAUDE.md` with `.claude/skills/`.
+- For Claude Code, check the selected instruction profile in the run detail
+  page. If a repo has both `AGENTS.md`/`.skills/` and
+  `CLAUDE.md`/`.claude/skills/`, SkillTrace may default to `agents_md` while
+  Claude reads its native `.claude/skills/` files. Use
+  `--instruction-profile claude-code`, or preserve symlinks when copying a test
+  repo, such as with `cp -RP`.
 - If events still do not appear, restart the daemon and inspect the probe log
   printed by `skilltrace daemon status`.
 
