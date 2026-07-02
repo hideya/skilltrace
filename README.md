@@ -71,7 +71,7 @@ Platform notes:
 - Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
   access is not captured.
 
-SkillTrace currently supports command-line MCP workflows for Codex CLI, Claude
+SkillTrace currently supports command-line workflows for Codex CLI, Claude
 Code, and Gemini CLI. Codex App support is not yet available.
 
 ## Installation
@@ -103,7 +103,8 @@ The daemon output shows the detected UI URL.
 
 ## Register The MCP Server
 
-Register SkillTrace with your agent client.
+SkillTrace uses MCP tools to record skill usage. Before using SkillTrace,
+register the SkillTrace local MCP server with your agent client.
 
 For Codex CLI:
 
@@ -141,8 +142,8 @@ Check it:
 gemini mcp list
 ```
 
-The diagnostics page also checks whether Codex MCP registration matches the
-installed command. Claude Code and Gemini CLI diagnostics are still future work.
+The diagnostics page also checks whether Codex, Claude Code, and Gemini CLI MCP
+registrations match the installed command when those CLIs are available.
 
 ## Quick Start
 
@@ -161,7 +162,8 @@ traceskill start --note "trying to simplify AGENTS.md"
 
 `-n` is accepted as a short alias.
 
-Then run your agent task normally.
+Then run your agent task as normal using the 'codex', 'claude' or 'gemini'
+commands.
 
 When the task is finished:
 
@@ -242,7 +244,7 @@ Useful pages:
 - `/app/runs/<run-id>`: timeline, run context, Git snapshot if available,
   captured instruction contents, consistency table, and reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
-  and Codex MCP registration.
+  and MCP registration for supported command-line clients.
 
 The run detail page checks consistency among the captured probing results.
 
@@ -316,10 +318,10 @@ SkillTrace is currently pre-alpha.
 Known limitations include:
 
 - Codex CLI, Claude Code, and Gemini CLI are the first supported command-line
-  MCP workflows.
+  workflows.
 - Codex App support is not yet available.
-- Claude Code and Gemini CLI MCP registration diagnostics are not yet
-  implemented.
+- MCP registration diagnostics are read-only and depend on the corresponding
+  command-line clients being available on the server process path.
 - Passive file access probing is platform-dependent.
 - macOS passive probing may require admin privileges.
 - Linux passive probing depends on `inotifywait`.

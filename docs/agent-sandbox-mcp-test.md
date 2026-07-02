@@ -238,8 +238,8 @@ For package-style Claude Code trials, use:
 claude mcp add skilltrace --scope user -- traceskill mcp
 ```
 
-SkillTrace does not yet show Claude Code MCP registration in `/app/diagnostics`;
-use `claude mcp get skilltrace` for now.
+SkillTrace also shows a read-only Claude Code MCP registration check in
+`/app/diagnostics` when the `claude` CLI is available to the server process.
 
 For Gemini CLI checkout trials, register the same MCP server with Gemini:
 
@@ -255,8 +255,8 @@ gemini mcp add skilltrace traceskill mcp --scope user
 ```
 
 Gemini CLI uses the existing `agents_md` profile for repos with `AGENTS.md` and
-`.skills/`. SkillTrace does not yet show Gemini CLI MCP registration in
-`/app/diagnostics`; use `gemini mcp list` for now.
+`.skills/`. SkillTrace also shows a read-only Gemini CLI MCP registration check
+in `/app/diagnostics` when the `gemini` CLI is available to the server process.
 
 ## Run The Experiment
 
@@ -503,7 +503,6 @@ This test does not yet verify:
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Windows passive probing
-- Claude Code and Gemini CLI MCP registration diagnostics in the SkillTrace UI
 - production deployment behavior
 
 ## Trying A Real Repository
@@ -595,8 +594,8 @@ If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.
 - The MCP server command is `traceskill-dev mcp`.
-- `/app/diagnostics` shows the expected daemon mode and, for Codex trials,
-  Codex MCP registration.
+- `/app/diagnostics` shows the expected daemon mode and MCP registration for
+  command-line clients available to the server process.
 - You ran `traceskill-dev start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called the SkillTrace MCP tools.

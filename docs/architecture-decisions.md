@@ -193,13 +193,15 @@ It currently reports:
 - the server process rendering the page
 - shared probe PID and log path on macOS or when shared probe state exists
 - the one active trace session, if present
-- Codex MCP registration from `codex mcp get skilltrace`
+- MCP registration for supported command-line clients when their CLIs are
+  available: Codex, Claude Code, and Gemini CLI
 
 Decision:
 
 - diagnostics are observational, not managerial
 - the page may shell out to local read-only commands such as
-  `codex mcp get skilltrace`
+  `codex mcp get skilltrace`, `claude mcp get skilltrace`, and
+  `gemini mcp list`
 - it should not add, remove, start, stop, or mutate local configuration
 
 Reasons:
@@ -210,7 +212,7 @@ Reasons:
 - keeping diagnostics read-only avoids turning the local app into a process
   manager before the lifecycle model is stable
 
-The Codex MCP check compares the current server mode with the expected command:
+The MCP checks compare the current server mode with the expected command:
 
 - checkout/dev mode expects `traceskill-dev mcp`
 - package mode expects `traceskill mcp`

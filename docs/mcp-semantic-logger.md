@@ -197,8 +197,8 @@ Then confirm the server is registered:
 claude mcp get skilltrace
 ```
 
-SkillTrace does not yet show Claude Code MCP registration in
-`/app/diagnostics`; use the Claude CLI check for now.
+SkillTrace also shows a read-only Claude Code MCP registration check in
+`/app/diagnostics` when the `claude` CLI is available to the server process.
 
 ## Gemini CLI MCP Registration
 
@@ -223,8 +223,8 @@ gemini mcp list
 Gemini CLI uses the existing `agents_md` instruction profile when the target
 repo uses `AGENTS.md` and `.skills/`.
 
-SkillTrace does not yet show Gemini CLI MCP registration in
-`/app/diagnostics`; use the Gemini CLI check for now.
+SkillTrace also shows a read-only Gemini CLI MCP registration check in
+`/app/diagnostics` when the `gemini` CLI is available to the server process.
 
 When `traceskill-dev start` or `traceskill start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use

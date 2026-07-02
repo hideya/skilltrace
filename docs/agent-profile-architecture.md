@@ -271,8 +271,8 @@ Test Gemini CLI without introducing a new instruction profile.
 
 Status: first-pass manual testing succeeded. Gemini CLI can register the
 SkillTrace MCP server and use the existing `agents_md` profile in an
-AGENTS.md-shaped sandbox. The current gap is diagnostics: SkillTrace does not
-yet inspect `gemini mcp list`.
+AGENTS.md-shaped sandbox. SkillTrace diagnostics now inspect `gemini mcp list`
+when the `gemini` CLI is available to the server process.
 
 ### Phase 7: Cross-Agent Comparison
 

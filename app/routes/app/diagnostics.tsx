@@ -4,12 +4,14 @@ import os from 'os'
 import path from 'path'
 import { getTraceSession } from '~/models/.server/trace-session'
 
+const MCP_CHECK_TIMEOUT_MS = 8000
+
 export async function loader() {
   let state = readDaemonState()
   let server = process.env.SKILLTRACE_SERVER || defaultServerUrl()
   let session = getTraceSession() ?? null
   let mode = process.env.SKILLTRACE_DEV === '1' ? 'dev' : 'package'
-  let mcp = readCodexMcpStatus(mode)
+  let mcp = readMcpStatuses(mode)
 
   return {
     daemon: state,
@@ -31,7 +33,7 @@ export async function loader() {
         : 'missing',
       shared_probe: sharedProbeCheck(state),
       state_matches_server: stateMatchesServer(state, server),
-      mcp_registration: mcp.status,
+      mcp_registration: mcp.summary.status,
     },
   }
 }
@@ -77,9 +79,9 @@ export default function Page({ loaderData }: PageProps) {
           />
         ) : null}
         <Metric
-          label="Codex MCP"
-          tone={checks.mcp_registration === 'ok' ? 'success' : 'warning'}
-          value={checks.mcp_registration}
+          label="MCP"
+          tone={mcp.summary.tone}
+          value={mcp.summary.label}
         />
         <Metric
           label="Active Session"
@@ -159,26 +161,7 @@ export default function Page({ loaderData }: PageProps) {
           </Panel>
         ) : null}
 
-        <Panel
-          description="Read-only check of codex mcp get skilltrace."
-          title="Codex MCP"
-        >
-          <KeyValues
-            rows={[
-              ['Status', mcp.message],
-              ['Expected', `${mcp.expected_command} mcp`],
-              ['Codex installed', mcp.codex_installed ? 'yes' : 'no'],
-              ['Registered', mcp.registered ? 'yes' : 'no'],
-              ['Command', mcp.command ?? 'unknown'],
-              ['Args', mcp.args ?? 'unknown'],
-            ]}
-          />
-          {mcp.output ? (
-            <pre className="mt-4 max-h-48 overflow-auto rounded-box bg-base-200 p-3 text-xs whitespace-pre-wrap">
-              {mcp.output}
-            </pre>
-          ) : null}
-        </Panel>
+        <McpRegistrationPanel mcp={mcp} />
 
         <Panel
           description="One active run can be attached at a time."
@@ -242,6 +225,55 @@ function Panel({ title, description, children }: PanelProps) {
       {children}
     </section>
   )
+}
+
+function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
+  return (
+    <Panel
+      description="Read-only checks of local command-line MCP registration."
+      title="MCP Registration"
+    >
+      <div className="space-y-5">
+        {mcp.clients.map((client) => (
+          <section className="space-y-3" key={client.key}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold">{client.name}</h3>
+              <span className={`badge badge-sm ${mcpStatusBadge(client)}`}>
+                {client.status}
+              </span>
+            </div>
+            <KeyValues
+              rows={[
+                ['Status', client.message],
+                ['Check', client.check_command],
+                ['Expected', `${client.expected_command} mcp`],
+                ['CLI installed', client.cli_installed ? 'yes' : 'no'],
+                ['Registered', client.registered ? 'yes' : 'no'],
+                ['Command', client.command ?? 'unknown'],
+                ['Args', client.args ?? 'unknown'],
+              ]}
+            />
+            {client.output ? (
+              <details className="rounded-box border border-base-300">
+                <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">
+                  Output
+                </summary>
+                <pre className="max-h-48 overflow-auto border-t border-base-300 bg-base-200 p-3 text-xs whitespace-pre-wrap">
+                  {client.output}
+                </pre>
+              </details>
+            ) : null}
+          </section>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
+function mcpStatusBadge(client: McpClientStatus) {
+  if (client.status === 'ok') return 'badge-success'
+  if (client.status === 'missing') return 'badge-outline'
+  return 'badge-warning'
 }
 
 function KeyValues({ rows }: KeyValuesProps) {
@@ -380,66 +412,232 @@ function defaultServerUrl() {
   return `http://${displayHost}:${port}`
 }
 
+function readMcpStatuses(mode: string): McpStatusReport {
+  let clients = [
+    readCodexMcpStatus(mode),
+    readClaudeMcpStatus(mode),
+    readGeminiMcpStatus(mode),
+  ]
+
+  return {
+    clients,
+    summary: summarizeMcpStatuses(clients),
+  }
+}
+
+function summarizeMcpStatuses(clients: McpClientStatus[]) {
+  let installed = clients.filter((client) => client.cli_installed)
+  let ok = installed.filter((client) => client.status === 'ok')
+  let warnings = installed.filter((client) => client.status === 'warning')
+
+  if (warnings.length > 0) {
+    return {
+      status: 'warning',
+      label: `${ok.length}/${installed.length} ok`,
+      tone: 'warning',
+    } satisfies McpSummary
+  }
+
+  if (installed.length === 0) {
+    return {
+      status: 'missing',
+      label: 'no CLI found',
+      tone: 'neutral',
+    } satisfies McpSummary
+  }
+
+  return {
+    status: 'ok',
+    label: `${ok.length}/${installed.length} ok`,
+    tone: ok.length > 0 ? 'success' : 'neutral',
+  } satisfies McpSummary
+}
+
 function readCodexMcpStatus(mode: string) {
   let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
-  let result = spawnSync('codex', ['mcp', 'get', 'skilltrace'], {
-    encoding: 'utf8',
-    timeout: 3000,
-  })
-  let output = [result.stderr, result.stdout].filter(Boolean).join('\n').trim()
+  let result = runMcpCheck('codex', ['mcp', 'get', 'skilltrace'])
+  let base = mcpStatusBase('codex', 'Codex', expectedCommand, result)
 
   if (result.error) {
     return {
-      status: 'warning',
+      ...base,
+      status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
       message: result.error.message,
-      codex_installed: result.error.message.includes('ENOENT') ? false : true,
-      registered: false,
-      expected_command: expectedCommand,
-      command: null,
-      args: null,
-      output,
-    } satisfies CodexMcpStatus
+      cli_installed: result.error.message.includes('ENOENT') ? false : true,
+    } satisfies McpClientStatus
   }
 
   if (result.status !== 0) {
     return {
+      ...base,
       status: 'warning',
       message: 'skilltrace MCP server is not registered',
-      codex_installed: true,
-      registered: false,
-      expected_command: expectedCommand,
-      command: null,
-      args: null,
-      output,
-    } satisfies CodexMcpStatus
+      cli_installed: true,
+    } satisfies McpClientStatus
   }
 
-  let command = parseCodexMcpValue(output, 'command')
-  let args = parseCodexMcpValue(output, 'args')
+  let command = parseMcpValue(result.output, 'command')
+  let args = parseMcpValue(result.output, 'args')
   let matches = command === expectedCommand && args === 'mcp'
 
   return {
+    ...base,
     status: matches ? 'ok' : 'warning',
     message: matches
       ? 'skilltrace MCP registration matches this mode'
       : 'skilltrace MCP registration does not match this mode',
-    codex_installed: true,
+    cli_installed: true,
     registered: true,
-    expected_command: expectedCommand,
     command,
     args,
-    output,
-  } satisfies CodexMcpStatus
+  } satisfies McpClientStatus
 }
 
-function parseCodexMcpValue(output: string, key: string) {
-  let prefix = `${key}:`
+function readClaudeMcpStatus(mode: string) {
+  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let result = runMcpCheck('claude', ['mcp', 'get', 'skilltrace'])
+  let base = mcpStatusBase('claude', 'Claude Code', expectedCommand, result)
+
+  if (result.error) {
+    return {
+      ...base,
+      status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
+      message: result.error.message,
+      cli_installed: result.error.message.includes('ENOENT') ? false : true,
+    } satisfies McpClientStatus
+  }
+
+  if (result.status !== 0) {
+    return {
+      ...base,
+      status: 'warning',
+      message: 'skilltrace MCP server is not registered',
+      cli_installed: true,
+    } satisfies McpClientStatus
+  }
+
+  let command = parseMcpValue(result.output, 'command')
+  let args = parseMcpValue(result.output, 'args')
+  let matches = command === expectedCommand && args === 'mcp'
+
+  return {
+    ...base,
+    status: matches ? 'ok' : 'warning',
+    message: matches
+      ? 'skilltrace MCP registration matches this mode'
+      : 'skilltrace MCP registration does not match this mode',
+    cli_installed: true,
+    registered: true,
+    command,
+    args,
+  } satisfies McpClientStatus
+}
+
+function readGeminiMcpStatus(mode: string) {
+  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let result = runMcpCheck('gemini', ['mcp', 'list'])
+  let base = mcpStatusBase('gemini', 'Gemini CLI', expectedCommand, result)
+
+  if (result.error) {
+    return {
+      ...base,
+      status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
+      message: result.error.message,
+      cli_installed: result.error.message.includes('ENOENT') ? false : true,
+    } satisfies McpClientStatus
+  }
+
+  if (result.status !== 0) {
+    return {
+      ...base,
+      status: 'warning',
+      message: 'could not read Gemini MCP registration',
+      cli_installed: true,
+    } satisfies McpClientStatus
+  }
+
+  let registered = /\bskilltrace\b/i.test(result.output)
+  if (!registered) {
+    return {
+      ...base,
+      status: 'warning',
+      message: 'skilltrace MCP server is not registered',
+      cli_installed: true,
+    } satisfies McpClientStatus
+  }
+
+  let command = parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
+  let args = parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
+  let matches =
+    (command === expectedCommand || result.output.includes(expectedCommand)) &&
+    (args === 'mcp' || /\bmcp\b/.test(result.output))
+
+  return {
+    ...base,
+    status: matches ? 'ok' : 'warning',
+    message: matches
+      ? 'skilltrace MCP registration appears to match this mode'
+      : 'skilltrace MCP registration could not be confirmed for this mode',
+    cli_installed: true,
+    registered: true,
+    command,
+    args,
+  } satisfies McpClientStatus
+}
+
+function runMcpCheck(command: string, args: string[]) {
+  let result = spawnSync(command, args, {
+    encoding: 'utf8',
+    timeout: MCP_CHECK_TIMEOUT_MS,
+  })
+  let output = [result.stderr, result.stdout].filter(Boolean).join('\n').trim()
+
+  return {
+    ...result,
+    output,
+    check_command: [command, ...args].join(' '),
+  }
+}
+
+function mcpStatusBase(
+  key: string,
+  name: string,
+  expectedCommand: string,
+  result: McpCheckResult,
+) {
+  return {
+    key,
+    name,
+    status: 'warning',
+    message: 'not checked',
+    cli_installed: false,
+    registered: false,
+    expected_command: expectedCommand,
+    command: null,
+    args: null,
+    output: result.output,
+    check_command: result.check_command,
+  } satisfies McpClientStatus
+}
+
+function parseMcpValue(output: string, key: string) {
+  let prefix = `${key}:`.toLowerCase()
   let line = output
     .split('\n')
     .map((item) => item.trim())
-    .find((item) => item.startsWith(prefix))
+    .find((item) => item.toLowerCase().startsWith(prefix))
 
   return line?.slice(prefix.length).trim() || null
+}
+
+function parseGeminiCommand(output: string) {
+  if (/\btraceskill-dev\b/.test(output)) return 'traceskill-dev'
+  if (/\btraceskill\b/.test(output)) return 'traceskill'
+  return null
+}
+
+function parseGeminiArgs(output: string) {
+  return /\bmcp\b/.test(output) ? 'mcp' : null
 }
 
 function formatDate(value?: string) {
@@ -452,7 +650,7 @@ type PageProps = {
     daemon: DaemonState | null
     server: string
     session: TraceSession | null
-    mcp: CodexMcpStatus
+    mcp: McpStatusReport
     process: ProcessInfo
     checks: Checks
   }
@@ -468,6 +666,10 @@ type PanelProps = {
   title: string
   description: string
   children: any
+}
+
+type McpRegistrationPanelProps = {
+  mcp: McpStatusReport
 }
 
 type KeyValuesProps = {
@@ -525,13 +727,34 @@ type MetricCheck = {
   tone: 'neutral' | 'success' | 'warning'
 }
 
-type CodexMcpStatus = {
-  status: 'ok' | 'warning'
+type McpStatusReport = {
+  clients: McpClientStatus[]
+  summary: McpSummary
+}
+
+type McpSummary = {
+  status: 'ok' | 'warning' | 'missing'
+  label: string
+  tone: 'neutral' | 'success' | 'warning'
+}
+
+type McpClientStatus = {
+  key: string
+  name: string
+  status: 'ok' | 'warning' | 'missing'
   message: string
-  codex_installed: boolean
+  cli_installed: boolean
   registered: boolean
   expected_command: string
   command: string | null
   args: string | null
   output: string
+  check_command: string
+}
+
+type McpCheckResult = {
+  error?: Error
+  status: number | null
+  output: string
+  check_command: string
 }
