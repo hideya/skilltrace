@@ -16,6 +16,8 @@
     'Poppins', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
   --font-serif: 'Playfair Display', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
   --animate-app-fade-in: app-fade-in 500ms ease-out both;
+  --text-2\.5xl: 1.6875rem --line-height: 2.125rem;
+  --text-1\.5xl: 1.375rem --line-height: 1.875rem;
 }
 
 @keyframes app-fade-in {

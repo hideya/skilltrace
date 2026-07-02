@@ -60,7 +60,7 @@ export default function Page({ loaderData: { user, notes } }) {
       <header className="space-y-3">
         <p className="badge rounded-full badge-outline">Protected</p>
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold text-balance">
+          <h1 className="text-3xl font-bold text-balance">
             Hello, {user.name || user.email}
           </h1>
           <p className="text-base-content/70">
@@ -71,7 +71,7 @@ export default function Page({ loaderData: { user, notes } }) {
 
       <section className="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold">New note</h2>
+          <h2 className="text-1.5xl font-bold">New note</h2>
           <p className="text-sm text-base-content/60">
             Capture a quick thought, task, or draft.
           </p>
@@ -111,7 +111,7 @@ export default function Page({ loaderData: { user, notes } }) {
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold">Your notes</h2>
+            <h2 className="text-1.5xl font-bold">Your notes</h2>
             <p className="text-sm text-base-content/60">
               {notes.length} note{notes.length === 1 ? '' : 's'}
             </p>

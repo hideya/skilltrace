@@ -22,7 +22,7 @@ export default function Page({ loaderData }: PageProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <p className="badge badge-outline badge-neutral">Admin index</p>
-          <h2 className="text-3xl font-bold">Users</h2>
+          <h2 className="text-1.5xl font-bold">Users</h2>
           <p className="text-base-content/70">
             {totalUsers} user{totalUsers === 1 ? '' : 's'} total
           </p>

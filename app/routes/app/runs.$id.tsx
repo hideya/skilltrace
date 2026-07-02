@@ -36,10 +36,10 @@ export default function Page({ loaderData }: PageProps) {
   useAutoRefresh(run.status === 'active')
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pt-10 pb-40">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 pt-10 pb-40">
       <header className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0 space-y-2">
+          <div className="mb-2 min-w-0 space-y-2">
             <div className="flex flex-row items-center gap-2">
               <BackButton />
               <div className="badge rounded-full badge-outline">
@@ -47,16 +47,16 @@ export default function Page({ loaderData }: PageProps) {
               </div>
             </div>
 
-            <h1 className="text-4xl font-bold text-balance break-words">
+            <h1 className="text-3xl font-bold tracking-wider text-balance break-words">
               {title}
             </h1>
             {run.description ? (
-              <p className="text-base-content/70">{run.description}</p>
+              <p className="font-mono text-base-content/70">
+                {run.description}
+              </p>
             ) : null}
             {note ? (
-              <p className="rounded-box bg-info/10 px-3 py-2 font-medium text-info">
-                {note}
-              </p>
+              <p className="font-medium tracking-wider text-info">{note}</p>
             ) : null}
           </div>
         </div>
@@ -145,7 +145,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
     <section className="flex min-h-0 flex-1 flex-col rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Run reflection</h2>
+          <h2 className="text-1.5xl font-bold">Run reflection</h2>
           <p className="text-sm text-base-content/60">
             Declared post-run diagnostic summary
           </p>
@@ -290,7 +290,7 @@ function RunContextPanel({ context }: RunContextPanelProps) {
     ['Client', context?.client],
     ['Working directory', context?.cwd],
     ['Task', context?.task_summary],
-    ['Notes', context?.notes],
+    ['Agent notes', context?.notes],
   ].filter(([_, value]) => value)
   let extra = extraContext(context)
 
@@ -298,7 +298,7 @@ function RunContextPanel({ context }: RunContextPanelProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Run context</h2>
+          <h2 className="text-1.5xl font-bold">Run context</h2>
           <p className="text-sm text-base-content/60">
             Declared execution metadata
           </p>
@@ -461,7 +461,7 @@ function CompactDetailsPanel({
     <details className="rounded-box border border-base-300 bg-base-100 shadow-sm">
       <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4">
         <div className="min-w-0">
-          <h2 className="text-xl font-bold">{title}</h2>
+          <h2 className="text-1.5xl font-bold">{title}</h2>
           <p className="truncate text-sm text-base-content/60">{summary}</p>
         </div>
         <span className="badge badge-outline">details</span>
@@ -769,7 +769,7 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Consistency</h2>
+          <h2 className="text-1.5xl font-bold">Consistency</h2>
           <p className="text-sm text-base-content/60">
             {rows.length} file{rows.length === 1 ? '' : 's'} · {description}
           </p>
@@ -845,7 +845,7 @@ function PanelHeader({ description, title }: PanelHeaderProps) {
   return (
     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-1.5xl font-bold">{title}</h2>
         <p className="text-sm text-base-content/60">{description}</p>
       </div>
     </div>
@@ -981,7 +981,7 @@ function Metric({ label, value }: MetricProps) {
       <p className="text-left text-xs tracking-[0.2em] text-base-content/50 uppercase">
         {label}
       </p>
-      <p className="mt-2 truncate text-right text-2xl font-bold">{value}</p>
+      <p className="mt-2 truncate text-right text-1.5xl font-bold">{value}</p>
     </div>
   )
 }
@@ -991,7 +991,7 @@ function Timeline({ events }: TimelineProps) {
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-5">
         <div>
-          <h2 className="text-2xl font-bold">Timeline</h2>
+          <h2 className="text-1.5xl font-bold">Timeline</h2>
           <p className="text-sm text-base-content/60">
             {events.length} event
             {events.length === 1 ? '' : 's'}
@@ -1149,8 +1149,8 @@ function eventDotClass(event: any) {
 }
 
 function eventDotSizeClass(event: any) {
-  if (isSemanticEvent(event)) return 'top-4.5 left-1 size-4'
-  if (isPassiveEvent(event)) return 'top-5 left-1.5 size-3'
+  if (isSemanticEvent(event)) return 'top-4.5 left-1.25 size-3.5'
+  if (isPassiveEvent(event)) return 'top-4.75 left-1.5 size-3'
   return 'top-5.5 left-2 size-2'
 }
 

@@ -39,7 +39,7 @@ export default function Page({ loaderData }: PageProps) {
               </div>
             </div>
 
-            <h1 className="text-4xl font-bold text-balance break-words">
+            <h1 className="text-3xl font-bold text-balance break-words">
               {comparison.group_label}
             </h1>
             {comparison.target_root ? (
@@ -71,7 +71,7 @@ export default function Page({ loaderData }: PageProps) {
           <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Cross-mode files</h2>
+                <h2 className="text-1.5xl font-bold">Cross-mode files</h2>
                 <p className="text-sm text-base-content/60">
                   Selected successful runs, compared by normalized skill and
                   reference files.
@@ -147,7 +147,7 @@ function ComparisonTable({ comparison }: ComparisonTableProps) {
 function InvalidSelection({ reasons }: InvalidSelectionProps) {
   return (
     <section className="rounded-box border border-warning/40 bg-warning/10 p-6">
-      <h2 className="text-2xl font-bold">Selection not applicable</h2>
+      <h2 className="text-1.5xl font-bold">Selection not applicable</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
         {reasons.length > 0 ? (
           reasons.map((reason) => <li key={reason}>{reason}</li>)
@@ -155,7 +155,7 @@ function InvalidSelection({ reasons }: InvalidSelectionProps) {
           <li>Select at least two successful runs with different modes.</li>
         )}
       </ul>
-      <Link className="btn mt-5 btn-sm btn-outline" to="/app/runs">
+      <Link className="btn mt-5 btn-outline btn-sm" to="/app/runs">
         Back to runs
       </Link>
     </section>
@@ -167,7 +167,7 @@ function RunCard({ item }: RunCardProps) {
 
   return (
     <Link
-      className="rounded-box block border border-base-300 bg-base-100 p-4 shadow-sm transition-colors hover:bg-base-200/70 focus:outline-none focus:ring-2 focus:ring-primary"
+      className="block rounded-box border border-base-300 bg-base-100 p-4 shadow-sm transition-colors hover:bg-base-200/70 focus:ring-2 focus:ring-primary focus:outline-none"
       reloadDocument
       to={`/app/runs/${run.public_id}`}
     >

@@ -21,7 +21,7 @@ export function AuthForm({
   return (
     <div className="space-y-4">
       {heading && (
-        <h2 className="text-center text-2xl leading-9 font-light tracking-tight">
+        <h2 className="text-center text-1.5xl leading-9 font-light tracking-tight">
           {heading}
         </h2>
       )}
@@ -144,7 +144,7 @@ export function AuthForm({
 
 export function Heading({ children }) {
   return (
-    <h2 className="text-center text-2xl leading-9 font-bold tracking-tight">
+    <h2 className="text-center text-1.5xl leading-9 font-bold tracking-tight">
       {children}
     </h2>
   )

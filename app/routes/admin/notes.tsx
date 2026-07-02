@@ -2,10 +2,10 @@ import { useRef } from 'react'
 import { Form } from 'react-router'
 import { replaceWithSuccess } from 'remix-toast'
 import { requireAdmin } from '~/.server/auth/middlewares'
-import { DataTable } from '~/ui/data-table'
 import { notFoundError } from '~/lib/.server/errors'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { Note } from '~/models/.server/note'
+import { DataTable } from '~/ui/data-table'
 
 export async function loader() {
   let notes = await Note.newest({
@@ -43,15 +43,15 @@ export default function Page({ loaderData }: PageProps) {
     <section className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <p className="badge badge-neutral badge-outline">Admin index</p>
-          <h2 className="text-3xl font-bold">All Notes</h2>
+          <p className="badge badge-outline badge-neutral">Admin index</p>
+          <h2 className="text-1.5xl font-bold">All Notes</h2>
           <p className="text-base-content/70">
             {totalNotes} note{totalNotes === 1 ? '' : 's'} total
           </p>
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-base-content/50">
+          <p className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
             Total notes
           </p>
           <p className="text-3xl font-bold">{totalNotes}</p>
@@ -90,7 +90,7 @@ function DeleteNoteCell({ noteId }: DeleteNoteCellProps) {
   return (
     <>
       <button
-        className="btn btn-ghost btn-xs text-error"
+        className="btn text-error btn-ghost btn-xs"
         type="button"
         onClick={() => dialogRef.current?.showModal()}
       >

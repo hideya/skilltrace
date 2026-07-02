@@ -45,7 +45,7 @@ export default function Page({ loaderData }: PageProps) {
       <header className="space-y-3">
         <p className="badge rounded-full badge-outline">Diagnostics</p>
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold text-balance">Daemon Status</h1>
+          <h1 className="text-3xl font-bold text-balance">Daemon Status</h1>
           <p className="text-base-content/70">
             Read-only view of the local SkillTrace runtime.
           </p>
@@ -236,7 +236,7 @@ function Panel({ title, description, children }: PanelProps) {
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <div className="mb-4 space-y-1">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-1.5xl font-bold">{title}</h2>
         <p className="text-sm text-base-content/60">{description}</p>
       </div>
       {children}

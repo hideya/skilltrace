@@ -84,12 +84,12 @@ export default function Page({ loaderData }: PageProps) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pt-10 pb-40">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 pt-10 pb-40">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-3">
           <p className="badge rounded-full badge-outline">{appName}</p>
           <div className="space-y-1">
-            <h1 className="text-4xl font-bold text-balance">Runs</h1>
+            <h1 className="text-3xl font-bold text-balance">Runs</h1>
             <p className="text-base-content/70">
               {summaries.length} observed run
               {summaries.length === 1 ? '' : 's'} in {groups.length} group
@@ -190,7 +190,7 @@ function RunGroup({
       }}
       open={isOpen}
     >
-      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-200 px-4 py-3">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-100 px-4 py-3">
         <div className="min-w-0">
           <h2 className="font-semibold break-words">{group.label}</h2>
           <p className="text-xs text-base-content/60">
@@ -241,7 +241,7 @@ function RunGroup({
       <div className="overflow-x-auto">
         <table className="table">
           <thead>
-            <tr>
+            <tr className="bg-base-200">
               {isEditing ? <th>Select</th> : null}
               {isComparing ? <th className="text-center">Compare</th> : null}
               <th>Run</th>
@@ -334,14 +334,14 @@ function RunRow({
         </td>
       ) : null}
       <td className="max-w-64">
-        <span className="inline-block max-w-64 font-medium">
+        <span className="inline-block w-54 font-medium">
           <RunLabel label={label} />
         </span>
-        {run.description ? (
+        {/* {run.description ? (
           <div className="mt-1 max-w-md truncate text-xs text-base-content/60">
             {run.description}
           </div>
-        ) : null}
+        ) : null} */}
       </td>
       <td className="text-center">
         <ModeBadge mode={summary.trace_mode} />
@@ -359,7 +359,7 @@ function RunRow({
         <ClientCell context={summary.context} />
       </td>
       <td className="text-right">{summary.event_count}</td>
-      <td className="max-w-52">
+      <td className="w-52">
         <RunNote note={run.bag?.note} />
       </td>
     </tr>
@@ -509,7 +509,10 @@ function RunLabel({ label }: RunLabelProps) {
   return (
     <span className="flex flex-col gap-2 text-xs leading-tight">
       <span>{parts.stem}</span>
-      <span className="font-mono text-sm font-bold">{parts.timestamp}</span>
+      <span className="font-mono">
+        <span className="pr-1 text-xs">{parts.date}-</span>
+        <span className="text-sm font-bold">{parts.time}</span>
+      </span>
     </span>
   )
 }
@@ -521,7 +524,7 @@ function RunNote({ note }: RunNoteProps) {
 
   return (
     <span
-      className="line-clamp-2 text-xs leading-snug text-base-content/70"
+      className="line-clamp-2 text-xs leading-snug tracking-wider text-base-content"
       title={note}
     >
       {note}
@@ -539,12 +542,13 @@ function resultLabel(result: ResultState, mode?: string) {
 }
 
 function splitRunLabel(label: string) {
-  let match = label.match(/^(.*-)(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})$/)
+  let match = label.match(/^(.*-)(\d{4}-\d{2}-\d{2})-(\d{2}-\d{2}-\d{2})$/)
   if (!match) return null
 
   return {
     stem: match[1],
-    timestamp: match[2],
+    date: match[2],
+    time: match[3],
   }
 }
 
