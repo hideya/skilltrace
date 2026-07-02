@@ -145,13 +145,30 @@ alias codex='/Applications/Codex.app/Contents/Resources/codex'
 
 To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
 
-For Codex, register the SkillTrace MCP server with:
+For checkout/dev mode, the easiest registration path is:
+
+```bash
+skilltrace-dev mcp install
+skilltrace-dev mcp status
+```
+
+This detects Codex CLI, Claude Code, and Gemini CLI when they are available on
+PATH and registers `skilltrace-dev mcp` for each supported client.
+
+For package-style trials, use:
+
+```bash
+skilltrace mcp install
+skilltrace mcp status
+```
+
+The equivalent manual Codex registration is:
 
 ```bash
 codex mcp add skilltrace -- skilltrace-dev mcp
 ```
 
-For package-style trials, register the packaged command instead:
+For package-style trials, register the packaged command manually with:
 
 ```bash
 codex mcp add skilltrace -- skilltrace mcp
@@ -179,17 +196,22 @@ terminal alone.
 
 ## Claude Code MCP Registration
 
-For Claude Code, register the checkout command with:
+For Claude Code, register the checkout command manually with:
 
 ```bash
+claude mcp remove skilltrace -s user
 claude mcp add skilltrace --scope user -- skilltrace-dev mcp
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
+claude mcp remove skilltrace -s user
 claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
+
+SkillTrace removes the existing Claude Code registration before adding it,
+because Claude Code does not overwrite an existing `skilltrace` MCP server.
 
 Then confirm the server is registered:
 
@@ -202,7 +224,7 @@ SkillTrace also shows a read-only Claude Code MCP registration check in
 
 ## Gemini CLI MCP Registration
 
-For Gemini CLI, register the checkout command with:
+For Gemini CLI, register the checkout command manually with:
 
 ```bash
 gemini mcp add skilltrace skilltrace-dev mcp --scope user
@@ -234,7 +256,7 @@ below.
 To remove the SkillTrace MCP server later:
 
 ```bash
-codex mcp remove skilltrace
+skilltrace-dev mcp uninstall
 ```
 
 When `SKILLTRACE_RUN_STEM` is set, the MCP server generates one run ID at startup:

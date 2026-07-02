@@ -148,6 +148,29 @@ and agent-declared summaries.
 SkillTrace uses MCP tools to record skill usage. Before using SkillTrace,
 register the SkillTrace local MCP server with your agent client.
 
+The easiest path is to let SkillTrace register itself for every supported agent
+CLI it can find on your PATH:
+
+```bash
+skilltrace mcp install
+```
+
+Check the registration:
+
+```bash
+skilltrace mcp status
+```
+
+You can target one client if needed:
+
+```bash
+skilltrace mcp install --agent codex
+skilltrace mcp install --agent claude
+skilltrace mcp install --agent gemini
+```
+
+Under the hood, this runs the appropriate agent-specific commands.
+
 For Codex CLI:
 
 ```bash
@@ -166,8 +189,12 @@ codex mcp get skilltrace
 For Claude Code:
 
 ```bash
+claude mcp remove skilltrace -s user
 claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
+
+SkillTrace removes the existing Claude Code registration before adding it,
+because Claude Code does not overwrite an existing `skilltrace` MCP server.
 
 Check it:
 
@@ -244,9 +271,8 @@ npm install
 
 # If the daemon is not already running:
 skilltrace daemon start
-codex mcp add skilltrace -- skilltrace mcp
-# claude mcp add skilltrace --scope user -- skilltrace mcp
-# gemini mcp add skilltrace skilltrace mcp --scope user
+skilltrace mcp install
+skilltrace mcp status
 
 skilltrace start --note "demo type-fix run"
 codex "Fix the TypeScript error using the available skill"
@@ -479,8 +505,8 @@ If no passive events appear:
 If no semantic events or run reflection appear:
 
 - Confirm the MCP server is registered to the same command you are testing.
-  For example, `codex mcp get skilltrace`, `claude mcp get skilltrace`, or
-  `gemini mcp list`.
+  Run `skilltrace mcp status`, or use `skilltrace mcp install` to register
+  all supported agent clients found on PATH.
 - Restart the agent after changing MCP registration.
 - Confirm the run mode is `full` or `passive_reflection`; `passive_only`
   intentionally records no semantic declarations or reflection.
@@ -543,22 +569,10 @@ Stop the daemon:
 skilltrace daemon stop
 ```
 
-Unregister MCP from Codex:
+Unregister SkillTrace MCP from supported agent clients:
 
 ```bash
-codex mcp remove skilltrace
-```
-
-Or from Claude Code:
-
-```bash
-claude mcp remove skilltrace -s user
-```
-
-Or from Gemini CLI:
-
-```bash
-gemini mcp remove skilltrace --scope user
+skilltrace mcp uninstall
 ```
 
 Uninstall the package:

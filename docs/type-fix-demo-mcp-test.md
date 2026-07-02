@@ -200,7 +200,25 @@ tmp/type-fix-demo/src/profile.ts
 
 ## Register SkillTrace MCP
 
-Register the local SkillTrace MCP server with Codex. This registration is generic and does not name the target repo:
+Register the local SkillTrace MCP server. This registration is generic and does
+not name the target repo.
+
+For checkout trials, the helper command registers SkillTrace with every
+supported agent CLI it can find:
+
+```bash
+skilltrace-dev mcp install
+skilltrace-dev mcp status
+```
+
+For package-style trials, use:
+
+```bash
+skilltrace mcp install
+skilltrace mcp status
+```
+
+The equivalent manual Codex command is:
 
 ```bash
 codex mcp add skilltrace -- skilltrace-dev mcp
@@ -239,6 +257,7 @@ the page compares the registered Codex command against the current UI mode.
 For Claude Code checkout trials, register the same MCP server with Claude:
 
 ```bash
+claude mcp remove skilltrace -s user
 claude mcp add skilltrace --scope user -- skilltrace-dev mcp
 claude mcp get skilltrace
 ```
@@ -246,6 +265,7 @@ claude mcp get skilltrace
 For package-style Claude Code trials, use:
 
 ```bash
+claude mcp remove skilltrace -s user
 claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
 
@@ -590,7 +610,7 @@ Then refresh the run detail page. The consistency panel can compare the passive 
 Remove the MCP server registration when you are done:
 
 ```bash
-codex mcp remove skilltrace
+skilltrace-dev mcp uninstall
 ```
 
 Reset the sandbox before the next experiment:
