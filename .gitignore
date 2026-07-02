@@ -6,7 +6,6 @@ node_modules/
 *.tgz
 data/local/*
 !data/.gitkeep
-agent-sandbox-repo/
 
 # React Router
 .react-router/

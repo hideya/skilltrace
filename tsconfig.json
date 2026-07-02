@@ -5,37 +5,19 @@
     "**/.client/**/*",
     ".react-router/types/**/*"
   ],
-  "exclude": [
-    "agent-sandbox-repo",
-    "agent-sandbox-repo-template"
-  ],
+  "exclude": ["agent-sandbox-repo-template", "tmp"],
   "compilerOptions": {
-    "types": [
-      "vite/client"
-    ],
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ESNext"
-    ],
+    "types": ["vite/client"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "rootDirs": [
-      ".",
-      "./.react-router/types"
-    ],
+    "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "drizzle-orm": [
-        "./node_modules/drizzle-orm"
-      ],
-      "drizzle-orm/*": [
-        "./node_modules/drizzle-orm/*"
-      ],
-      "~/*": [
-        "./app/*"
-      ]
+      "drizzle-orm": ["./node_modules/drizzle-orm"],
+      "drizzle-orm/*": ["./node_modules/drizzle-orm/*"],
+      "~/*": ["./app/*"]
     },
     "strict": true,
     "noImplicitAny": false,
