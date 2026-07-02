@@ -478,6 +478,10 @@ function InstructionSurfacesPanel({
     ? report.alias_groups
     : []
   let warnings = Array.isArray(profile?.warnings) ? profile.warnings : []
+  let infoWarnings = warnings.filter(isInstructionProfileDefaultWarning)
+  let warningWarnings = warnings.filter(
+    (warning) => !isInstructionProfileDefaultWarning(warning),
+  )
 
   return (
     <CompactDetailsPanel
@@ -500,10 +504,20 @@ function InstructionSurfacesPanel({
             </div>
           ) : null}
 
-          {warnings.length > 0 ? (
+          {infoWarnings.length > 0 ? (
+            <div className="alert text-sm alert-info">
+              <ul className="list-disc pl-5">
+                {infoWarnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {warningWarnings.length > 0 ? (
             <div className="alert text-sm alert-warning">
               <ul className="list-disc pl-5">
-                {warnings.map((warning, index) => (
+                {warningWarnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
                 ))}
               </ul>
@@ -578,6 +592,10 @@ function InstructionSurfacesPanel({
       )}
     </CompactDetailsPanel>
   )
+}
+
+function isInstructionProfileDefaultWarning(warning: string) {
+  return warning.startsWith('Multiple instruction profiles were detected')
 }
 
 function SurfaceStat({ label, value }: SurfaceStatProps) {
