@@ -192,7 +192,7 @@ function RunGroup({
     >
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-100 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="font-semibold break-words">{group.label}</h2>
+          <h2 className="section-title break-words">{group.label}</h2>
           <p className="text-xs text-base-content/60">
             {group.summaries.length} run
             {group.summaries.length === 1 ? '' : 's'} · {group.targetRoot}
