@@ -1,10 +1,10 @@
 # Type Fix Skill
 
-This is a SkillTrace sandbox skill fixture. It is not an installed Codex skill.
+This is a SkillTrace demo skill fixture. It is not an installed Codex skill.
 
 ## Applicability
 
-Use this skill when the user asks to fix TypeScript, syntax, or source errors in this sandbox repository.
+Use this skill when the user asks to fix TypeScript, syntax, or source errors in this demo repository.
 
 ## SkillTrace Metadata
 
@@ -23,16 +23,16 @@ Use this metadata with the tracing policy in `.skilltrace/instrumentation.md`.
 
 ## Procedure
 
-1. Run `pnpm tsc`.
+1. Run `npm run tsc`.
 2. Read the diagnostics carefully.
 3. Check `.skills/type-fix/references/checklist.md`.
 4. Fix the smallest number of source lines needed.
-5. Run `pnpm tsc` again.
+5. Run `npm run tsc` again.
 6. Report the files changed and final verification result.
 
 ## Constraints
 
-- Do not modify files outside this sandbox repository.
+- Do not modify files outside this repository.
 - Do not rewrite working code unnecessarily.
 - Prefer direct fixes over abstractions.
 - Keep output concise.

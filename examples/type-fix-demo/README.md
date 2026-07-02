@@ -15,12 +15,13 @@ Copy this directory with symlinks preserved before each trial:
 ```bash
 cp -RP skill-trace/examples/type-fix-demo type-fix-demo
 cd type-fix-demo
-pnpm install
+npm install
 ```
 
 Then start SkillTrace and run an agent task:
 
 ```bash
+# If the daemon is not already running:
 skilltrace daemon start
 skilltrace start --note "demo type-fix run"
 codex "Fix the TypeScript error using the available skill"

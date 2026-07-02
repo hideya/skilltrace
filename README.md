@@ -67,8 +67,7 @@ occasional missing traces.
 
 - Node.js 22+
 - npm
-- Codex CLI, Claude Code, or Gemini CLI for MCP registration in the current
-  workflow
+- Codex CLI, Claude Code, or Gemini CLI
 - macOS or Linux
   - macOS only: admin password may be required
   - Linux only: `inotify-tools` installation may be required
@@ -162,7 +161,10 @@ available.
 
 ## Quick Start
 
-From the target repo you want to trace:
+From the target repo you want to trace.
+
+SkillTrace expects the repo to have an agent instruction surface, such as
+`AGENTS.md` with `.skills/`, or `CLAUDE.md` with `.claude/skills/`.
 
 ```bash
 cd <repo>
@@ -204,10 +206,10 @@ Before tracing sensitive repositories, read
 git clone https://github.com/hideya/skill-trace.git
 cp -RP skill-trace/examples/type-fix-demo type-fix-demo
 cd type-fix-demo
-pnpm install
+npm install
 
+# If the daemon is not already running:
 skilltrace daemon start
-open http://localhost:7555
 codex mcp add skilltrace -- skilltrace mcp
 # claude mcp add skilltrace --scope user -- skilltrace mcp
 # gemini mcp add skilltrace skilltrace mcp --scope user
@@ -217,6 +219,18 @@ codex "Fix the TypeScript error using the available skill"
 # claude "Fix the TypeScript error using the available skill"
 # gemini "Fix the TypeScript error using the available skill"
 skilltrace stop
+```
+
+Open `http://localhost:7555` in your browser.
+
+To retry the toy demo from a clean copy:
+
+```bash
+cd ..
+rm -rf type-fix-demo
+cp -RP skill-trace/examples/type-fix-demo type-fix-demo
+cd type-fix-demo
+npm install
 ```
 
 ### Target Repo Requirements
@@ -285,6 +299,12 @@ Useful pages:
   captured instruction contents, consistency table, and reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and MCP registration for supported command-line clients.
+
+Run IDs use the form `<repo-name>-<path-token>-<timestamp>`, such as
+`type-fix-demo-3KGUxK-2026-07-02-18-31-15`. The short path token is derived
+from the absolute target directory path, so repeated runs from the same copied
+repo group together, while repos with the same folder name in different
+locations remain distinguishable.
 
 The run detail page checks consistency among the captured probing results.
 
