@@ -335,7 +335,7 @@ async function daemonStart(args: string[]) {
     if (startup.health?.ok) {
       console.log(`  warning: ${server} is responding from pid ${startup.health.pid ?? 'unknown'}, not ${child.pid}`)
     }
-    console.log('  check: traceskill daemon logs')
+    console.log('  check: skilltrace daemon logs')
   }
 }
 
@@ -433,7 +433,7 @@ function assertTraceTarget(
   console.error(`  profile: ${profile}`)
   console.error(`  expected: ${instructionProfileExpectation(profile)}`)
   console.error('')
-  console.error('Run traceskill start from the target repo, or pass --target <repo>.')
+  console.error('Run skilltrace start from the target repo, or pass --target <repo>.')
   process.exit(1)
 }
 
@@ -662,7 +662,7 @@ function parseArgs(args: string[]) {
 async function confirmDiscard(session: any) {
   if (!process.stdin.isTTY) {
     console.error('Refusing to discard without confirmation in a non-interactive terminal.')
-    console.error('Run `traceskill stop --discard --yes` to discard without prompting.')
+    console.error('Run `skilltrace stop --discard --yes` to discard without prompting.')
     return false
   }
 
@@ -708,7 +708,7 @@ async function postSessionEvent(
 }
 
 function commandName() {
-  return DEV_MODE ? 'traceskill-dev' : 'traceskill'
+  return DEV_MODE ? 'skilltrace-dev' : 'skilltrace'
 }
 
 async function getDaemonStatus(server: string) {
@@ -842,7 +842,7 @@ function printActiveSessionRefusal(server: string, session: any) {
   console.error(`  instruction injection: ${instructionInjectionStatus(session.target_root)}`)
   console.error(`  ui: ${new URL(`/app/runs/${session.run_id}`, server)}`)
   console.error('')
-  console.error('Run `traceskill stop` before starting another session.')
+  console.error('Run `skilltrace stop` before starting another session.')
 }
 
 function printDaemonStatus(status: any) {
@@ -880,7 +880,7 @@ function printBindChangeHint(state: DaemonState, bindHost: string, port: string)
   console.log(
     `SkillTrace daemon is already running with bind ${state.bind_host ?? 'unknown'}:${state.bind_port ?? '?'}.`,
   )
-  console.log('Run `traceskill daemon stop` before changing HOST or PORT.')
+  console.log('Run `skilltrace daemon stop` before changing HOST or PORT.')
 }
 
 function printSharedProbeChangeHint(state: DaemonState, requested: boolean) {
@@ -889,7 +889,7 @@ function printSharedProbeChangeHint(state: DaemonState, requested: boolean) {
   let current = state.shared_probe_requested ? 'with' : 'without'
   let next = requested ? 'with' : 'without'
   console.log(`SkillTrace daemon is already running ${current} a shared probe.`)
-  console.log(`Run \`traceskill daemon stop\` before restarting ${next} a shared probe.`)
+  console.log(`Run \`skilltrace daemon stop\` before restarting ${next} a shared probe.`)
 }
 
 function printSharedProbeDaemonState(state: DaemonState) {
@@ -1212,7 +1212,7 @@ function printInstrumentationWarning(instrumentation: any, injectRequested?: boo
   console.warn('Warning: SkillTrace instrumentation is not configured.')
   console.warn('Semantic MCP events are unlikely.')
   console.warn(
-    'Run `traceskill start --mode full` to let SkillTrace configure temporary tracing instructions.',
+    'Run `skilltrace start --mode full` to let SkillTrace configure temporary tracing instructions.',
   )
   for (let warning of instrumentation.warnings ?? []) {
     console.warn(`  warning: ${warning}`)
@@ -1469,10 +1469,10 @@ function removeDaemonState() {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: traceskill <serve|start|status|end|stop|mcp>')
-  console.error('       traceskill start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
-  console.error('       traceskill stop [--discard] [--yes]')
-  console.error('       traceskill daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
+  console.error('Usage: skilltrace <serve|start|status|end|stop|mcp>')
+  console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
+  console.error('       skilltrace stop [--discard] [--yes]')
+  console.error('       skilltrace daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }
 

@@ -33,19 +33,23 @@ Reasons:
 
 SkillTrace has two command surfaces:
 
-- `traceskill` is the npm-package command for users and friend trials.
-- `traceskill-dev` is the checkout-local command for dogfooding this repository.
+- `skilltrace` is the npm-package command for users and friend trials.
+- `traceskill` remains a package alias for existing docs, scripts, and muscle
+  memory.
+- `skilltrace-dev` is the checkout-local command for dogfooding this repository.
+- `traceskill-dev` remains a checkout-local alias.
 
 Reasons:
 
-- `npm install -g skilltrace` should eventually expose the simple command name.
+- `npm install -g skilltrace` should expose the command that matches the package
+  and project name.
 - checkout dogfooding should not shadow or mutate a globally installed package
   command
 - separate default ports let package and checkout environments coexist
 - package/default uses `http://localhost:7555`
 - checkout/dev uses `http://localhost:5777`
 - MCP registration is less ambiguous when development trials explicitly use
-  `traceskill-dev mcp`
+  `skilltrace-dev mcp`
 
 Before publishing, the package can be tested with:
 
@@ -74,8 +78,9 @@ while build artifacts and old tarballs can be regenerated. Both publish scripts
 rely on `prepack`, so the React Router build and package CLI entrypoints are
 rebuilt before npm packs the tarball.
 
-The package uses `package.json` `bin` to expose `traceskill`. `prepack` runs the
-full production build so the tarball includes:
+The package uses `package.json` `bin` to expose both `skilltrace` and the
+existing `traceskill` alias. `prepack` runs the full production build so the
+tarball includes:
 
 - `build/client` and `build/server` from React Router
 - `dist/traceskill.js` for the CLI
@@ -83,13 +88,14 @@ full production build so the tarball includes:
 - `dist/traceskill-probe-worker.js` for passive probing
 - `dist/traceskill-serve.js` for the local production server shim
 
-The installed `traceskill` command runs built JavaScript from `dist`. It does
+The installed package commands run built JavaScript from `dist`. They do
 not depend on `tsx` at runtime.
 
 The checkout installer remains intentionally small. `pnpm traceskill:install`
-writes `~/.skilltrace/bin/traceskill-dev`, points it back to the current
-checkout, launches the CLI through Node's `--import tsx/dist/loader.mjs`, and
-sets default development environment variables:
+writes `~/.skilltrace/bin/skilltrace-dev` and `~/.skilltrace/bin/traceskill-dev`,
+points them back to the current checkout, launches the CLI through Node's
+`--import tsx/dist/loader.mjs`, and sets default development environment
+variables:
 
 ```text
 SKILLTRACE_SERVER=http://localhost:5777
@@ -103,7 +109,7 @@ It also removes old generated checkout wrappers named `traceskill` from
 Packaging complications found:
 
 - Runtime commands cannot shell out to `pnpm --dir <checkout>` after npm
-  install, so `traceskill` launches package-local built scripts directly.
+  install, so the package commands launch package-local built scripts directly.
 - The generated development wrapper still uses Node with
   `--import tsx/dist/loader.mjs` instead of the `tsx` CLI. In restricted
   environments, the `tsx` CLI may try to open an IPC socket and fail before our
@@ -138,7 +144,7 @@ Packaging complications found:
   the v0 local UI does not require login, but the scaffolded auth modules still
   validate cookie configuration at import time.
 - The packaged server binds to `127.0.0.1` by default for local safety. Container
-  or VM trials can use `HOST=0.0.0.0 traceskill daemon start`; the server log and
+  or VM trials can use `HOST=0.0.0.0 skilltrace daemon start`; the server log and
   daemon output should show the actual bind host and detected IPv4 UI URLs.
 - When a daemon is already running, changing `HOST` or `PORT` on a second
   `daemon start` command should not silently change the process. The CLI reports
@@ -212,10 +218,11 @@ Reasons:
 - keeping diagnostics read-only avoids turning the local app into a process
   manager before the lifecycle model is stable
 
-The MCP checks compare the current server mode with the expected command:
+The MCP checks compare the current server mode with the expected command or
+alias:
 
-- checkout/dev mode expects `traceskill-dev mcp`
-- package mode expects `traceskill mcp`
+- checkout/dev mode expects `skilltrace-dev mcp` or `traceskill-dev mcp`
+- package mode expects `skilltrace mcp` or `traceskill mcp`
 
 ## One Active Session
 
@@ -226,14 +233,14 @@ Reasons:
 - avoids stale probe processes
 - simplifies MCP run ID resolution
 - matches the current assumption that one repo is being debugged at a time
-- makes `traceskill start` and `traceskill stop` easy to understand
+- makes `skilltrace start` and `skilltrace stop` easy to understand
 
 Starting a new session should refuse while another session is active. This
 avoids low-value accidental runs and keeps instruction injection cleanup easy to
-reason about. The user should run `traceskill stop` before starting another
+reason about. The user should run `skilltrace stop` before starting another
 session.
 
-If the active session was started by mistake, `traceskill stop --discard`
+If the active session was started by mistake, `skilltrace stop --discard`
 provides the same cleanup path as normal stop, then deletes that active run's
 record and events after CLI confirmation. Discard is intentionally scoped to the
 current active session; deleting older finished runs remains a UI operation.
@@ -255,7 +262,7 @@ targets a different repository.
 
 The local web server does not start the passive probe directly.
 
-Instead, `traceskill start`:
+Instead, `skilltrace start`:
 
 1. asks the daemon to create an active session
 2. prepares the platform probe in the user's terminal
@@ -271,19 +278,19 @@ Router dev server process. On Linux, the `inotifywait` probe does not need sudo.
 macOS daemon mode starts a daemon-owned shared probe by default:
 
 ```bash
-traceskill daemon start
+skilltrace daemon start
 ```
 
 This is experimental and macOS-only. It starts the server and a daemon-owned
 `fs_usage` worker at daemon startup, so the user may be prompted for their
-macOS admin password once before trace sessions begin. Later `traceskill start`
+macOS admin password once before trace sessions begin. Later `skilltrace start`
 calls keep the single-active-session model and attach the active run to the
 shared worker without another password prompt during the daemon lifetime.
 
 For macOS troubleshooting, the user can opt out:
 
 ```bash
-traceskill daemon start --no-shared-probe
+skilltrace daemon start --no-shared-probe
 ```
 
 Reasons:
@@ -441,20 +448,20 @@ The current pattern is:
 3. declare passive skill roots in `.skilltrace.json`
 4. keep task-specific skill metadata in the relevant `SKILL.md`
 
-For lower-friction real-repo trials, `traceskill start` applies the reusable
+For lower-friction real-repo trials, `skilltrace start` applies the reusable
 SkillTrace pieces automatically for the current trace session. It writes
 `.skilltrace/instrumentation.md`, creates a minimal `.skilltrace.json` with
 `skill_roots: ['.skills']` when needed, and prepends the single `AGENTS.md`
 instruction. The mutation is manifest-backed in `.skilltrace/injection.json`,
-and `traceskill stop` removes only the exact inserted instruction block and only
+and `skilltrace stop` removes only the exact inserted instruction block and only
 removes generated files when SkillTrace created them and they are unchanged.
 
 The start command supports explicit trace modes:
 
 ```bash
-traceskill start --mode full
-traceskill start --mode passive_reflection
-traceskill start --mode passive_only
+skilltrace start --mode full
+skilltrace start --mode passive_reflection
+skilltrace start --mode passive_only
 ```
 
 `full` is the default and writes the complete instrumentation template.

@@ -20,7 +20,7 @@ VS Code saw the sandbox skill instructions but did not expose the custom
 SkillTrace MCP tools to the agent session, even though `/mcp` showed the
 `skilltrace` server as enabled.
 
-The current recommended checkout flow uses `traceskill-dev start`. It asks the
+The current recommended checkout flow uses `skilltrace-dev start`. It asks the
 local SkillTrace server to create an active session, then launches a passive
 probe worker for the current repo before the agent starts reading the target
 repo. The probe uses `fs_usage` on macOS and `inotifywait` on Linux. The MCP
@@ -32,8 +32,8 @@ and semantic declarations share the same run ID.
 - Main SkillTrace app: this repository.
 - Sandbox template: `agent-sandbox-repo-template`.
 - Generated sandbox repo: `agent-sandbox-repo`.
-- Local checkout CLI: `traceskill-dev`.
-- Local checkout MCP server command: `traceskill-dev mcp`.
+- Local checkout CLI: `skilltrace-dev`.
+- Local checkout MCP server command: `skilltrace-dev mcp`.
 - Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
 - MCP tools exposed to the agent: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
@@ -42,14 +42,15 @@ and semantic declarations share the same run ID.
 
 ## Prerequisites
 
-From the main SkillTrace repo, install the local `traceskill-dev` wrapper once:
+From the main SkillTrace repo, install the local `skilltrace-dev` wrapper once:
 
 ```bash
 pnpm traceskill:install
 ```
 
-The installer writes `~/.skilltrace/bin/traceskill-dev`. If your shell cannot
-find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
+The installer writes `~/.skilltrace/bin/skilltrace-dev` and the older
+`traceskill-dev` alias. If your shell cannot find `skilltrace-dev`, add
+`~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -64,36 +65,36 @@ fi
 Start the local SkillTrace server in another terminal:
 
 ```bash
-traceskill-dev serve
+skilltrace-dev serve
 ```
 
 For experimental background operation, use:
 
 ```bash
-traceskill-dev daemon start
-traceskill-dev daemon status
-traceskill-dev daemon logs
-traceskill-dev daemon stop
+skilltrace-dev daemon start
+skilltrace-dev daemon status
+skilltrace-dev daemon logs
+skilltrace-dev daemon stop
 ```
 
 On macOS, daemon mode owns a shared `fs_usage` probe by default:
 
 ```bash
-traceskill-dev daemon start
+skilltrace-dev daemon start
 ```
 
 This is experimental. It may prompt for your macOS admin password once at
 daemon startup, shows `shared probe` in `daemon status`, and lets later
-`traceskill-dev start` sessions attach to the shared worker without asking for
+`skilltrace-dev start` sessions attach to the shared worker without asking for
 the password again during the daemon lifetime. If the shared worker is
-unavailable, `traceskill-dev start` records a warning and falls back to the
+unavailable, `skilltrace-dev start` records a warning and falls back to the
 normal per-run probe. Linux keeps the normal per-run `inotifywait` path because
 it does not need sudo.
 
 For macOS troubleshooting, disable the shared probe with:
 
 ```bash
-traceskill-dev daemon start --no-shared-probe
+skilltrace-dev daemon start --no-shared-probe
 ```
 
 Do not run dev and packaged macOS shared-probe daemons at the same time. The
@@ -196,13 +197,13 @@ agent-sandbox-repo/src/profile.ts
 Register the local SkillTrace MCP server with Codex. This registration is generic and does not name the target repo:
 
 ```bash
-codex mcp add skilltrace -- traceskill-dev mcp
+codex mcp add skilltrace -- skilltrace-dev mcp
 ```
 
 For package-style trials, use:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- skilltrace mcp
 ```
 
 Then confirm it is registered:
@@ -215,7 +216,8 @@ The command should show:
 
 - `enabled: true`
 - `transport: stdio`
-- `command: traceskill-dev` for checkout trials, or `command: traceskill` for package trials
+- `command: skilltrace-dev` or `command: traceskill-dev` for checkout trials
+- `command: skilltrace` or `command: traceskill` for package trials
 - `args: mcp`
 
 The run ID is not configured in the MCP registration. The MCP server resolves
@@ -228,14 +230,14 @@ the page compares the registered Codex command against the current UI mode.
 For Claude Code checkout trials, register the same MCP server with Claude:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill-dev mcp
+claude mcp add skilltrace --scope user -- skilltrace-dev mcp
 claude mcp get skilltrace
 ```
 
 For package-style Claude Code trials, use:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
 
 SkillTrace also shows a read-only Claude Code MCP registration check in
@@ -244,14 +246,14 @@ SkillTrace also shows a read-only Claude Code MCP registration check in
 For Gemini CLI checkout trials, register the same MCP server with Gemini:
 
 ```bash
-gemini mcp add skilltrace traceskill-dev mcp --scope user
+gemini mcp add skilltrace skilltrace-dev mcp --scope user
 gemini mcp list
 ```
 
 For package-style Gemini CLI trials, use:
 
 ```bash
-gemini mcp add skilltrace traceskill mcp --scope user
+gemini mcp add skilltrace skilltrace mcp --scope user
 ```
 
 Gemini CLI uses the existing `agents_md` profile for repos with `AGENTS.md` and
@@ -614,9 +616,10 @@ codex mcp get skilltrace
 claude mcp get skilltrace
 ```
 
-For dev trials, the command should usually be `traceskill-dev mcp`. For package
-trials, it should usually be `traceskill mcp`. Restart the agent after changing
-MCP registration, and confirm the run mode is not `passive_only`.
+For dev trials, the command should usually be `skilltrace-dev mcp`. For package
+trials, it should usually be `skilltrace mcp`. The older `traceskill-dev` and
+`traceskill` aliases are still accepted. Restart the agent after changing MCP
+registration, and confirm the run mode is not `passive_only`.
 
 If the MCP server fails to start, run:
 

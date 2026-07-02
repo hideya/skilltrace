@@ -97,7 +97,7 @@ export default function Page({ loaderData }: PageProps) {
 
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Panel
-          description="State written by traceskill daemon start."
+          description="State written by skilltrace daemon start."
           title="Daemon"
         >
           {daemon ? (
@@ -477,9 +477,9 @@ function summarizeMcpStatuses(clients: McpClientStatus[]) {
 }
 
 async function readCodexMcpStatus(mode: string) {
-  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let expectedCommands = expectedMcpCommands(mode)
   let result = await runMcpCheck('codex', ['mcp', 'get', 'skilltrace'])
-  let base = mcpStatusBase('codex', 'Codex', expectedCommand, result)
+  let base = mcpStatusBase('codex', 'Codex', expectedCommands, result)
 
   if (result.error) {
     if (result.timed_out) {
@@ -510,7 +510,7 @@ async function readCodexMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
-  let matches = command === expectedCommand && args === 'mcp'
+  let matches = command ? expectedCommands.includes(command) && args === 'mcp' : false
 
   return {
     ...base,
@@ -526,9 +526,9 @@ async function readCodexMcpStatus(mode: string) {
 }
 
 async function readClaudeMcpStatus(mode: string) {
-  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let expectedCommands = expectedMcpCommands(mode)
   let result = await runMcpCheck('claude', ['mcp', 'get', 'skilltrace'])
-  let base = mcpStatusBase('claude', 'Claude Code', expectedCommand, result)
+  let base = mcpStatusBase('claude', 'Claude Code', expectedCommands, result)
 
   if (result.error) {
     if (result.timed_out) {
@@ -559,7 +559,7 @@ async function readClaudeMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
-  let matches = command === expectedCommand && args === 'mcp'
+  let matches = command ? expectedCommands.includes(command) && args === 'mcp' : false
 
   return {
     ...base,
@@ -575,9 +575,9 @@ async function readClaudeMcpStatus(mode: string) {
 }
 
 async function readGeminiMcpStatus(mode: string) {
-  let expectedCommand = mode === 'dev' ? 'traceskill-dev' : 'traceskill'
+  let expectedCommands = expectedMcpCommands(mode)
   let result = await runMcpCheck('gemini', ['mcp', 'list'])
-  let base = mcpStatusBase('gemini', 'Gemini CLI', expectedCommand, result)
+  let base = mcpStatusBase('gemini', 'Gemini CLI', expectedCommands, result)
 
   if (result.error) {
     if (result.timed_out) {
@@ -619,7 +619,8 @@ async function readGeminiMcpStatus(mode: string) {
   let command = parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
   let args = parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
   let matches =
-    (command === expectedCommand || result.output.includes(expectedCommand)) &&
+    ((command ? expectedCommands.includes(command) : false) ||
+      expectedCommands.some((item) => result.output.includes(item))) &&
     (args === 'mcp' || /\bmcp\b/.test(result.output))
 
   return {
@@ -692,10 +693,16 @@ function mcpCheckOutput(stderr: string, stdout: string) {
   return [stderr, stdout].filter(Boolean).join('\n').trim()
 }
 
+function expectedMcpCommands(mode: string) {
+  return mode === 'dev'
+    ? ['skilltrace-dev', 'traceskill-dev']
+    : ['skilltrace', 'traceskill']
+}
+
 function mcpStatusBase(
   key: string,
   name: string,
-  expectedCommand: string,
+  expectedCommands: string[],
   result: McpCheckResult,
 ) {
   return {
@@ -705,7 +712,7 @@ function mcpStatusBase(
     message: 'not checked',
     cli_installed: false,
     registered: false,
-    expected_command: expectedCommand,
+    expected_command: expectedCommands.join(' or '),
     command: null,
     args: null,
     output: result.output,

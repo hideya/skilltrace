@@ -97,11 +97,11 @@ debugging utility:
 
 ```bash
 npm install -g ./skilltrace-0.0.0.tgz
-traceskill daemon start
+skilltrace daemon start
 cd <repo>
-traceskill start
+skilltrace start
 codex
-traceskill stop
+skilltrace stop
 ```
 
 For local package trials before publishing to npm, build a tarball from this
@@ -117,10 +117,11 @@ The `./` is important. Without `./`, npm may interpret
 GitHub-style package spec instead of a local tarball path.
 
 The package build emits React Router production assets under `build/` and
-package-facing Node entrypoints under `dist/`. The installed `traceskill`
-command runs built JavaScript, not TypeScript through `tsx`; `tsx` is kept only
-for checkout development commands such as `pnpm traceskill` and
-`traceskill-dev`.
+package-facing Node entrypoints under `dist/`. The installed `skilltrace`
+command runs built JavaScript, not TypeScript through `tsx`; `traceskill` is
+kept as an alias. `tsx` is kept only
+for checkout development commands such as `pnpm skilltrace` and
+`skilltrace-dev`; the old `pnpm traceskill` script remains available.
 
 After reinstalling or restarting packaged SkillTrace, refresh any already-open
 UI tabs if navigation feels stale. A direct URL such as `/app/runs/<run-id>` can
@@ -151,20 +152,20 @@ uploading it. When the dry run looks right and you are logged in with
 pnpm publish:do
 ```
 
-By default, `traceskill start` enables the plug-and-play tracing overlay:
+By default, `skilltrace start` enables the plug-and-play tracing overlay:
 
 ```bash
-traceskill start
+skilltrace start
 ```
 
 This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template,
 creates `.skilltrace.json` with a default `.skills` passive probe root when
 needed, prepends a single tracing instruction to `AGENTS.md`, and records a
-manifest at `.skilltrace/injection.json`. `traceskill stop` removes only the
+manifest at `.skilltrace/injection.json`. `skilltrace stop` removes only the
 exact inserted instruction and only removes generated files if SkillTrace
 created them and they were not changed.
 
-`traceskill start` expects to run from a target repo that contains `AGENTS.md`
+`skilltrace start` expects to run from a target repo that contains `AGENTS.md`
 and `.skills/`. If either is missing, it refuses before creating a run so an
 accidental parent-directory command does not create misleading trace records.
 
@@ -175,9 +176,9 @@ and records them in the run timeline.
 SkillTrace supports three run modes:
 
 ```bash
-traceskill start --mode full
-traceskill start --mode passive_reflection
-traceskill start --mode passive_only
+skilltrace start --mode full
+skilltrace start --mode passive_reflection
+skilltrace start --mode passive_only
 ```
 
 `full` is the default and asks for passive, live semantic, and reflection
@@ -187,16 +188,16 @@ injection and uses only passive file observations. `--no-inject-instructions`
 remains available as an alias for passive-only troubleshooting.
 
 Only one trace session can be active at a time. If a session is already active,
-`traceskill start` refuses and asks you to run `traceskill stop` first.
+`skilltrace start` refuses and asks you to run `skilltrace stop` first.
 
-`traceskill serve` runs the local server in the foreground. For early daemon
+`skilltrace serve` runs the local server in the foreground. For early daemon
 dogfooding, there is also an explicit experimental background mode:
 
 ```bash
-traceskill daemon start
-traceskill daemon status
-traceskill daemon logs
-traceskill daemon stop
+skilltrace daemon start
+skilltrace daemon status
+skilltrace daemon logs
+skilltrace daemon stop
 ```
 
 Daemon state is written to `~/.skilltrace/daemon.json`, and server logs are
@@ -205,14 +206,14 @@ written to `~/.skilltrace/logs/daemon.log`.
 On macOS, daemon mode starts an experimental shared passive probe by default:
 
 ```bash
-traceskill daemon start
+skilltrace daemon start
 ```
 
 This may prompt for your macOS admin password once at daemon startup so
 SkillTrace can start a daemon-owned `fs_usage` worker. Later
-`traceskill start` sessions attach to that shared probe and should not ask for
+`skilltrace start` sessions attach to that shared probe and should not ask for
 the password again during the daemon lifetime. If the shared probe is
-unavailable or has crashed, `traceskill start` records a visible warning and
+unavailable or has crashed, `skilltrace start` records a visible warning and
 falls back to the normal per-run probe. Linux keeps the current per-run
 `inotifywait` probe because it is scoped, lightweight, and does not need sudo.
 
@@ -220,7 +221,7 @@ For macOS troubleshooting, disable the shared probe and return to the per-run
 probe path with:
 
 ```bash
-traceskill daemon start --no-shared-probe
+skilltrace daemon start --no-shared-probe
 ```
 
 macOS allows only one active `fs_usage`/ktrace-style probe at a time in this
@@ -234,7 +235,7 @@ The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
 
 ```bash
-HOST=0.0.0.0 traceskill daemon start
+HOST=0.0.0.0 skilltrace daemon start
 ```
 
 The daemon output and log will show the bind address and any detected IPv4 UI
@@ -254,17 +255,18 @@ apk add inotify-tools
 With `HOST=0.0.0.0`, the daemon prints a host-reachable UI URL when it can
 detect one, such as `http://192.168.64.2:7555`.
 
-When installed as an npm package, `traceskill` is available from npm's global
-bin location. From this checkout, `pnpm traceskill:install` is still available
-as a development helper; it creates a local `traceskill-dev` wrapper in
-`~/.skilltrace/bin`. The development wrapper defaults to
+When installed as an npm package, `skilltrace` is available from npm's global
+bin location, with `traceskill` kept as an alias. From this checkout,
+`pnpm traceskill:install` is still available as a development helper; it
+creates local `skilltrace-dev` and `traceskill-dev` wrappers in
+`~/.skilltrace/bin`. The development wrappers default to
 `http://localhost:5777` so it can coexist with the package command on
 `http://localhost:7555`. The dev server uses a strict port, so it fails fast
 instead of silently moving to another port when `5777` is already occupied. The
 wrapper preserves the repo directory you run it from, so the trace target is
 normally just the current working directory.
 
-If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
+If your shell cannot find `skilltrace-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then

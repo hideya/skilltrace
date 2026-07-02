@@ -47,9 +47,7 @@ export default function Page({ loaderData }: PageProps) {
               </div>
             </div>
 
-            <h1 className="page-title tracking-wider break-words">
-              {title}
-            </h1>
+            <h1 className="page-title tracking-wider break-words">{title}</h1>
             {run.description ? (
               <p className="font-mono text-base-content/70">
                 {run.description}

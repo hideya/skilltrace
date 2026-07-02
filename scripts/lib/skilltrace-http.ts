@@ -41,7 +41,7 @@ export function serverUnavailableMessage(
   url: URL,
   options: SkillTraceHttpOptions = {},
 ) {
-  let command = options.commandName ?? 'traceskill'
+  let command = options.commandName ?? 'skilltrace'
 
   return [
     `SkillTrace server is not reachable at ${url.origin}.`,

@@ -55,6 +55,14 @@ SkillTrace is a small but concrete first step in that direction. It is not just
 a skill execution tracer; it is an attempt to make skill usage observable enough
 that failures can eventually become reusable procedural knowledge.
 
+## Status
+
+SkillTrace is currently pre-alpha developer tooling.
+
+It is intended for people experimenting with AI agent skills, MCP workflows,
+and skill observability. Expect rough edges, platform-specific behavior, and
+occasional missing traces.
+
 ## Requirements
 
 - Node.js 22+
@@ -83,7 +91,7 @@ npm install -g skilltrace
 Start the local daemon:
 
 ```bash
-traceskill daemon start
+skilltrace daemon start
 ```
 
 Open the UI:
@@ -96,10 +104,16 @@ For a Linux container or VM where you want to open the UI from the host
 machine, start the daemon like this to bind to all interfaces:
 
 ```bash
-HOST=0.0.0.0 traceskill daemon start
+HOST=0.0.0.0 skilltrace daemon start
 ```
 
 The daemon output shows the detected UI URL.
+
+Only bind to `0.0.0.0` in a trusted local network or isolated development
+environment. The UI may expose captured traces, repository metadata, diffs,
+and agent-declared summaries.
+
+The older `traceskill` command remains available as an alias.
 
 ## Register The MCP Server
 
@@ -109,7 +123,7 @@ register the SkillTrace local MCP server with your agent client.
 For Codex CLI:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- skilltrace mcp
 ```
 
 Check it:
@@ -121,7 +135,7 @@ codex mcp get skilltrace
 For Claude Code:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
 
 Check it:
@@ -133,7 +147,7 @@ claude mcp get skilltrace
 For Gemini CLI:
 
 ```bash
-gemini mcp add skilltrace traceskill mcp --scope user
+gemini mcp add skilltrace skilltrace mcp --scope user
 ```
 
 Check it:
@@ -152,13 +166,13 @@ From the target repo you want to trace:
 
 ```bash
 cd <repo>
-traceskill start
+skilltrace start
 ```
 
 Add a short note when you want the run list to show what you were trying:
 
 ```bash
-traceskill start --note "trying to simplify AGENTS.md"
+skilltrace start --note "trying to simplify AGENTS.md"
 ```
 
 `-n` is accepted as a short alias.
@@ -169,21 +183,42 @@ command.
 When the task is finished:
 
 ```bash
-traceskill stop
+skilltrace stop
 ```
 
 If you realize immediately that the active run was a mistake, discard it:
 
 ```bash
-traceskill stop --discard
+skilltrace stop --discard
 ```
 
 This cleans up temporary instruction injection and deletes the active run
 record after confirmation. Use `--yes` to skip the prompt.
 
+Before tracing sensitive repositories, read
+[Privacy And Data](#privacy-and-data).
+
+## Try It On A Toy Skill
+
+```bash
+git clone <this-repo>
+cp -r skill-trace/examples/type-fix-demo type-fix-demo
+cd type-fix-demo
+codex mcp add skilltrace -- skilltrace mcp
+# claude mcp add skilltrace --scope user -- skilltrace mcp
+# gemini mcp add skilltrace skilltrace mcp --scope user
+skilltrace daemon start
+open http://localhost:5777
+skilltrace start --note "demo type-fix run"
+codex "Fix the TypeScript error using the available skill"
+# claude "Fix the TypeScript error using the available skill"
+# gemini "Fix the TypeScript error using the available skill"
+skilltrace stop
+```
+
 ### Target Repo Requirements
 
-By default, `traceskill start` auto-detects one of these supported instruction
+By default, `skilltrace start` auto-detects one of these supported instruction
 profiles:
 
 - `agents_md`: `AGENTS.md` and `.skills/`
@@ -195,18 +230,18 @@ surface or when you want to be explicit.
 
 SkillTrace injects a temporary tracing-policy instruction into the selected
 instruction file, writes `.skilltrace/instrumentation.md`, and creates
-`.skilltrace.json` when needed. `traceskill stop` removes the temporary
+`.skilltrace.json` when needed. `skilltrace stop` removes the temporary
 instruction and generated files when they are unchanged.
 
 Only one trace session can be active at a time. If a session is active,
-`traceskill start` refuses until you run `traceskill stop`.
+`skilltrace start` refuses until you run `skilltrace stop`.
 
 ## Trace Modes
 
 For your first run, just type:
 
 ```bash
-traceskill start
+skilltrace start
 ```
 
 This enables all available probing methods.
@@ -221,9 +256,9 @@ modes to see whether the agent keeps working as expected.
 SkillTrace supports three modes:
 
 ```bash
-traceskill start --mode full
-traceskill start --mode passive_reflection
-traceskill start --mode passive_only
+skilltrace start --mode full
+skilltrace start --mode passive_reflection
+skilltrace start --mode passive_only
 ```
 
 - `full`: passive file access, live semantic MCP declarations, and final
@@ -258,7 +293,7 @@ there is no second evidence stream to compare.
 
 ## Git Provenance
 
-When the target repo is inside a Git worktree, `traceskill start` records a
+When the target repo is inside a Git worktree, `skilltrace start` records a
 lightweight run snapshot:
 
 - HEAD commit and branch
@@ -278,10 +313,10 @@ its captured provenance.
 
 ## Troubleshooting
 
-If `traceskill start` cannot connect to the server, start the daemon first:
+If `skilltrace start` cannot connect to the server, start the daemon first:
 
 ```bash
-traceskill daemon start
+skilltrace daemon start
 ```
 
 Then open `/app/diagnostics` and confirm the daemon, server, and active session
@@ -289,8 +324,8 @@ state before launching the agent.
 
 If no passive events appear:
 
-- Make sure `traceskill start` was run before launching the agent.
-- On macOS, check `/app/diagnostics` or `traceskill daemon status` and confirm
+- Make sure `skilltrace start` was run before launching the agent.
+- On macOS, check `/app/diagnostics` or `skilltrace daemon status` and confirm
   the shared probe is running. Starting the daemon may ask for your admin
   password once because the macOS passive probe uses `fs_usage`.
 - On Linux, install `inotify-tools` and confirm the run status says the probe is
@@ -298,7 +333,7 @@ If no passive events appear:
 - Confirm the target repo has the expected instruction surface, such as
   `AGENTS.md` with `.skills/` or `CLAUDE.md` with `.claude/skills/`.
 - If events still do not appear, restart the daemon and inspect the probe log
-  printed by `traceskill daemon status`.
+  printed by `skilltrace daemon status`.
 
 If no semantic events or run reflection appear:
 
@@ -364,7 +399,7 @@ Local SkillTrace data is stored under `~/.skilltrace`.
 Stop the daemon:
 
 ```bash
-traceskill daemon stop
+skilltrace daemon stop
 ```
 
 Unregister MCP from Codex:

@@ -35,9 +35,9 @@ For the current best local prototype, prefer the local server flow:
 
 ```bash
 pnpm traceskill:install
-traceskill-dev serve
+skilltrace-dev serve
 cd <repo>
-traceskill-dev start
+skilltrace-dev start
 ```
 
 For package-style trials, create and install a local tarball instead:
@@ -45,7 +45,7 @@ For package-style trials, create and install a local tarball instead:
 ```bash
 npm pack
 npm install -g ./skilltrace-0.0.0.tgz
-traceskill daemon start
+skilltrace daemon start
 ```
 
 Use `./` or an absolute path for local tarballs. Without it, npm can interpret
@@ -55,7 +55,7 @@ For a Linux container or VM that should be opened from the host machine, start
 the daemon with:
 
 ```bash
-HOST=0.0.0.0 traceskill daemon start
+HOST=0.0.0.0 skilltrace daemon start
 ```
 
 The daemon prints the bind address and a host-reachable UI URL when it can
@@ -74,11 +74,11 @@ timeline records a warning that passive probing is unavailable.
 On macOS, daemon mode starts a shared `fs_usage` probe by default:
 
 ```bash
-traceskill daemon start
+skilltrace daemon start
 ```
 
 This may prompt for your macOS admin password once at daemon startup so
-SkillTrace can start the daemon-owned probe. Later `traceskill start` sessions
+SkillTrace can start the daemon-owned probe. Later `skilltrace start` sessions
 attach the active run to that shared probe and should not ask for the password
 again during the daemon lifetime. If the shared probe is unavailable, SkillTrace
 records a warning and falls back to the normal per-run probe when it can.
@@ -86,7 +86,7 @@ records a warning and falls back to the normal per-run probe when it can.
 For macOS troubleshooting, disable the shared probe with:
 
 ```bash
-traceskill daemon start --no-shared-probe
+skilltrace daemon start --no-shared-probe
 ```
 
 Do not run dev and packaged macOS shared-probe daemons at the same time. The
@@ -98,9 +98,9 @@ for about 30 seconds.
 Use explicit run modes when comparing intervention levels:
 
 ```bash
-traceskill-dev start --mode full
-traceskill-dev start --mode passive_reflection
-traceskill-dev start --mode passive_only
+skilltrace-dev start --mode full
+skilltrace-dev start --mode passive_reflection
+skilltrace-dev start --mode passive_only
 ```
 
 `full` is the default and injects context, live skill lifecycle, reference-read,
@@ -109,7 +109,7 @@ reflection guidance only. `passive_only` does not inject MCP tracing
 instructions into the target repo. The older `--no-inject-instructions` flag
 remains available as a passive-only alias.
 
-If your shell cannot find `traceskill-dev`, add `~/.skilltrace/bin` to your `PATH`:
+If your shell cannot find `skilltrace-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -148,13 +148,13 @@ To make it persistent, add that line to your shell rc file, such as `~/.zshrc`.
 For Codex, register the SkillTrace MCP server with:
 
 ```bash
-codex mcp add skilltrace -- traceskill-dev mcp
+codex mcp add skilltrace -- skilltrace-dev mcp
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- skilltrace mcp
 ```
 
 Then confirm the server is registered:
@@ -170,8 +170,8 @@ The local UI also exposes a read-only registration check at `/app/diagnostics`.
 It runs `codex mcp get skilltrace` from the server process and compares the
 registered command with the current SkillTrace mode:
 
-- checkout/dev mode expects `traceskill-dev mcp`
-- package mode expects `traceskill mcp`
+- checkout/dev mode expects `skilltrace-dev mcp` or `traceskill-dev mcp`
+- package mode expects `skilltrace mcp` or `traceskill mcp`
 
 Use this page when switching between dogfooding the checkout and testing the
 packaged command; a mismatched MCP registration is easy to overlook from the
@@ -182,13 +182,13 @@ terminal alone.
 For Claude Code, register the checkout command with:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill-dev mcp
+claude mcp add skilltrace --scope user -- skilltrace-dev mcp
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
 
 Then confirm the server is registered:
@@ -205,13 +205,13 @@ SkillTrace also shows a read-only Claude Code MCP registration check in
 For Gemini CLI, register the checkout command with:
 
 ```bash
-gemini mcp add skilltrace traceskill-dev mcp --scope user
+gemini mcp add skilltrace skilltrace-dev mcp --scope user
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
-gemini mcp add skilltrace traceskill mcp --scope user
+gemini mcp add skilltrace skilltrace mcp --scope user
 ```
 
 Then confirm the server is registered:

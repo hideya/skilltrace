@@ -8,14 +8,14 @@ describe('skilltrace HTTP helpers', () => {
   test('formats a server unavailable message with the active command name', () => {
     let message = serverUnavailableMessage(
       new URL('http://127.0.0.1:5777/api/sessions/status'),
-      { commandName: 'traceskill-dev' },
+      { commandName: 'skilltrace-dev' },
     )
 
     expect(message).toContain(
       'SkillTrace server is not reachable at http://127.0.0.1:5777.',
     )
-    expect(message).toContain('`traceskill-dev daemon start`')
-    expect(message).toContain('`traceskill-dev serve`')
+    expect(message).toContain('`skilltrace-dev daemon start`')
+    expect(message).toContain('`skilltrace-dev serve`')
   })
 
   test('detects undici aggregate connection failures', () => {

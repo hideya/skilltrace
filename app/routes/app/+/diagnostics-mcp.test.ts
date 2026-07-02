@@ -41,17 +41,23 @@ skilltrace:
     let output = `
 Configured MCP servers:
 
-✓ skilltrace: traceskill-dev mcp (stdio) - Connected
+✓ skilltrace: skilltrace-dev mcp (stdio) - Connected
 `
 
-    expect(parseGeminiCommand(output)).toBe('traceskill-dev')
+    expect(parseGeminiCommand(output)).toBe('skilltrace-dev')
     expect(parseGeminiArgs(output)).toBe('mcp')
   })
 
-  it('prefers traceskill-dev over traceskill when parsing Gemini output', () => {
-    let output = 'skilltrace: traceskill-dev mcp (stdio)'
+  it('prefers dev command names when parsing Gemini output', () => {
+    let output = 'skilltrace: skilltrace-dev mcp (stdio)'
 
-    expect(parseGeminiCommand(output)).toBe('traceskill-dev')
+    expect(parseGeminiCommand(output)).toBe('skilltrace-dev')
+  })
+
+  it('parses the existing traceskill alias in Gemini output', () => {
+    let output = 'skilltrace: traceskill mcp (stdio)'
+
+    expect(parseGeminiCommand(output)).toBe('traceskill')
   })
 
   it('returns null when expected values are absent', () => {
