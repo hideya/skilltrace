@@ -14,7 +14,9 @@ import {
 } from './lib/skilltrace-probe'
 
 const SHARED_POLL_INTERVAL_MS = 500
-const SHARED_POLL_FAILURE_LIMIT = 60
+const SHARED_POLL_FAILURE_LIMIT = 1200
+const SHARED_POLL_FAILURE_LOG_INTERVAL = 20
+const SHARED_POLL_MESSAGE_LIMIT = 600
 
 async function main() {
   let options = parseArgs(process.argv.slice(2))
@@ -390,11 +392,24 @@ function createSharedState(serverUrl: string): SharedProbeState {
 
 async function pollSharedSession(state: SharedProbeState) {
   while (!state.stopped) {
-    let ok = await refreshSharedSession(state)
-    state.pollFailures = ok ? 0 : state.pollFailures + 1
+    let failure = await refreshSharedSession(state)
+
+    if (failure) {
+      state.pollFailures += 1
+      logSharedPollFailure(state.pollFailures, failure)
+    } else {
+      if (state.pollFailures > 0) {
+        console.error(
+          `TraceSkill shared session poll recovered after ${state.pollFailures} failed poll${state.pollFailures === 1 ? '' : 's'}`,
+        )
+      }
+      state.pollFailures = 0
+    }
 
     if (state.pollFailures >= SHARED_POLL_FAILURE_LIMIT) {
-      console.error('TraceSkill shared probe lost contact with daemon; exiting')
+      console.error(
+        `TraceSkill shared probe lost contact with daemon after ${state.pollFailures} failed polls; exiting`,
+      )
       process.exit(1)
     }
 
@@ -411,7 +426,7 @@ async function refreshSharedSession(state: SharedProbeState) {
         console.error('TraceSkill shared probe detached from active session')
       }
       state.session = undefined
-      return true
+      return null
     }
 
     let next = {
@@ -425,12 +440,24 @@ async function refreshSharedSession(state: SharedProbeState) {
       console.error(`TraceSkill skill roots: ${next.skillRoots.join(', ')}`)
     }
     state.session = next
-    return true
+    return null
   } catch (error) {
     let message = error instanceof Error ? error.message : String(error)
-    console.error(`TraceSkill shared session poll failed: ${message}`)
-    return false
+    return message
   }
+}
+
+function logSharedPollFailure(count: number, message: string) {
+  if (count !== 1 && count % SHARED_POLL_FAILURE_LOG_INTERVAL !== 0) return
+
+  console.error(
+    `TraceSkill shared session poll failed (${count}/${SHARED_POLL_FAILURE_LIMIT}): ${truncateLogMessage(message)}`,
+  )
+}
+
+function truncateLogMessage(message: string) {
+  if (message.length <= SHARED_POLL_MESSAGE_LIMIT) return message
+  return `${message.slice(0, SHARED_POLL_MESSAGE_LIMIT)}...[truncated]`
 }
 
 function sleep(ms: number) {

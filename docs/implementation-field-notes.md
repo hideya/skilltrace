@@ -133,6 +133,18 @@ confusing run IDs, lost injection cleanup, and misleading short runs. If a
 newer run exists after an older run missed `trace_session_finished`, the older
 run is shown as interrupted.
 
+## Shared Probes Must Tolerate Dev Server Turbulence
+
+The macOS shared probe polls the local SkillTrace server to learn which run is
+currently active. During local development, route edits or transient Vite
+transform errors can make the server return temporary 500 responses even though
+the daemon soon recovers.
+
+The shared probe should not die quickly in that case, because restarting it may
+require macOS authorization again. It now keeps retrying for a longer grace
+period, logs compact poll failures, and reports recovery when the server becomes
+healthy again.
+
 ## Passive-Only Runs Should Not Say Pass
 
 A passive-only run has one evidence stream. It can show that evidence was
