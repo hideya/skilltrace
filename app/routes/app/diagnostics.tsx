@@ -233,37 +233,44 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
       description="Read-only checks of local command-line MCP registration."
       title="MCP Registration"
     >
-      <div className="space-y-5">
+      <div className="space-y-3">
         {mcp.clients.map((client) => (
-          <section className="space-y-3" key={client.key}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold">{client.name}</h3>
+          <details className="rounded-box border border-base-300" key={client.key}>
+            <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 marker:hidden">
+              <div className="min-w-0">
+                <h3 className="font-semibold">{client.name}</h3>
+                <p className="truncate text-xs text-base-content/60">
+                  {client.message}
+                </p>
+              </div>
               <span className={`badge badge-sm ${mcpStatusBadge(client)}`}>
                 {client.status}
               </span>
+            </summary>
+            <div className="space-y-3 border-t border-base-300 p-3">
+              <KeyValues
+                rows={[
+                  ['Status', client.message],
+                  ['Check', client.check_command],
+                  ['Expected', `${client.expected_command} mcp`],
+                  ['CLI installed', client.cli_installed ? 'yes' : 'no'],
+                  ['Registered', client.registered ? 'yes' : 'no'],
+                  ['Command', client.command ?? 'unknown'],
+                  ['Args', client.args ?? 'unknown'],
+                ]}
+              />
+              {client.output ? (
+                <details className="rounded-box border border-base-300">
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">
+                    Output
+                  </summary>
+                  <pre className="max-h-48 overflow-auto border-t border-base-300 bg-base-200 p-3 text-xs whitespace-pre-wrap">
+                    {client.output}
+                  </pre>
+                </details>
+              ) : null}
             </div>
-            <KeyValues
-              rows={[
-                ['Status', client.message],
-                ['Check', client.check_command],
-                ['Expected', `${client.expected_command} mcp`],
-                ['CLI installed', client.cli_installed ? 'yes' : 'no'],
-                ['Registered', client.registered ? 'yes' : 'no'],
-                ['Command', client.command ?? 'unknown'],
-                ['Args', client.args ?? 'unknown'],
-              ]}
-            />
-            {client.output ? (
-              <details className="rounded-box border border-base-300">
-                <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">
-                  Output
-                </summary>
-                <pre className="max-h-48 overflow-auto border-t border-base-300 bg-base-200 p-3 text-xs whitespace-pre-wrap">
-                  {client.output}
-                </pre>
-              </details>
-            ) : null}
-          </section>
+          </details>
         ))}
       </div>
     </Panel>
