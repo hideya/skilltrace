@@ -49,6 +49,8 @@ async function main() {
     await end(args)
   } else if (command === 'status') {
     await status(args)
+  } else if (command === 'diagnostics') {
+    await diagnostics(args)
   } else if (command === 'serve') {
     runServe()
   } else if (command === 'daemon') {
@@ -266,6 +268,19 @@ async function status(args: string[]) {
     printSession('Active SkillTrace session', server, result.session)
   } else {
     console.log('No active SkillTrace session.')
+  }
+}
+
+async function diagnostics(args: string[]) {
+  let options = parseArgs(args)
+  let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let result = await getJson(server, '/api/diagnostics')
+  let diagnostics = result.diagnostics
+
+  if (options.verbose) {
+    printDiagnosticsVerbose(diagnostics)
+  } else {
+    printDiagnosticsCompact(diagnostics)
   }
 }
 
@@ -692,6 +707,8 @@ function parseArgs(args: string[]) {
       options.sharedProbe = false
     } else if (arg === '--lines') {
       options.lines = Number(args[++index])
+    } else if (arg === '--verbose') {
+      options.verbose = true
     } else {
       usage(`Unknown option: ${arg}`)
     }
@@ -913,6 +930,111 @@ function printDaemonStatus(status: any) {
   if (status.health?.session) {
     printSession('Active SkillTrace session', status.server, status.health.session)
   }
+}
+
+function printDiagnosticsCompact(data: any) {
+  let status = diagnosticsStatus(data)
+  console.log(`SkillTrace diagnostics: ${status}`)
+  console.log(`  daemon: ${diagnosticsDaemonLabel(data)}`)
+  console.log(`  server: ${data.server}`)
+
+  if (data.session) {
+    console.log(`  active session: running ${data.session.target_root}`)
+  } else {
+    console.log('  active session: none')
+  }
+
+  if (diagnosticsShowsSharedProbe(data)) {
+    console.log(`  shared probe: ${data.checks.shared_probe.label}`)
+  }
+
+  console.log('  MCP:')
+  for (let client of data.mcp.clients) {
+    console.log(`    ${client.key}: ${diagnosticsMcpLabel(client)}`)
+  }
+}
+
+function printDiagnosticsVerbose(data: any) {
+  printDiagnosticsCompact(data)
+  console.log('')
+  console.log('Daemon')
+  if (data.daemon) {
+    console.log(`  pid: ${data.daemon.pid} ${data.checks.daemon_pid}`)
+    console.log(`  server: ${data.daemon.server}`)
+    console.log(
+      `  bind: ${data.daemon.bind_host ?? '?'}:${data.daemon.bind_port ?? '?'}`,
+    )
+    for (let url of data.daemon.ui_urls ?? []) {
+      console.log(`  ui: ${url}`)
+    }
+    console.log(`  started: ${data.daemon.started_at}`)
+    console.log(`  log: ${data.daemon.log_path}`)
+  } else {
+    console.log('  state: missing')
+  }
+
+  console.log('')
+  console.log('Server Process')
+  console.log(`  pid: ${data.process.pid}`)
+  console.log(`  mode: ${data.process.mode}`)
+  console.log(`  host: ${data.process.host}`)
+  console.log(`  port: ${data.process.port}`)
+  console.log(`  platform: ${data.process.platform}`)
+  console.log(`  node: ${data.process.node}`)
+
+  if (diagnosticsShowsSharedProbe(data)) {
+    console.log('')
+    console.log('Shared Probe')
+    console.log(`  status: ${data.checks.shared_probe.label}`)
+    console.log(
+      `  pid: ${data.daemon?.shared_probe_pid ?? 'missing'} ${data.checks.shared_probe_pid}`,
+    )
+    console.log(`  log: ${data.daemon?.shared_probe_log_path ?? 'none'}`)
+    console.log(`  warning: ${data.daemon?.shared_probe_warning ?? 'none'}`)
+  }
+
+  console.log('')
+  console.log('MCP')
+  for (let client of data.mcp.clients) {
+    console.log(`  ${client.key}: ${diagnosticsMcpLabel(client)}`)
+    console.log(`    name: ${client.name}`)
+    console.log(`    message: ${client.message}`)
+    console.log(`    check: ${client.check_command}`)
+    console.log(`    expected: ${client.expected_command} mcp`)
+    console.log(`    command: ${client.command ?? 'unknown'}`)
+    console.log(`    args: ${client.args ?? 'unknown'}`)
+  }
+}
+
+function diagnosticsStatus(data: any) {
+  let warning =
+    data.checks.daemon_pid !== 'running' ||
+    !data.checks.state_matches_server ||
+    data.mcp.summary.tone === 'warning' ||
+    (diagnosticsShowsSharedProbe(data) &&
+      data.checks.shared_probe.tone === 'warning')
+
+  return warning ? 'warning' : 'ok'
+}
+
+function diagnosticsDaemonLabel(data: any) {
+  if (!data.daemon) return 'missing'
+  return data.checks.daemon_pid
+}
+
+function diagnosticsShowsSharedProbe(data: any) {
+  return (
+    data.process.platform === 'darwin' ||
+    !!data.daemon?.shared_probe_requested ||
+    !!data.daemon?.shared_probe_pid ||
+    !!data.daemon?.shared_probe_warning
+  )
+}
+
+function diagnosticsMcpLabel(client: any) {
+  if (client.status === 'missing') return 'not installed'
+  if (client.status === 'timeout') return 'timeout'
+  return client.status
 }
 
 function printBindChangeHint(state: DaemonState, bindHost: string, port: string) {
@@ -1510,9 +1632,10 @@ function removeDaemonState() {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: skilltrace <serve|start|status|end|stop|mcp>')
+  console.error('Usage: skilltrace <serve|start|status|diagnostics|end|stop|mcp>')
   console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
   console.error('       skilltrace stop [--discard] [--yes]')
+  console.error('       skilltrace diagnostics [--verbose]')
   console.error('       skilltrace daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }
@@ -1543,6 +1666,7 @@ type Options = {
   sharedProbe?: boolean
   lines?: number
   note?: string
+  verbose?: boolean
 }
 
 type TraceMode = 'full' | 'passive_reflection' | 'passive_only'

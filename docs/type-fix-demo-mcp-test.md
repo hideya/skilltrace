@@ -129,6 +129,13 @@ server mode, shared probe status, active session, and whether
 `codex mcp get skilltrace` matches the current command surface. For checkout
 trials, Codex should be registered to `skilltrace-dev mcp`.
 
+For a compact command-line preflight check, run:
+
+```bash
+skilltrace-dev diagnostics
+skilltrace-dev diagnostics --verbose
+```
+
 For package-style trials, build and install a local tarball from the main
 SkillTrace repo instead of using `skilltrace-dev`:
 

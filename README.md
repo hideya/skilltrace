@@ -334,6 +334,13 @@ Useful pages:
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and MCP registration for supported command-line clients.
 
+For the same setup check from the command line, run:
+
+```bash
+skilltrace diagnostics
+skilltrace diagnostics --verbose
+```
+
 Run IDs use the form `<repo-name>-<path-token>-<timestamp>`, such as
 `type-fix-demo-3KGUxK-2026-07-02-18-31-15`. The short path token is derived
 from the absolute target directory path, so repeated runs from the same copied
@@ -435,7 +442,8 @@ If `skilltrace start` cannot connect to the server, start the daemon first:
 skilltrace daemon start
 ```
 
-Then open `/app/diagnostics` and confirm the daemon, server, and active session
+Then run `skilltrace diagnostics`, or open `/app/diagnostics`, and confirm the
+daemon, server, active session, passive probe, and per-agent MCP registration
 state before launching the agent.
 
 If no passive events appear:

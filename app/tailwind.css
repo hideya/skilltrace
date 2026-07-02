@@ -31,11 +31,11 @@
 
 @layer components {
   .page-title {
-    @apply text-3xl font-thin text-balance;
+    @apply text-4xl font-light text-balance;
   }
 
   .section-title {
-    @apply text-1.5xl font-semibold;
+    @apply text-2xl font-light;
   }
 }
 

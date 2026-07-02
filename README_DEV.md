@@ -302,6 +302,13 @@ The local UI has three primary views:
   registration for Codex CLI, Claude Code, and Gemini CLI when those CLIs are
   available.
 
+The same runtime check is available from the command line:
+
+```bash
+skilltrace-dev diagnostics
+skilltrace-dev diagnostics --verbose
+```
+
 On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
 Result column intentionally shows `Running` while a trace session is active.
 Final diagnoses such as `Pass`, `Warning`, or passive-only `Captured` appear
