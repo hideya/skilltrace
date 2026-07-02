@@ -140,8 +140,6 @@ Only bind to `0.0.0.0` in a trusted local network or isolated development
 environment. The UI may expose captured traces, repository metadata, diffs,
 and agent-declared summaries.
 
-The older `traceskill` command remains available as an alias.
-
 ## Register The MCP Server
 
 SkillTrace uses MCP tools to record skill usage. Before using SkillTrace,

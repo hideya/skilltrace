@@ -9,9 +9,7 @@ export function parseMcpValue(output: string, key: string) {
 }
 
 export function parseGeminiCommand(output: string) {
-  let match = output.match(
-    /\bskilltrace:\s+(skilltrace-dev|traceskill-dev|skilltrace|traceskill)\b/i,
-  )
+  let match = output.match(/\bskilltrace:\s+(skilltrace-dev|skilltrace)\b/i)
   if (match) return match[1]
 
   return null

@@ -34,10 +34,7 @@ Reasons:
 SkillTrace has two command surfaces:
 
 - `skilltrace` is the npm-package command for users and friend trials.
-- `traceskill` remains a package alias for existing docs, scripts, and muscle
-  memory.
 - `skilltrace-dev` is the checkout-local command for dogfooding this repository.
-- `traceskill-dev` remains a checkout-local alias.
 
 Reasons:
 
@@ -79,7 +76,7 @@ rely on `prepack`, so the React Router build and package CLI entrypoints are
 rebuilt before npm packs the tarball.
 
 The package uses `package.json` `bin` to expose both `skilltrace` and the
-existing `traceskill` alias. `prepack` runs the full production build so the
+existing `skilltrace` alias. `prepack` runs the full production build so the
 tarball includes:
 
 - `build/client` and `build/server` from React Router
@@ -91,9 +88,9 @@ tarball includes:
 The installed package commands run built JavaScript from `dist`. They do
 not depend on `tsx` at runtime.
 
-The checkout installer remains intentionally small. `pnpm traceskill:install`
-writes `~/.skilltrace/bin/skilltrace-dev` and `~/.skilltrace/bin/traceskill-dev`,
-points them back to the current checkout, launches the CLI through Node's
+The checkout installer remains intentionally small. `pnpm skilltrace:install`
+writes `~/.skilltrace/bin/skilltrace-dev`, points it back to the current
+checkout, launches the CLI through Node's
 `--import tsx/dist/loader.mjs`, and sets default development environment
 variables:
 
@@ -103,8 +100,8 @@ PORT=5777
 SKILLTRACE_DEV=1
 ```
 
-It also removes old generated checkout wrappers named `traceskill` from
-`~/.skilltrace/bin` and `~/.local/bin`, but preserves non-SkillTrace files.
+It also removes old generated checkout wrappers from previous installer
+layouts, but preserves non-SkillTrace files.
 
 Packaging complications found:
 
@@ -218,11 +215,10 @@ Reasons:
 - keeping diagnostics read-only avoids turning the local app into a process
   manager before the lifecycle model is stable
 
-The MCP checks compare the current server mode with the expected command or
-alias:
+The MCP checks compare the current server mode with the expected command:
 
-- checkout/dev mode expects `skilltrace-dev mcp` or `traceskill-dev mcp`
-- package mode expects `skilltrace mcp` or `traceskill mcp`
+- checkout/dev mode expects `skilltrace-dev mcp`
+- package mode expects `skilltrace mcp`
 
 ## One Active Session
 
@@ -314,14 +310,14 @@ Failure behavior:
 - shared probe workers exit if they cannot reach the daemon for about 30
   seconds, which prevents an orphan worker from holding the macOS `fs_usage`
   slot forever after a daemon crash or manual kill
-- if the shared worker is unavailable or crashed, `traceskill start` records
+- if the shared worker is unavailable or crashed, `skilltrace start` records
   `trace_probe_shared_unavailable`
-- when possible, `traceskill start` falls back to the existing per-run probe
+- when possible, `skilltrace start` falls back to the existing per-run probe
 - if the conflict means a per-run macOS probe would also fail, SkillTrace keeps
   the run semantic-only and records a visible warning
 - shared probes are marked as `probe_kind: shared` on the active session so
-  `traceskill stop` does not kill the daemon-owned worker
-- `traceskill daemon stop` owns cleanup of the shared worker
+  `skilltrace stop` does not kill the daemon-owned worker
+- `skilltrace daemon stop` owns cleanup of the shared worker
 - passive probe workers dedupe by run and file for the whole worker lifetime so
   the probe's own file hashing does not create a feedback loop of repeated
   passive events
@@ -483,7 +479,7 @@ itself.
 
 ## Git Run Snapshots
 
-`traceskill start` records a lightweight Git snapshot when the target repo is
+`skilltrace start` records a lightweight Git snapshot when the target repo is
 inside a Git worktree.
 
 Captured data:

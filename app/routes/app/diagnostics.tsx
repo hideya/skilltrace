@@ -711,14 +711,12 @@ function mcpCheckOutput(stderr: string, stdout: string) {
 }
 
 function expectedMcpCommands(mode: string) {
-  return mode === 'dev'
-    ? ['skilltrace-dev', 'traceskill-dev']
-    : ['skilltrace', 'traceskill']
+  return mode === 'dev' ? ['skilltrace-dev'] : ['skilltrace']
 }
 
 function devWrapperWarning(mode: string, command: string | null) {
   if (mode !== 'dev' || !command) return null
-  if (!['skilltrace-dev', 'traceskill-dev'].includes(command)) return null
+  if (command !== 'skilltrace-dev') return null
 
   let filePath = path.join(os.homedir(), '.skilltrace/bin', command)
   if (!fs.existsSync(filePath)) {

@@ -309,7 +309,7 @@ function activeProbeOptions(options: ProbeOptions | SharedProbeOptions) {
 function probeBackend(): ProbeBackend {
   if (process.platform === 'darwin') return 'fs_usage'
   if (process.platform === 'linux') return 'inotifywait'
-  throw new Error(`traceskill passive probing does not support ${process.platform}`)
+  throw new Error(`SkillTrace passive probing does not support ${process.platform}`)
 }
 
 function assertProbeReady(backend: ProbeBackend) {
@@ -323,7 +323,7 @@ function assertProbeReady(backend: ProbeBackend) {
 
   let sudo = spawnSync('sudo', ['-n', 'true'], { stdio: 'pipe' })
   if (sudo.status !== 0) {
-    throw new Error('sudo is not ready. Run `sudo -v` before traceskill start.')
+    throw new Error('sudo is not ready. Run `sudo -v` before skilltrace start.')
   }
 }
 

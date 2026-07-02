@@ -34,7 +34,7 @@ By itself, this command does not implement passive file observation, skill loadi
 For the current best local prototype, prefer the local server flow:
 
 ```bash
-pnpm traceskill:install
+pnpm skilltrace:install
 skilltrace-dev serve
 cd <repo>
 skilltrace-dev start
@@ -121,7 +121,7 @@ fi
 That starts a passive probe before the agent reads the target repo. On macOS
 the probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks
 the SkillTrace server for the one active session ID when the model calls one of
-the SkillTrace MCP tools. On macOS, `traceskill-dev start` prompts for sudo
+the SkillTrace MCP tools. On macOS, `skilltrace-dev start` prompts for sudo
 from your terminal before launching the probe worker. On Linux, the
 `inotifywait` probe does not need sudo.
 
@@ -170,8 +170,8 @@ The local UI also exposes a read-only registration check at `/app/diagnostics`.
 It runs `codex mcp get skilltrace` from the server process and compares the
 registered command with the current SkillTrace mode:
 
-- checkout/dev mode expects `skilltrace-dev mcp` or `traceskill-dev mcp`
-- package mode expects `skilltrace mcp` or `traceskill mcp`
+- checkout/dev mode expects `skilltrace-dev mcp`
+- package mode expects `skilltrace mcp`
 
 Use this page when switching between dogfooding the checkout and testing the
 packaged command; a mismatched MCP registration is easy to overlook from the
@@ -226,7 +226,7 @@ repo uses `AGENTS.md` and `.skills/`.
 SkillTrace also shows a read-only Gemini CLI MCP registration check in
 `/app/diagnostics` when the `gemini` CLI is available to the server process.
 
-When `traceskill-dev start` or `traceskill start` is active, the MCP command
+When `skilltrace-dev start` or `skilltrace start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown
 below.

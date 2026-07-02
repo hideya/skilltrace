@@ -11,14 +11,14 @@ describe('diagnostics MCP output parsing', () => {
 skilltrace
   enabled: true
   transport: stdio
-  command: traceskill-dev
+  command: skilltrace-dev
   args: mcp
   cwd: -
   env: -
   remove: codex mcp remove skilltrace
 `
 
-    expect(parseMcpValue(output, 'command')).toBe('traceskill-dev')
+    expect(parseMcpValue(output, 'command')).toBe('skilltrace-dev')
     expect(parseMcpValue(output, 'args')).toBe('mcp')
   })
 
@@ -28,12 +28,12 @@ skilltrace:
   Scope: User config (available in all your projects)
   Status: OK Connected
   Type: stdio
-  Command: traceskill
+  Command: skilltrace
   Args: mcp
   Environment:
 `
 
-    expect(parseMcpValue(output, 'command')).toBe('traceskill')
+    expect(parseMcpValue(output, 'command')).toBe('skilltrace')
     expect(parseMcpValue(output, 'args')).toBe('mcp')
   })
 
@@ -54,10 +54,10 @@ Configured MCP servers:
     expect(parseGeminiCommand(output)).toBe('skilltrace-dev')
   })
 
-  it('parses the existing traceskill alias in Gemini output', () => {
+  it('ignores old Gemini alias output', () => {
     let output = 'skilltrace: traceskill mcp (stdio)'
 
-    expect(parseGeminiCommand(output)).toBe('traceskill')
+    expect(parseGeminiCommand(output)).toBeNull()
   })
 
   it('returns null when expected values are absent', () => {

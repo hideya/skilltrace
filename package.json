@@ -24,8 +24,7 @@
     "url": "git+https://github.com/hideya/skill-trace.git"
   },
   "bin": {
-    "skilltrace": "./bin/traceskill.js",
-    "traceskill": "./bin/traceskill.js"
+    "skilltrace": "./bin/skilltrace.js"
   },
   "files": [
     "bin",
@@ -55,11 +54,6 @@
     "skilltrace:probe-session": "tsx scripts/skilltrace-probe-session.ts",
     "skilltrace": "tsx scripts/traceskill.ts",
     "skilltrace-dev": "SKILLTRACE_DEV=1 SKILLTRACE_SERVER=http://localhost:5777 PORT=5777 tsx scripts/traceskill.ts",
-    "traceskill": "tsx scripts/traceskill.ts",
-    "traceskill-dev": "SKILLTRACE_DEV=1 SKILLTRACE_SERVER=http://localhost:5777 PORT=5777 tsx scripts/traceskill.ts",
-    "traceskill:mcp": "tsx scripts/skilltrace-mcp.ts",
-    "traceskill:install": "tsx scripts/install-traceskill-bin.ts install",
-    "traceskill:uninstall": "tsx scripts/install-traceskill-bin.ts uninstall",
     "demo:reset": "tsx scripts/reset-demo.ts",
     "atlas": "atlas schema apply --env dev",
     "atlas:prod": "dotenv -- atlas schema apply --env prod",

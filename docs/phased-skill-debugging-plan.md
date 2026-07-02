@@ -180,11 +180,11 @@ Current implementation note:
   target skill/reference file.
 
 - runs record lightweight trace mode metadata without a database migration
-- current default `traceskill start` records `full`
-- `traceskill start --mode passive_reflection` records `passive_reflection` and
+- current default `skilltrace start` records `full`
+- `skilltrace start --mode passive_reflection` records `passive_reflection` and
   injects the reduced reflection template
-- `traceskill start --mode passive_only` and
-  `traceskill start --no-inject-instructions` record `passive_only`
+- `skilltrace start --mode passive_only` and
+  `skilltrace start --no-inject-instructions` record `passive_only`
 - the run detail page shows the recorded mode in the top metrics
 - passive-only runs that capture expected passive evidence are labeled
   `Captured` in the UI instead of `Pass`

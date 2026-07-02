@@ -183,15 +183,15 @@ instructions in every task skill.
 The low-friction path is:
 
 ```bash
-traceskill start
+skilltrace start
 codex
-traceskill stop
+skilltrace stop
 ```
 
 This temporarily inserts the `AGENTS.md` instruction, creates
 `.skilltrace/instrumentation.md` from SkillTrace's bundled template when needed,
 and creates a minimal `.skilltrace.json` passive probe config when needed. The
-injected changes are manifest-backed and removed by `traceskill stop` when they
+injected changes are manifest-backed and removed by `skilltrace stop` when they
 are still unchanged.
 
 The default injection flow adds one tracing-policy line near the top of

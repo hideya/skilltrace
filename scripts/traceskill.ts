@@ -76,17 +76,16 @@ function devWrapperWarnings() {
   let binDir = path.join(os.homedir(), '.skilltrace/bin')
   let warnings: string[] = []
 
-  for (let name of ['skilltrace-dev', 'traceskill-dev']) {
-    let filePath = path.join(binDir, name)
-    if (!fs.existsSync(filePath)) {
-      warnings.push(`${name} is missing from ${binDir}.`)
-      continue
-    }
+  let name = 'skilltrace-dev'
+  let filePath = path.join(binDir, name)
+  if (!fs.existsSync(filePath)) {
+    warnings.push(`${name} is missing from ${binDir}.`)
+    return warnings
+  }
 
-    let content = fs.readFileSync(filePath, 'utf8')
-    if (!isCurrentDevWrapper(content)) {
-      warnings.push(`${name} looks stale.`)
-    }
+  let content = fs.readFileSync(filePath, 'utf8')
+  if (!isCurrentDevWrapper(content)) {
+    warnings.push(`${name} looks stale.`)
   }
 
   return warnings

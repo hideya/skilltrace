@@ -118,10 +118,9 @@ GitHub-style package spec instead of a local tarball path.
 
 The package build emits React Router production assets under `build/` and
 package-facing Node entrypoints under `dist/`. The installed `skilltrace`
-command runs built JavaScript, not TypeScript through `tsx`; `traceskill` is
-kept as an alias. `tsx` is kept only
+command runs built JavaScript, not TypeScript through `tsx`. `tsx` is kept only
 for checkout development commands such as `pnpm skilltrace` and
-`skilltrace-dev`; the old `pnpm traceskill` script remains available.
+`skilltrace-dev`.
 
 After reinstalling or restarting packaged SkillTrace, refresh any already-open
 UI tabs if navigation feels stale. A direct URL such as `/app/runs/<run-id>` can
@@ -256,10 +255,9 @@ With `HOST=0.0.0.0`, the daemon prints a host-reachable UI URL when it can
 detect one, such as `http://192.168.64.2:7555`.
 
 When installed as an npm package, `skilltrace` is available from npm's global
-bin location, with `traceskill` kept as an alias. From this checkout,
-`pnpm traceskill:install` is still available as a development helper; it
-creates local `skilltrace-dev` and `traceskill-dev` wrappers in
-`~/.skilltrace/bin`. The development wrappers default to
+bin location. From this checkout, `pnpm skilltrace:install` is available as a
+development helper; it creates a local `skilltrace-dev` wrapper in
+`~/.skilltrace/bin`. The development wrapper defaults to
 `http://localhost:5777` so it can coexist with the package command on
 `http://localhost:7555`. The dev server uses a strict port, so it fails fast
 instead of silently moving to another port when `5777` is already occupied. The
@@ -275,8 +273,8 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-`pnpm traceskill:uninstall` removes generated development wrappers from both
-the current `~/.skilltrace/bin` location and the older `~/.local/bin` location.
+`pnpm skilltrace:uninstall` removes generated development wrappers from both
+the current `~/.skilltrace/bin` location and older installer locations.
 See `docs/architecture-decisions.md` for the package/dev installer split and
 runtime packaging notes.
 
@@ -335,13 +333,13 @@ idle views do not continue polling.
 The diagnostics page is intentionally not a manager. It does not start or stop
 processes or edit Codex configuration. It is a quick way to catch common setup
 mistakes, such as running the package UI while Codex is still registered to
-`traceskill-dev mcp`, or vice versa.
+`skilltrace-dev mcp`, or vice versa.
 
 ```text
 Local LLM environment
   ├─ Agent / LLM client
   ├─ Skills directory
-  ├─ traceskill CLI
+  ├─ skilltrace CLI
   │    └─ starts / ends the active local trace session
   ├─ passive probe
   │    └─ watches SKILL.md / references access

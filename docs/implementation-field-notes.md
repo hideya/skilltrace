@@ -9,7 +9,7 @@ shape of the fix, and the current boundary of the solution.
 The first reliable MCP path used command-line Codex with:
 
 ```bash
-codex mcp add skilltrace -- traceskill mcp
+codex mcp add skilltrace -- skilltrace mcp
 ```
 
 The Codex App could show MCP registration state, but did not reliably expose
@@ -21,8 +21,8 @@ App support as future work.
 
 Development and packaged installs can coexist:
 
-- `traceskill-dev` uses the development port
-- `traceskill` uses the packaged/default port
+- `skilltrace-dev` uses the development port
+- `skilltrace` uses the packaged/default port
 
 It is easy to run the dev daemon while Codex MCP is still registered to the
 packaged command, or the reverse. The diagnostics page checks
@@ -31,7 +31,7 @@ server mode.
 
 ## Daemon And Server Are Not The Same Process
 
-`traceskill daemon start` starts a daemon process, and that daemon starts the
+`skilltrace daemon start` starts a daemon process, and that daemon starts the
 React Router server process. Users experience this as "the daemon is serving
 the UI," but internally the server process owns the listening port.
 
@@ -116,11 +116,11 @@ The current implementation keeps the simpler model:
 
 ## Instruction Injection Should Be Manifest-Backed
 
-`traceskill start` can temporarily insert a single instruction into `AGENTS.md`
+`skilltrace start` can temporarily insert a single instruction into `AGENTS.md`
 and write `.skilltrace/instrumentation.md` plus `.skilltrace.json`. A manifest
 records what SkillTrace created and inserted.
 
-`traceskill stop` removes only the exact inserted block and only removes
+`skilltrace stop` removes only the exact inserted block and only removes
 generated files when SkillTrace created them and they were not changed.
 
 This avoids broad backup/restore behavior and keeps cleanup compatible with a
@@ -209,5 +209,5 @@ An instruction profile describes repository surfaces such as:
 An agent client is the program that actually runs the task, such as Codex CLI,
 Gemini CLI, or Claude Code. SkillTrace can detect instruction surfaces before
 the agent starts, but the client is best learned from later context or
-reflection because `traceskill start` does not know which agent command the
+reflection because `skilltrace start` does not know which agent command the
 user will launch.

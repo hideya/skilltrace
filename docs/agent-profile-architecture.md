@@ -52,7 +52,7 @@ until the single-profile model is boring and reliable.
 
 ### Agent Client
 
-An agent client describes the tool that actually runs after `traceskill start`,
+An agent client describes the tool that actually runs after `skilltrace start`,
 such as Codex CLI, Gemini CLI, Claude Code, or another MCP-capable client.
 
 SkillTrace cannot reliably know this at start time because the user runs the
@@ -165,7 +165,7 @@ The first safe behavior can be:
 
 Add surface detection without changing current behavior.
 
-Status: implemented for `traceskill start`. The detected surface report is
+Status: implemented for `skilltrace start`. The detected surface report is
 stored as `instruction_surfaces` in the run metadata and repeated on the
 `trace_session_started` event. Current AGENTS.md injection behavior is
 unchanged.
@@ -195,12 +195,12 @@ run context. This phase should not change injection behavior yet.
 Add explicit instruction profile selection:
 
 ```bash
-traceskill start --instruction-profile agents-md
-traceskill start --instruction-profile claude-code
-traceskill start --instruction-profile auto
+skilltrace start --instruction-profile agents-md
+skilltrace start --instruction-profile claude-code
+skilltrace start --instruction-profile auto
 ```
 
-Status: metadata selection is implemented. `traceskill start` accepts
+Status: metadata selection is implemented. `skilltrace start` accepts
 `--instruction-profile auto|agents-md|claude-code` and stores the selected
 instruction profile as `instruction_profile` in run metadata and the
 `trace_session_started` event. `auto` selects the only detected instruction
@@ -260,10 +260,10 @@ registration points to the expected command for the current package/dev mode.
 Status: not implemented yet. Claude Code itself can be registered manually with:
 
 ```bash
-claude mcp add skilltrace --scope user -- traceskill mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp
 ```
 
-For checkout trials, use `traceskill-dev mcp` instead.
+For checkout trials, use `skilltrace-dev mcp` instead.
 
 ### Phase 6: Gemini CLI As An AGENTS.md-Compatible Client
 

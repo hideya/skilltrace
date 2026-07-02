@@ -45,12 +45,11 @@ and semantic declarations share the same run ID.
 From the main SkillTrace repo, install the local `skilltrace-dev` wrapper once:
 
 ```bash
-pnpm traceskill:install
+pnpm skilltrace:install
 ```
 
-The installer writes `~/.skilltrace/bin/skilltrace-dev` and the older
-`traceskill-dev` alias. If your shell cannot find `skilltrace-dev`, add
-`~/.skilltrace/bin` to your `PATH`:
+The installer writes `~/.skilltrace/bin/skilltrace-dev`. If your shell cannot
+find `skilltrace-dev`, add `~/.skilltrace/bin` to your `PATH`:
 
 ```bash
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
@@ -59,8 +58,8 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-`pnpm traceskill:uninstall` also removes older generated wrappers from
-`~/.local/bin/traceskill`.
+`pnpm skilltrace:uninstall` also removes generated wrappers from older
+installer locations.
 
 Start the local SkillTrace server in another terminal:
 
@@ -108,7 +107,7 @@ The foreground `serve` command is still the default dogfooding path. The daemon
 mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`.
 
-`traceskill-dev start` launches the passive probe worker from your terminal. On
+`skilltrace-dev start` launches the passive probe worker from your terminal. On
 macOS, that keeps the sudo prompt in the user's terminal instead of inside the
 web server process. On Linux, the `inotifywait` probe does not need sudo.
 
@@ -128,15 +127,15 @@ http://localhost:5777/app/diagnostics
 Use `/app/diagnostics` as a read-only setup check. It shows the daemon process,
 server mode, shared probe status, active session, and whether
 `codex mcp get skilltrace` matches the current command surface. For checkout
-trials, Codex should be registered to `traceskill-dev mcp`.
+trials, Codex should be registered to `skilltrace-dev mcp`.
 
 For package-style trials, build and install a local tarball from the main
-SkillTrace repo instead of using `traceskill-dev`:
+SkillTrace repo instead of using `skilltrace-dev`:
 
 ```bash
 npm pack
 npm install -g ./skilltrace-0.0.0.tgz
-traceskill daemon start
+skilltrace daemon start
 ```
 
 Use `./` or an absolute path for the tarball. Without it, npm can interpret the
@@ -156,13 +155,13 @@ http://localhost:7555/app/diagnostics
 ```
 
 In package mode, `/app/diagnostics` expects Codex to be registered to
-`traceskill mcp`.
+`skilltrace mcp`.
 
 For Linux containers or VMs that should be opened from the host machine, bind
 the daemon to all interfaces:
 
 ```bash
-HOST=0.0.0.0 traceskill daemon start
+HOST=0.0.0.0 skilltrace daemon start
 ```
 
 The daemon prints the actual bind address and a host-reachable UI URL when it
@@ -219,8 +218,8 @@ The command should show:
 
 - `enabled: true`
 - `transport: stdio`
-- `command: skilltrace-dev` or `command: traceskill-dev` for checkout trials
-- `command: skilltrace` or `command: traceskill` for package trials
+- `command: skilltrace-dev` for checkout trials
+- `command: skilltrace` for package trials
 - `args: mcp`
 
 The run ID is not configured in the MCP registration. The MCP server resolves
@@ -269,17 +268,17 @@ Start the trace session from the demo working copy:
 
 ```bash
 cd tmp/type-fix-demo
-traceskill-dev start
+skilltrace-dev start
 ```
 
-For package-style trials, use `traceskill start`.
+For package-style trials, use `skilltrace start`.
 
 Add `--note <text>` or `-n <text>` if you want the runs page to show the
 purpose of a particular trial.
 
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
 inserts one SkillTrace instruction at the top of the selected instruction file,
-and records `.skilltrace/injection.json` so `traceskill-dev stop` can clean up
+and records `.skilltrace/injection.json` so `skilltrace-dev stop` can clean up
 the exact injected changes. For the default `agents_md` profile, the
 instruction file is `AGENTS.md`. For the `claude_code` profile, it is
 `CLAUDE.md` or `.claude/CLAUDE.md`.
@@ -291,11 +290,11 @@ It also prints a probe log path under:
 ~/.skilltrace/logs/probes/traceskill-probe-<run_id>.log
 ```
 
-If a session is already active, `traceskill-dev start` refuses and asks you to run
-`traceskill-dev stop` first. This avoids accidental low-value runs and keeps
+If a session is already active, `skilltrace-dev start` refuses and asks you to run
+`skilltrace-dev stop` first. This avoids accidental low-value runs and keeps
 manifest-backed instruction cleanup predictable.
 
-Run `traceskill-dev start` from the demo working copy root, or pass
+Run `skilltrace-dev start` from the demo working copy root, or pass
 `--target <repo>`. The command refuses if the target does not contain the
 expected instruction surfaces for the selected profile, which catches
 accidental parent-directory runs before they create misleading records.
@@ -305,9 +304,9 @@ accidental parent-directory runs before they create misleading records.
 For mode comparison trials, use:
 
 ```bash
-traceskill-dev start --mode full
-traceskill-dev start --mode passive_reflection
-traceskill-dev start --mode passive_only
+skilltrace-dev start --mode full
+skilltrace-dev start --mode passive_reflection
+skilltrace-dev start --mode passive_only
 ```
 
 `full` is the default. `passive_reflection` skips live skill lifecycle logging
@@ -322,7 +321,7 @@ missing semantic tracing setup is visible even after the terminal output is gone
 If passive events do not appear, restart with:
 
 ```bash
-traceskill-dev start --debug-probe
+skilltrace-dev start --debug-probe
 ```
 
 Then inspect the printed probe log.
@@ -331,9 +330,9 @@ For Claude Code profile trials, start from a repo with `CLAUDE.md` or
 `.claude/CLAUDE.md` plus `.claude/skills/`:
 
 ```bash
-traceskill-dev start --instruction-profile claude-code
+skilltrace-dev start --instruction-profile claude-code
 claude
-traceskill-dev stop
+skilltrace-dev stop
 ```
 
 The `claude_code` profile injects into the Claude instruction file and writes
@@ -345,9 +344,9 @@ either spelling.
 For Gemini CLI trials, use the normal AGENTS.md-shaped sandbox:
 
 ```bash
-traceskill-dev start --instruction-profile agents-md
+skilltrace-dev start --instruction-profile agents-md
 gemini
-traceskill-dev stop
+skilltrace-dev stop
 ```
 
 In July 2026 testing, Gemini CLI worked with the existing `agents_md` profile.
@@ -374,7 +373,7 @@ the skill so the run records declared agent, model, client, working directory,
 and task summary metadata.
 
 The probe discovers the target repo from the command-line Codex session.
-`traceskill-dev start` creates the passive probe config:
+`skilltrace-dev start` creates the passive probe config:
 
 ```text
 .skilltrace.json
@@ -435,7 +434,7 @@ http://localhost:5777/app/runs
 ```
 
 For package-style trials, open `http://localhost:7555/app/runs`, or the
-host-reachable URL printed by `HOST=0.0.0.0 traceskill daemon start`.
+host-reachable URL printed by `HOST=0.0.0.0 skilltrace daemon start`.
 
 Look for a run ID like:
 
@@ -481,7 +480,7 @@ declared semantically, the MCP semantic path worked but the passive probe did
 not observe the skill read.
 
 On the runs list, the Result column should show `Running` until
-`traceskill-dev stop` or `traceskill stop` records `trace_session_finished`.
+`skilltrace-dev stop` or `skilltrace stop` records `trace_session_finished`.
 After stop, it changes to the final diagnosis from the file-oriented
 consistency matrix. If an unstopped run is superseded by a newer
 `trace_session_started` event, the Status column shows `Interrupted` to make the
@@ -518,9 +517,9 @@ with reversible instruction injection.
 The low-friction path is:
 
 ```bash
-traceskill-dev start
+skilltrace-dev start
 codex
-traceskill-dev stop
+skilltrace-dev stop
 ```
 
 This temporarily adds a tracing-policy line near the top of `AGENTS.md`, writes
@@ -598,10 +597,10 @@ pnpm demo:reset type-fix-demo
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.
-- The MCP server command is `traceskill-dev mcp`.
+- The MCP server command is `skilltrace-dev mcp`.
 - `/app/diagnostics` shows the expected daemon mode and MCP registration for
   command-line clients available to the server process.
-- You ran `traceskill-dev start` from the target repo before launching Codex.
+- You ran `skilltrace-dev start` from the target repo before launching Codex.
 - You are using command-line Codex, not Codex via VS Code.
 - The sandbox agent actually called the SkillTrace MCP tools.
 - The run may be under the generated path-hash timestamped ID.
@@ -620,9 +619,8 @@ claude mcp get skilltrace
 ```
 
 For dev trials, the command should usually be `skilltrace-dev mcp`. For package
-trials, it should usually be `skilltrace mcp`. The older `traceskill-dev` and
-`traceskill` aliases are still accepted. Restart the agent after changing MCP
-registration, and confirm the run mode is not `passive_only`.
+trials, it should usually be `skilltrace mcp`. Restart the agent after changing
+MCP registration, and confirm the run mode is not `passive_only`.
 
 If the MCP server fails to start, run:
 
@@ -646,8 +644,8 @@ With `inotify-tools` installed, a successful Linux run should show passive
 `skill_file_read` and `skill_reference_read` events as well as MCP semantic
 events. If the MCP semantic events appear but passive events do not, check that
 the target repo has `.skilltrace.json` and `.skills`, and that
-`traceskill-dev start` or `traceskill start` was run before Codex started. Run
-`traceskill-dev status` or `traceskill status` and confirm the probe says
+`skilltrace-dev start` or `skilltrace start` was run before Codex started. Run
+`skilltrace-dev status` or `skilltrace status` and confirm the probe says
 `running`. If it is not running, inspect the printed probe log.
 
 For Claude Code trials, also check the selected instruction profile and copied
@@ -669,15 +667,15 @@ If the consistency panel says `Declared but not observed`, the semantic MCP part
 When you are done, stop the active session:
 
 ```bash
-traceskill-dev stop
+skilltrace-dev stop
 ```
 
-`traceskill-dev end` is also accepted as an alias.
+`skilltrace-dev end` is also accepted as an alias.
 
 From any repo you can run:
 
 ```bash
-traceskill-dev start
-traceskill-dev status
-traceskill-dev stop
+skilltrace-dev start
+skilltrace-dev status
+skilltrace-dev stop
 ```
