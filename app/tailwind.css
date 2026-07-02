@@ -31,7 +31,7 @@
 
 @layer components {
   .page-title {
-    @apply text-3xl font-bold text-balance;
+    @apply text-3xl font-thin text-balance;
   }
 
   .section-title {

@@ -121,6 +121,9 @@ Start the local daemon:
 skilltrace daemon start
 ```
 
+On macOS, this may ask for your admin password so SkillTrace can run `fs_usage`
+for passive skill-file access probing.
+
 Open the UI:
 
 ```text
