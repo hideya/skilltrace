@@ -4,6 +4,7 @@ import path from 'path'
 import { afterEach, describe, expect, test } from 'vitest'
 import {
   detectInstructionSurfaces,
+  type InstructionSurfaceReport,
   instructionProfileReady,
   selectInstructionProfile,
 } from './instruction-profile'
@@ -66,7 +67,7 @@ describe('instruction profiles', () => {
   })
 
   test('auto selection defaults to agents_md when profiles are ambiguous', () => {
-    let report = {
+    let report: InstructionSurfaceReport = {
       detected_at: '2026-07-02T00:00:00.000Z',
       surfaces: [],
       alias_groups: [],

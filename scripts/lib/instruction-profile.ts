@@ -169,7 +169,7 @@ function hasSurface(
   )
 }
 
-function unique(values: string[]) {
+function unique<T extends string>(values: T[]) {
   return [...new Set(values)]
 }
 

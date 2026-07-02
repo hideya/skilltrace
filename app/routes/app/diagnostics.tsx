@@ -3,6 +3,11 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { getTraceSession } from '~/models/.server/trace-session'
+import {
+  parseGeminiArgs,
+  parseGeminiCommand,
+  parseMcpValue,
+} from './+/diagnostics-mcp'
 
 const MCP_CHECK_TIMEOUT_MS = 8000
 
@@ -625,26 +630,6 @@ function mcpStatusBase(
     output: result.output,
     check_command: result.check_command,
   } satisfies McpClientStatus
-}
-
-function parseMcpValue(output: string, key: string) {
-  let prefix = `${key}:`.toLowerCase()
-  let line = output
-    .split('\n')
-    .map((item) => item.trim())
-    .find((item) => item.toLowerCase().startsWith(prefix))
-
-  return line?.slice(prefix.length).trim() || null
-}
-
-function parseGeminiCommand(output: string) {
-  if (/\btraceskill-dev\b/.test(output)) return 'traceskill-dev'
-  if (/\btraceskill\b/.test(output)) return 'traceskill'
-  return null
-}
-
-function parseGeminiArgs(output: string) {
-  return /\bmcp\b/.test(output) ? 'mcp' : null
 }
 
 function formatDate(value?: string) {

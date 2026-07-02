@@ -198,7 +198,9 @@ export function loadTargetConfig(
   }
 }
 
-function selectedInstructionProfile(value?: Record<string, unknown>) {
+function selectedInstructionProfile(
+  value?: Record<string, unknown>,
+): InstructionProfile {
   return value?.selected === 'claude_code' ? 'claude_code' : 'agents_md'
 }
 
