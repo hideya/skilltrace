@@ -7,5 +7,10 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    watch: {
+      ignored: ['**/tmp/**', '**/data/**'],
+    },
+  },
   plugins: [reactRouter(), tailwindcss(), devtoolsJson()],
 })

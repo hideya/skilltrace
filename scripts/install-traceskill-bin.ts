@@ -82,7 +82,11 @@ function wrapperContent() {
 
   return `#!/bin/sh
 ${MARKER}
-SKILLTRACE_TARGET_ROOT="\${SKILLTRACE_TARGET_ROOT:-$PWD}" \\
+if [ -z "\${SKILLTRACE_TARGET_ROOT:-}" ]; then
+  SKILLTRACE_TARGET_ROOT="$(pwd -P 2>/dev/null || printf '%s' "\${PWD:-}")"
+fi
+cd ${shellQuote(PROJECT_ROOT)} || exit 1
+export SKILLTRACE_TARGET_ROOT
 SKILLTRACE_DEV="\${SKILLTRACE_DEV:-1}" \\
 SKILLTRACE_SERVER="\${SKILLTRACE_SERVER:-${DEV_SERVER}}" \\
 PORT="\${PORT:-${DEV_PORT}}" \\
