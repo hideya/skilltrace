@@ -1,8 +1,8 @@
 # Instruction Profile Architecture
 
 This note records the design and current status for extending SkillTrace beyond
-one repository instruction convention. The first non-AGENTS.md profile is
-Claude Code.
+one repository instruction convention. Claude Code is the first non-AGENTS.md
+profile. Gemini CLI currently reuses the AGENTS.md-compatible profile.
 
 The goal is not to make SkillTrace clever about every agent convention at once.
 The goal is to keep each instruction surface safe, inspectable, and generic
@@ -44,6 +44,7 @@ Supported profiles:
 - `agents_md`
 - `claude_code`
 
+Gemini CLI uses `agents_md` when a repo exposes `AGENTS.md` and `.skills/`.
 Future instruction profiles may cover other repo instruction conventions.
 
 One run uses one active instruction profile. Mixed-profile tracing can wait
@@ -264,7 +265,16 @@ claude mcp add skilltrace --scope user -- traceskill mcp
 
 For checkout trials, use `traceskill-dev mcp` instead.
 
-### Phase 6: Cross-Agent Comparison
+### Phase 6: Gemini CLI As An AGENTS.md-Compatible Client
+
+Test Gemini CLI without introducing a new instruction profile.
+
+Status: first-pass manual testing succeeded. Gemini CLI can register the
+SkillTrace MCP server and use the existing `agents_md` profile in an
+AGENTS.md-shaped sandbox. The current gap is diagnostics: SkillTrace does not
+yet inspect `gemini mcp list`.
+
+### Phase 7: Cross-Agent Comparison
 
 Once AGENTS.md and Claude Code instruction profiles are stable, compare runs
 across profiles.
@@ -275,6 +285,8 @@ The comparison should show:
 - logical paths used by each agent
 - resolved paths used for normalization
 - warnings when instruction profiles used different instruction surfaces
+- visibility into AGENTS.md-compatible clients, such as Codex CLI and Gemini
+  CLI, that share the same instruction profile
 
 This is the point where SkillTrace becomes a generic skill observability tool
 rather than an AGENTS.md-shaped tracer.

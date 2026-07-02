@@ -200,6 +200,32 @@ claude mcp get skilltrace
 SkillTrace does not yet show Claude Code MCP registration in
 `/app/diagnostics`; use the Claude CLI check for now.
 
+## Gemini CLI MCP Registration
+
+For Gemini CLI, register the checkout command with:
+
+```bash
+gemini mcp add skilltrace traceskill-dev mcp --scope user
+```
+
+For package-style trials, register the packaged command instead:
+
+```bash
+gemini mcp add skilltrace traceskill mcp --scope user
+```
+
+Then confirm the server is registered:
+
+```bash
+gemini mcp list
+```
+
+Gemini CLI uses the existing `agents_md` instruction profile when the target
+repo uses `AGENTS.md` and `.skills/`.
+
+SkillTrace does not yet show Gemini CLI MCP registration in
+`/app/diagnostics`; use the Gemini CLI check for now.
+
 When `traceskill-dev start` or `traceskill start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown

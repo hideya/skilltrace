@@ -2,7 +2,7 @@
 
 This runbook explains how to test SkillTrace with a real command-line agent
 session using the local MCP server. The main path uses Codex CLI; Claude Code
-profile checks are included where they differ.
+and Gemini CLI checks are included where they differ.
 
 The goal is to verify that an agent working in a separate fake repository can:
 
@@ -241,6 +241,23 @@ claude mcp add skilltrace --scope user -- traceskill mcp
 SkillTrace does not yet show Claude Code MCP registration in `/app/diagnostics`;
 use `claude mcp get skilltrace` for now.
 
+For Gemini CLI checkout trials, register the same MCP server with Gemini:
+
+```bash
+gemini mcp add skilltrace traceskill-dev mcp --scope user
+gemini mcp list
+```
+
+For package-style Gemini CLI trials, use:
+
+```bash
+gemini mcp add skilltrace traceskill mcp --scope user
+```
+
+Gemini CLI uses the existing `agents_md` profile for repos with `AGENTS.md` and
+`.skills/`. SkillTrace does not yet show Gemini CLI MCP registration in
+`/app/diagnostics`; use `gemini mcp list` for now.
+
 ## Run The Experiment
 
 Start the trace session from the sandbox repo:
@@ -316,6 +333,19 @@ The `claude_code` profile injects into the Claude instruction file and writes
 `.claude/skills` is a symlink to another repo-local skill directory,
 SkillTrace also records a resolved repo-local root so passive probing can match
 either spelling.
+
+For Gemini CLI trials, use the normal AGENTS.md-shaped sandbox:
+
+```bash
+traceskill-dev start --instruction-profile agents-md
+gemini
+traceskill-dev stop
+```
+
+In July 2026 testing, Gemini CLI worked with the existing `agents_md` profile.
+As with other clients, smaller or faster models may vary in how precisely they
+follow the semantic logging schema, so compare passive, semantic, and
+reflection evidence rather than trusting one stream alone.
 
 Then start command-line Codex from the same sandbox repo:
 
@@ -455,8 +485,8 @@ This test verifies:
 
 - A command-line MCP client can launch the local SkillTrace MCP server through
   stdio.
-- Codex CLI and Claude Code can see and call the SkillTrace MCP tools when
-  registered to the correct command.
+- Codex CLI, Claude Code, and Gemini CLI can see and call the SkillTrace MCP
+  tools when registered to the correct command.
 - A reusable `.skilltrace/instrumentation.md` overlay can drive SkillTrace MCP calls.
 - The local probe worker can observe skill file reads before the agent starts reading the target repo.
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
@@ -470,7 +500,7 @@ This test does not yet verify:
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Windows passive probing
-- Claude Code MCP registration diagnostics in the SkillTrace UI
+- Claude Code and Gemini CLI MCP registration diagnostics in the SkillTrace UI
 - production deployment behavior
 
 ## Trying A Real Repository

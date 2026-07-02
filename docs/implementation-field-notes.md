@@ -170,6 +170,23 @@ which files were passively accessed, and which semantic events were emitted.
 This kind of validation matters for real repositories, where teams may use
 symlinks or shared instruction directories to support multiple agent clients.
 
+## AGENTS.md-Compatible Clients Can Share One Instruction Profile
+
+In Gemini CLI testing on July 2, 2026, we confirmed that Gemini CLI can use the
+existing `agents_md` instruction profile for a repository with `AGENTS.md` and
+`.skills/`.
+
+One run with a smaller, faster model produced useful MCP events but used a
+slightly different semantic event shape than requested. A later run with a
+larger model reported passive, semantic, and reflection signals consistently:
+the passive probe observed the skill and checklist files, semantic MCP events
+declared the skill lifecycle and reference read, and reflection listed the same
+files.
+
+This is another concrete reason SkillTrace keeps the evidence streams separate.
+The tool can distinguish "the client/profile integration works" from "this
+particular run followed the semantic reporting schema exactly."
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:

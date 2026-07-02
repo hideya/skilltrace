@@ -859,12 +859,14 @@ async function confirmDiscard(session: any) {
 }
 
 async function getJson(server: string, pathname: string) {
-  let response = await fetch(new URL(pathname, server))
+  let url = new URL(pathname, server)
+  let response = await fetchJson(url)
   return await jsonResponse(response)
 }
 
 async function postJson(server: string, pathname: string, body: any) {
-  let response = await fetch(new URL(pathname, server), {
+  let url = new URL(pathname, server)
+  let response = await fetchJson(url, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -873,6 +875,18 @@ async function postJson(server: string, pathname: string, body: any) {
   })
 
   return await jsonResponse(response)
+}
+
+async function fetchJson(url: URL, init?: RequestInit) {
+  try {
+    return await fetch(url, init)
+  } catch (error) {
+    if (isConnectionFailure(error)) {
+      throw new Error(serverUnavailableMessage(url))
+    }
+
+    throw error
+  }
 }
 
 async function postSessionEvent(
@@ -900,6 +914,41 @@ async function jsonResponse(response: Response) {
   }
 
   return await response.json()
+}
+
+function isConnectionFailure(error: unknown) {
+  if (!(error instanceof Error)) return false
+  let cause = error.cause as any
+  if (isNetworkFailureCode(cause?.code)) return true
+  if (Array.isArray(cause?.errors)) {
+    return cause.errors.some((item: any) => isNetworkFailureCode(item?.code))
+  }
+
+  return error.message === 'fetch failed'
+}
+
+function isNetworkFailureCode(code: unknown) {
+  return [
+    'ECONNREFUSED',
+    'ECONNRESET',
+    'EHOSTUNREACH',
+    'ENOTFOUND',
+    'ETIMEDOUT',
+  ].includes(String(code))
+}
+
+function serverUnavailableMessage(url: URL) {
+  let command = commandName()
+
+  return [
+    `SkillTrace server is not reachable at ${url.origin}.`,
+    `Start it with \`${command} daemon start\` or \`${command} serve\`, then retry.`,
+    'Use `--server <url>` if the server is running somewhere else.',
+  ].join('\n')
+}
+
+function commandName() {
+  return DEV_MODE ? 'traceskill-dev' : 'traceskill'
 }
 
 async function getDaemonStatus(server: string) {
@@ -1664,7 +1713,19 @@ function usage(message: string): never {
   process.exit(1)
 }
 
-await main()
+await main().catch(handleFatalError)
+
+function handleFatalError(error: unknown): never {
+  if (process.env.SKILLTRACE_DEBUG_STACK && error instanceof Error && error.stack) {
+    console.error(error.stack)
+  } else if (error instanceof Error) {
+    console.error(error.message)
+  } else {
+    console.error(String(error))
+  }
+
+  process.exit(1)
+}
 
 type Options = {
   target?: string

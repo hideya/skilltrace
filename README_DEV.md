@@ -284,7 +284,8 @@ supervises the passive probe, and receives MCP semantic events.
 See `docs/architecture-decisions.md` for the decisions and complications found
 while building the first local prototype. See
 `docs/agent-profile-architecture.md` for the AGENTS.md/Claude Code profile
-model and symlink-safe instruction surface design.
+model, Gemini CLI's AGENTS.md-compatible path, and symlink-safe instruction
+surface design.
 
 The local UI has three primary views:
 
@@ -293,7 +294,8 @@ The local UI has three primary views:
   repo across tracing modes.
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
   process, macOS shared passive probe when applicable, active session, and Codex
-  MCP registration.
+  MCP registration. Claude Code and Gemini CLI registration diagnostics are not
+  implemented yet.
 
 On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
 Result column intentionally shows `Running` while a trace session is active.

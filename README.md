@@ -59,7 +59,8 @@ that failures can eventually become reusable procedural knowledge.
 
 - Node.js 22+
 - npm
-- Codex CLI or Claude Code for MCP registration in the current workflow
+- Codex CLI, Claude Code, or Gemini CLI for MCP registration in the current
+  workflow
 - macOS or Linux
   - macOS only: admin password may be required
   - Linux only: `inotify-tools` installation may be required
@@ -70,8 +71,8 @@ Platform notes:
 - Linux uses an `inotifywait` probe. Install `inotify-tools` if passive file
   access is not captured.
 
-SkillTrace currently supports command-line MCP workflows for Codex CLI and
-Claude Code. Codex App support is not yet available.
+SkillTrace currently supports command-line MCP workflows for Codex CLI, Claude
+Code, and Gemini CLI. Codex App support is not yet available.
 
 ## Installation
 
@@ -128,8 +129,20 @@ Check it:
 claude mcp get skilltrace
 ```
 
+For Gemini CLI:
+
+```bash
+gemini mcp add skilltrace traceskill mcp --scope user
+```
+
+Check it:
+
+```bash
+gemini mcp list
+```
+
 The diagnostics page also checks whether Codex MCP registration matches the
-installed command. Claude Code diagnostics are still future work.
+installed command. Claude Code and Gemini CLI diagnostics are still future work.
 
 ## Quick Start
 
@@ -257,9 +270,11 @@ SkillTrace is currently pre-alpha.
 
 Known limitations include:
 
-- Codex CLI and Claude Code are the first supported command-line MCP workflows.
+- Codex CLI, Claude Code, and Gemini CLI are the first supported command-line
+  MCP workflows.
 - Codex App support is not yet available.
-- Claude Code MCP registration diagnostics are not yet implemented.
+- Claude Code and Gemini CLI MCP registration diagnostics are not yet
+  implemented.
 - Passive file access probing is platform-dependent.
 - macOS passive probing may require admin privileges.
 - Linux passive probing depends on `inotifywait`.
@@ -312,6 +327,12 @@ Or from Claude Code:
 
 ```bash
 claude mcp remove skilltrace -s user
+```
+
+Or from Gemini CLI:
+
+```bash
+gemini mcp remove skilltrace --scope user
 ```
 
 Uninstall the package:

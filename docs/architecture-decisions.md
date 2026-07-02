@@ -424,6 +424,10 @@ Claude's command-line MCP registration. The design is captured in
 attention to symlinked instruction surfaces such as `CLAUDE.md -> AGENTS.md`
 and `.claude/skills -> .skills`.
 
+Gemini CLI is supported as an AGENTS.md-compatible command-line MCP client. It
+uses the existing `agents_md` instruction profile rather than introducing a new
+repository surface.
+
 ## Pluggable Instrumentation Overlay
 
 SkillTrace tracing instructions should be reusable outside the sandbox.
