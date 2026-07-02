@@ -201,12 +201,13 @@ Before tracing sensitive repositories, read
 ## Try It On A Toy Skill
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/hideya/skill-trace.git
 cp -RP skill-trace/examples/type-fix-demo type-fix-demo
 cd type-fix-demo
+pnpm install
 
 skilltrace daemon start
-open http://localhost:5777
+open http://localhost:7555
 codex mcp add skilltrace -- skilltrace mcp
 # claude mcp add skilltrace --scope user -- skilltrace mcp
 # gemini mcp add skilltrace skilltrace mcp --scope user

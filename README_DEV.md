@@ -243,7 +243,7 @@ URLs, such as `http://192.168.64.2:7555`.
 
 Passive file probing currently uses macOS `fs_usage` on macOS and
 `inotifywait` from `inotify-tools` on Linux. If the Linux dependency is missing,
-`traceskill start` still creates the run and enables semantic MCP tracing, but
+`skilltrace start` still creates the run and enables semantic MCP tracing, but
 records a visible warning that passive probing is unavailable.
 
 On Alpine Linux, install the passive probe dependency with:
@@ -295,14 +295,14 @@ The local UI has three primary views:
 - `/app/runs/compare?runs=...` compares selected successful runs for a target
   repo across tracing modes.
 - `/app/diagnostics` shows read-only runtime checks for the daemon, server
-  process, macOS shared passive probe when applicable, active session, and Codex
-  MCP registration. Claude Code and Gemini CLI registration diagnostics are not
-  implemented yet.
+  process, macOS shared passive probe when applicable, active session, and MCP
+  registration for Codex CLI, Claude Code, and Gemini CLI when those CLIs are
+  available.
 
 On the runs page, `Status`, `Result`, and `Mode` are shown separately. The
 Result column intentionally shows `Running` while a trace session is active.
 Final diagnoses such as `Pass`, `Warning`, or passive-only `Captured` appear
-only after `traceskill stop` records `trace_session_finished`, and are derived
+only after `skilltrace stop` records `trace_session_finished`, and are derived
 from the file-oriented consistency matrix. If an unstopped run is superseded by a newer
 `trace_session_started` event, the Status column shows `Interrupted` to make the
 missing cleanup visible.
@@ -314,7 +314,7 @@ opening the report. The comparison report shows whether skill and reference file
 usage remains stable as instrumentation is reduced from full tracing to
 passive-only capture.
 
-At `traceskill start`, after any stale SkillTrace overlay cleanup and before
+At `skilltrace start`, after any stale SkillTrace overlay cleanup and before
 the current run's overlay is injected, SkillTrace also records a lightweight Git
 run snapshot when the target repo is inside a Git worktree. The snapshot stores
 the HEAD commit, branch, broad changed-file status, and bounded

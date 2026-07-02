@@ -527,7 +527,7 @@ unavailable and continues the run normally.
 
 ## Sandbox Template
 
-`agent-sandbox-repo` is generated from `agent-sandbox-repo-template`.
+`agent-sandbox-repo` is generated from `examples/type-fix-demo`.
 
 Reasons:
 

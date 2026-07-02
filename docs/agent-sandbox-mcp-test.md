@@ -30,7 +30,7 @@ and semantic declarations share the same run ID.
 ## Pieces
 
 - Main SkillTrace app: this repository.
-- Sandbox template: `agent-sandbox-repo-template`.
+- Demo template: `examples/type-fix-demo`.
 - Generated sandbox repo: `agent-sandbox-repo`.
 - Local checkout CLI: `skilltrace-dev`.
 - Local checkout MCP server command: `skilltrace-dev mcp`.
@@ -184,7 +184,7 @@ From the main SkillTrace repo:
 pnpm sandbox:reset
 ```
 
-This recreates `agent-sandbox-repo` from `agent-sandbox-repo-template`.
+This recreates `agent-sandbox-repo` from `examples/type-fix-demo`.
 
 The generated repo intentionally contains TypeScript errors in:
 

@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 const ROOT = process.cwd()
-const TEMPLATE_DIR = path.join(ROOT, 'agent-sandbox-repo-template')
+const TEMPLATE_DIR = path.join(ROOT, 'examples/type-fix-demo')
 const TARGET_DIR = path.join(ROOT, 'agent-sandbox-repo')
 
 function main() {
@@ -11,7 +11,10 @@ function main() {
   }
 
   fs.rmSync(TARGET_DIR, { recursive: true, force: true })
-  fs.cpSync(TEMPLATE_DIR, TARGET_DIR, { recursive: true })
+  fs.cpSync(TEMPLATE_DIR, TARGET_DIR, {
+    recursive: true,
+    verbatimSymlinks: true,
+  })
 
   console.log(`Reset ${path.relative(ROOT, TARGET_DIR)} from template`)
 }
