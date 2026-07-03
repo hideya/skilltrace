@@ -33,7 +33,7 @@ and semantic declarations share the same run ID.
 - Demo template: `examples/type-fix-demo`.
 - Generated demo working copy: `tmp/type-fix-demo`.
 - Local checkout CLI: `skilltrace-dev`.
-- Local checkout MCP server command: `skilltrace-dev mcp`.
+- Local checkout MCP server command: `skilltrace-dev mcp serve`.
 - Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
 - MCP tools exposed to the agent: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
@@ -127,7 +127,7 @@ http://localhost:5777/app/diagnostics
 Use `/app/diagnostics` as a read-only setup check. It shows the daemon process,
 server mode, shared probe status, active session, and whether
 `codex mcp get skilltrace` matches the current command surface. For checkout
-trials, Codex should be registered to `skilltrace-dev mcp`.
+trials, Codex should be registered to `skilltrace-dev mcp serve`.
 
 For a compact command-line preflight check, run:
 
@@ -162,7 +162,7 @@ http://localhost:7555/app/diagnostics
 ```
 
 In package mode, `/app/diagnostics` expects Codex to be registered to
-`skilltrace mcp`.
+`skilltrace mcp serve`.
 
 For Linux containers or VMs that should be opened from the host machine, bind
 the daemon to all interfaces:
@@ -221,13 +221,13 @@ skilltrace mcp status
 The equivalent manual Codex command is:
 
 ```bash
-codex mcp add skilltrace -- skilltrace-dev mcp
+codex mcp add skilltrace -- skilltrace-dev mcp serve
 ```
 
 For package-style trials, use:
 
 ```bash
-codex mcp add skilltrace -- skilltrace mcp
+codex mcp add skilltrace -- skilltrace mcp serve
 ```
 
 As of June 2026, Codex CLI stores MCP registration globally by default and does
@@ -245,7 +245,7 @@ The command should show:
 - `transport: stdio`
 - `command: skilltrace-dev` for checkout trials
 - `command: skilltrace` for package trials
-- `args: mcp`
+- `args: mcp serve`
 
 The run ID is not configured in the MCP registration. The MCP server resolves
 the active SkillTrace session when a SkillTrace MCP tool is called.
@@ -258,7 +258,7 @@ For Claude Code checkout trials, register the same MCP server with Claude:
 
 ```bash
 claude mcp remove skilltrace -s user
-claude mcp add skilltrace --scope user -- skilltrace-dev mcp
+claude mcp add skilltrace --scope user -- skilltrace-dev mcp serve
 claude mcp get skilltrace
 ```
 
@@ -266,7 +266,7 @@ For package-style Claude Code trials, use:
 
 ```bash
 claude mcp remove skilltrace -s user
-claude mcp add skilltrace --scope user -- skilltrace mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp serve
 ```
 
 SkillTrace also shows a read-only Claude Code MCP registration check in
@@ -275,14 +275,14 @@ SkillTrace also shows a read-only Claude Code MCP registration check in
 For Gemini CLI checkout trials, register the same MCP server with Gemini:
 
 ```bash
-gemini mcp add skilltrace skilltrace-dev mcp --scope user
+gemini mcp add skilltrace skilltrace-dev mcp serve --scope user
 gemini mcp list
 ```
 
 For package-style Gemini CLI trials, use:
 
 ```bash
-gemini mcp add skilltrace skilltrace mcp --scope user
+gemini mcp add skilltrace skilltrace mcp serve --scope user
 ```
 
 Gemini CLI uses the existing `agents_md` profile for repos with `AGENTS.md` and
@@ -634,7 +634,7 @@ per-client MCP registration.
 If no run appears, check that:
 
 - SkillTrace is running at `http://localhost:5777`.
-- The MCP server command is `skilltrace-dev mcp`.
+- The MCP server command is `skilltrace-dev mcp serve`.
 - `/app/diagnostics` shows the expected daemon mode and MCP registration for
   command-line clients available to the server process.
 - You ran `skilltrace-dev start` from the target repo before launching Codex.
@@ -655,9 +655,9 @@ codex mcp get skilltrace
 claude mcp get skilltrace
 ```
 
-For dev trials, the command should usually be `skilltrace-dev mcp`. For package
-trials, it should usually be `skilltrace mcp`. Restart the agent after changing
-MCP registration, and confirm the run mode is not `passive_only`.
+For dev trials, the command should usually be `skilltrace-dev mcp serve`. For
+package trials, it should usually be `skilltrace mcp serve`. Restart the agent
+after changing MCP registration, and confirm the run mode is not `passive_only`.
 
 If the MCP server fails to start, run:
 

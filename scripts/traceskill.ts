@@ -41,7 +41,7 @@ const GIT_SNAPSHOT_TEXT_LIMIT = 200_000
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
-  if (command !== 'mcp') warnIfDevWrapperStale()
+  if (!(command === 'mcp' && args[0] === 'serve')) warnIfDevWrapperStale()
 
   if (command === 'start') {
     await start(args)
@@ -304,6 +304,8 @@ async function mcp(args: string[]) {
   let [command, ...rest] = args
 
   if (!command) {
+    mcpUsage()
+  } else if (command === 'serve') {
     runScript('scripts/skilltrace-mcp.ts')
   } else if (command === 'install') {
     await mcpInstall(rest)
@@ -321,7 +323,7 @@ async function mcpInstall(args: string[]) {
   let agents = selectedMcpAgents(options)
   let serverCommand = expectedMcpServerCommand()
 
-  console.log(`Installing SkillTrace MCP registrations for: ${serverCommand} mcp`)
+  console.log(`Installing SkillTrace MCP registrations for: ${serverCommand} mcp serve`)
   console.log('')
 
   let results = agents.map((agent) => installMcpAgent(agent, serverCommand))
@@ -344,7 +346,7 @@ async function mcpStatus(args: string[]) {
   let agents = selectedMcpAgents(options)
   let serverCommand = expectedMcpServerCommand()
 
-  console.log(`Expected SkillTrace MCP command: ${serverCommand} mcp`)
+  console.log(`Expected SkillTrace MCP command: ${serverCommand} mcp serve`)
   console.log('')
 
   for (let agent of agents) {
@@ -1054,7 +1056,7 @@ function printDiagnosticsVerbose(data: any) {
     console.log(`    name: ${client.name}`)
     console.log(`    message: ${client.message}`)
     console.log(`    check: ${client.check_command}`)
-    console.log(`    expected: ${client.expected_command} mcp`)
+    console.log(`    expected: ${client.expected_command} ${client.expected_args}`)
     console.log(`    command: ${client.command ?? 'unknown'}`)
     console.log(`    args: ${client.args ?? 'unknown'}`)
   }
@@ -1247,10 +1249,11 @@ function mcpAgents() {
         '--',
         serverCommand,
         'mcp',
+        'serve',
       ],
       registrationMatches: (output: string, serverCommand: string) =>
         new RegExp(`command:\\s*${escapeRegExp(serverCommand)}\\b`).test(output) &&
-        /\bargs:\s*mcp\b/.test(output),
+        /\bargs:\s*mcp serve\b/.test(output),
     },
     {
       key: 'claude',
@@ -1268,10 +1271,11 @@ function mcpAgents() {
         '--',
         serverCommand,
         'mcp',
+        'serve',
       ],
       registrationMatches: (output: string, serverCommand: string) =>
         new RegExp(`Command:\\s*${escapeRegExp(serverCommand)}\\b`).test(output) &&
-        /\bArgs:\s*mcp\b/.test(output),
+        /\bArgs:\s*mcp serve\b/.test(output),
     },
     {
       key: 'gemini',
@@ -1285,13 +1289,14 @@ function mcpAgents() {
         'skilltrace',
         serverCommand,
         'mcp',
+        'serve',
         '--scope',
         'user',
       ],
       registrationMatches: (output: string, serverCommand: string) =>
         /\bskilltrace\b/i.test(output) &&
         output.includes(serverCommand) &&
-        /\bmcp\b/.test(output),
+        /\bmcp serve\b/.test(output),
     },
   ] satisfies McpAgent[]
 }
@@ -1305,6 +1310,20 @@ function indentLines(value: string, prefix: string) {
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function mcpUsage() {
+  console.log('Usage: skilltrace mcp <serve|install|status|uninstall>')
+  console.log('')
+  console.log('Commands:')
+  console.log('  serve      Start the stdio MCP server for agent clients')
+  console.log('  install    Register SkillTrace MCP with supported agent clients')
+  console.log('  status     Check SkillTrace MCP registration')
+  console.log('  uninstall  Remove SkillTrace MCP registration')
+  console.log('')
+  console.log('Options:')
+  console.log('  --agent codex|claude|gemini')
+  console.log('  --verbose')
 }
 
 function printBindChangeHint(state: DaemonState, bindHost: string, port: string) {
@@ -1906,8 +1925,7 @@ function usage(message: string): never {
   console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
   console.error('       skilltrace stop [--discard] [--yes]')
   console.error('       skilltrace diagnostics [--verbose]')
-  console.error('       skilltrace mcp <install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')
-  console.error('       skilltrace mcp')
+  console.error('       skilltrace mcp <serve|install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')
   console.error('       skilltrace daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
   process.exit(1)
 }

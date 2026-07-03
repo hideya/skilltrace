@@ -174,7 +174,7 @@ Under the hood, this runs the appropriate agent-specific commands.
 For Codex CLI:
 
 ```bash
-codex mcp add skilltrace -- skilltrace mcp
+codex mcp add skilltrace -- skilltrace mcp serve
 ```
 
 As of June 2026, Codex CLI stores MCP registration globally by default and does
@@ -190,7 +190,7 @@ For Claude Code:
 
 ```bash
 claude mcp remove skilltrace -s user
-claude mcp add skilltrace --scope user -- skilltrace mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp serve
 ```
 
 SkillTrace removes the existing Claude Code registration before adding it,
@@ -205,7 +205,7 @@ claude mcp get skilltrace
 For Gemini CLI:
 
 ```bash
-gemini mcp add skilltrace skilltrace mcp --scope user
+gemini mcp add skilltrace skilltrace mcp serve --scope user
 ```
 
 Check it:

@@ -48,7 +48,7 @@ Reasons:
 - package/default uses `http://localhost:7555`
 - checkout/dev uses `http://localhost:5777`
 - MCP registration is less ambiguous when development trials explicitly use
-  `skilltrace-dev mcp`
+  `skilltrace-dev mcp serve`
 
 Before publishing, the package can be tested with:
 
@@ -219,8 +219,8 @@ Reasons:
 
 The MCP checks compare the current server mode with the expected command:
 
-- checkout/dev mode expects `skilltrace-dev mcp`
-- package mode expects `skilltrace mcp`
+- checkout/dev mode expects `skilltrace-dev mcp serve`
+- package mode expects `skilltrace mcp serve`
 
 ## One Active Session
 

@@ -203,7 +203,7 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
           >
             <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 marker:hidden">
               <div className="min-w-0">
-                <h3 className="font-medium">{client.name}</h3>
+                <h3 className="font-normal">{client.name}</h3>
                 {/* <p className="truncate text-xs text-base-content/60">
                   {client.message}
                 </p> */}
@@ -219,7 +219,10 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
               <KeyValues
                 rows={[
                   ['Check', client.check_command],
-                  ['Expected', `${client.expected_command} mcp`],
+                  [
+                    'Expected',
+                    `${client.expected_command} ${client.expected_args}`,
+                  ],
                   ['CLI installed', client.cli_installed ? 'yes' : 'no'],
                   ['Registered', client.registered ? 'yes' : 'no'],
                   ['Command', client.command ?? 'unknown'],
@@ -228,7 +231,7 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
               />
               {client.output ? (
                 <details className="rounded-box border border-base-300">
-                  <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
                     Output
                   </summary>
                   <pre className="max-h-48 overflow-auto border-t border-base-300 bg-base-200 p-3 text-xs whitespace-pre-wrap">
@@ -356,6 +359,7 @@ type McpClientStatus = {
   cli_installed: boolean
   registered: boolean
   expected_command: string
+  expected_args: string
   command: string | null
   args: string | null
   output: string

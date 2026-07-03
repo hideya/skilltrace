@@ -16,5 +16,8 @@ export function parseGeminiCommand(output: string) {
 }
 
 export function parseGeminiArgs(output: string) {
-  return /\bmcp\b/.test(output) ? 'mcp' : null
+  if (/\bmcp serve\b/.test(output)) return 'mcp serve'
+  if (/\bmcp\b/.test(output)) return 'mcp'
+
+  return null
 }

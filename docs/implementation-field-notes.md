@@ -9,7 +9,7 @@ shape of the fix, and the current boundary of the solution.
 The first reliable MCP path used command-line Codex with:
 
 ```bash
-codex mcp add skilltrace -- skilltrace mcp
+codex mcp add skilltrace -- skilltrace mcp serve
 ```
 
 The Codex App could show MCP registration state, but did not reliably expose

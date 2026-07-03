@@ -153,7 +153,7 @@ skilltrace-dev mcp status
 ```
 
 This detects Codex CLI, Claude Code, and Gemini CLI when they are available on
-PATH and registers `skilltrace-dev mcp` for each supported client.
+PATH and registers `skilltrace-dev mcp serve` for each supported client.
 
 For package-style trials, use:
 
@@ -165,13 +165,13 @@ skilltrace mcp status
 The equivalent manual Codex registration is:
 
 ```bash
-codex mcp add skilltrace -- skilltrace-dev mcp
+codex mcp add skilltrace -- skilltrace-dev mcp serve
 ```
 
 For package-style trials, register the packaged command manually with:
 
 ```bash
-codex mcp add skilltrace -- skilltrace mcp
+codex mcp add skilltrace -- skilltrace mcp serve
 ```
 
 Then confirm the server is registered:
@@ -187,8 +187,8 @@ The local UI also exposes a read-only registration check at `/app/diagnostics`.
 It runs `codex mcp get skilltrace` from the server process and compares the
 registered command with the current SkillTrace mode:
 
-- checkout/dev mode expects `skilltrace-dev mcp`
-- package mode expects `skilltrace mcp`
+- checkout/dev mode expects `skilltrace-dev mcp serve`
+- package mode expects `skilltrace mcp serve`
 
 Use this page when switching between dogfooding the checkout and testing the
 packaged command; a mismatched MCP registration is easy to overlook from the
@@ -200,14 +200,14 @@ For Claude Code, register the checkout command manually with:
 
 ```bash
 claude mcp remove skilltrace -s user
-claude mcp add skilltrace --scope user -- skilltrace-dev mcp
+claude mcp add skilltrace --scope user -- skilltrace-dev mcp serve
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
 claude mcp remove skilltrace -s user
-claude mcp add skilltrace --scope user -- skilltrace mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp serve
 ```
 
 SkillTrace removes the existing Claude Code registration before adding it,
@@ -227,13 +227,13 @@ SkillTrace also shows a read-only Claude Code MCP registration check in
 For Gemini CLI, register the checkout command manually with:
 
 ```bash
-gemini mcp add skilltrace skilltrace-dev mcp --scope user
+gemini mcp add skilltrace skilltrace-dev mcp serve --scope user
 ```
 
 For package-style trials, register the packaged command instead:
 
 ```bash
-gemini mcp add skilltrace skilltrace mcp --scope user
+gemini mcp add skilltrace skilltrace mcp serve --scope user
 ```
 
 Then confirm the server is registered:

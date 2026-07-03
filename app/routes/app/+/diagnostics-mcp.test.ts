@@ -12,14 +12,14 @@ skilltrace
   enabled: true
   transport: stdio
   command: skilltrace-dev
-  args: mcp
+  args: mcp serve
   cwd: -
   env: -
   remove: codex mcp remove skilltrace
 `
 
     expect(parseMcpValue(output, 'command')).toBe('skilltrace-dev')
-    expect(parseMcpValue(output, 'args')).toBe('mcp')
+    expect(parseMcpValue(output, 'args')).toBe('mcp serve')
   })
 
   it('parses Claude Code MCP key-value output case-insensitively', () => {
@@ -29,27 +29,27 @@ skilltrace:
   Status: OK Connected
   Type: stdio
   Command: skilltrace
-  Args: mcp
+  Args: mcp serve
   Environment:
 `
 
     expect(parseMcpValue(output, 'command')).toBe('skilltrace')
-    expect(parseMcpValue(output, 'args')).toBe('mcp')
+    expect(parseMcpValue(output, 'args')).toBe('mcp serve')
   })
 
   it('parses Gemini CLI compact MCP list output', () => {
     let output = `
 Configured MCP servers:
 
-✓ skilltrace: skilltrace-dev mcp (stdio) - Connected
+✓ skilltrace: skilltrace-dev mcp serve (stdio) - Connected
 `
 
     expect(parseGeminiCommand(output)).toBe('skilltrace-dev')
-    expect(parseGeminiArgs(output)).toBe('mcp')
+    expect(parseGeminiArgs(output)).toBe('mcp serve')
   })
 
   it('prefers dev command names when parsing Gemini output', () => {
-    let output = 'skilltrace: skilltrace-dev mcp (stdio)'
+    let output = 'skilltrace: skilltrace-dev mcp serve (stdio)'
 
     expect(parseGeminiCommand(output)).toBe('skilltrace-dev')
   })
@@ -58,6 +58,12 @@ Configured MCP servers:
     let output = 'skilltrace: traceskill mcp (stdio)'
 
     expect(parseGeminiCommand(output)).toBeNull()
+  })
+
+  it('parses old Gemini MCP args as a stale registration shape', () => {
+    let output = 'skilltrace: skilltrace-dev mcp (stdio)'
+
+    expect(parseGeminiArgs(output)).toBe('mcp')
   })
 
   it('returns null when expected values are absent', () => {

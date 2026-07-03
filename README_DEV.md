@@ -345,7 +345,7 @@ idle views do not continue polling.
 The diagnostics page is intentionally not a manager. It does not start or stop
 processes or edit Codex configuration. It is a quick way to catch common setup
 mistakes, such as running the package UI while Codex is still registered to
-`skilltrace-dev mcp`, or vice versa.
+`skilltrace-dev mcp serve`, or vice versa.
 
 ```text
 Local LLM environment

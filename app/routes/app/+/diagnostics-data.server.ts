@@ -242,8 +242,9 @@ async function readCodexMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
+  let expectedArgs = expectedMcpArgs()
   let matches = command
-    ? expectedCommands.includes(command) && args === 'mcp'
+    ? expectedCommands.includes(command) && args === expectedArgs
     : false
   let wrapperWarning = devWrapperWarning(mode, command)
 
@@ -296,8 +297,9 @@ async function readClaudeMcpStatus(mode: string) {
 
   let command = parseMcpValue(result.output, 'command')
   let args = parseMcpValue(result.output, 'args')
+  let expectedArgs = expectedMcpArgs()
   let matches = command
-    ? expectedCommands.includes(command) && args === 'mcp'
+    ? expectedCommands.includes(command) && args === expectedArgs
     : false
   let wrapperWarning = devWrapperWarning(mode, command)
 
@@ -363,10 +365,11 @@ async function readGeminiMcpStatus(mode: string) {
     parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
   let args =
     parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
+  let expectedArgs = expectedMcpArgs()
   let matches =
     ((command ? expectedCommands.includes(command) : false) ||
       expectedCommands.some((item) => result.output.includes(item))) &&
-    (args === 'mcp' || /\bmcp\b/.test(result.output))
+    (args === expectedArgs || /\bmcp serve\b/.test(result.output))
   let wrapperWarning = devWrapperWarning(mode, command)
 
   return {
@@ -445,6 +448,10 @@ function expectedMcpCommands(mode: string) {
   return mode === 'dev' ? ['skilltrace-dev'] : ['skilltrace']
 }
 
+function expectedMcpArgs() {
+  return 'mcp serve'
+}
+
 function devWrapperWarning(mode: string, command: string | null) {
   if (mode !== 'dev' || !command) return null
   if (command !== 'skilltrace-dev') return null
@@ -485,6 +492,7 @@ function mcpStatusBase(
     cli_installed: false,
     registered: false,
     expected_command: expectedCommands.join(' or '),
+    expected_args: expectedMcpArgs(),
     command: null,
     args: null,
     output: result.output,
@@ -567,6 +575,7 @@ export type McpClientStatus = {
   cli_installed: boolean
   registered: boolean
   expected_command: string
+  expected_args: string
   command: string | null
   args: string | null
   output: string

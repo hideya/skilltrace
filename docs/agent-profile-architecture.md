@@ -260,10 +260,10 @@ registration points to the expected command for the current package/dev mode.
 Status: not implemented yet. Claude Code itself can be registered manually with:
 
 ```bash
-claude mcp add skilltrace --scope user -- skilltrace mcp
+claude mcp add skilltrace --scope user -- skilltrace mcp serve
 ```
 
-For checkout trials, use `skilltrace-dev mcp` instead.
+For checkout trials, use `skilltrace-dev mcp serve` instead.
 
 ### Phase 6: Gemini CLI As An AGENTS.md-Compatible Client
 

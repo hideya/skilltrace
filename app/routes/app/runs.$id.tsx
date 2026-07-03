@@ -505,7 +505,7 @@ function InstructionSurfacesPanel({
           ) : null}
 
           {infoWarnings.length > 0 ? (
-            <div className="alert text-sm alert-info">
+            <div className="p-1 text-sm font-semibold text-info">
               <ul className="list-disc pl-5">
                 {infoWarnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
@@ -687,7 +687,7 @@ function InstructionFileDialog({
       <div className="modal-box max-w-5xl">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h3 className="text-xl font-bold">Instruction file content</h3>
+            <h3 className="text-xl font-semibold">Instruction file content</h3>
             <p className="mt-1 font-mono text-xs break-words text-base-content/60">
               {file.target_relative_path ?? file.path}
             </p>
