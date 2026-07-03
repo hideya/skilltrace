@@ -32,6 +32,8 @@
     "dist",
     "scripts/templates",
     "README.md",
+    "LICENSE",
+    "NOTICE.md",
     "react-router.config.ts"
   ],
   "type": "module",
