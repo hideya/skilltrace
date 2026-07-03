@@ -520,6 +520,26 @@ If no semantic events or run reflection appear:
 - Try a stronger model or rerun the same scenario. Semantic reporting and
   reflection depend on the agent following the injected instructions.
 
+## How Is This Different From General Agent Observability?
+
+General agent observability tools trace model calls, tool calls, spans, latency,
+cost, and production behavior.
+
+SkillTrace focuses on a narrower question:
+
+> How do we know whether a natural-language skill was activated, declared, and
+> reflected as influential in a specific agent run?
+
+It does this by comparing three evidence streams:
+
+- passive file-access traces
+- MCP semantic declarations
+- structured post-run reflection
+
+SkillTrace is not a replacement for LangSmith, Langfuse, Phoenix, Braintrust,
+Weave, or OpenTelemetry-based tracing. It is a complementary local probe for
+debugging skill usage itself.
+
 ## Known Limitations
 
 SkillTrace is currently pre-alpha.
