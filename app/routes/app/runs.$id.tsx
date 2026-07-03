@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { Form, redirect, useNavigate, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
+import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
@@ -391,11 +392,13 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
       </div>
 
       {files.length > 0 ? (
-        <details className="mt-4 rounded-box border border-base-300">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-            {files.length} Changed file{files.length === 1 ? '' : 's'}
-          </summary>
-          <ul className="border-t border-base-300 p-4">
+        <AnimatedDisclosure
+          childrenClassName="border-t border-base-300 p-4"
+          className="mt-4 rounded-box border border-base-300"
+          header={`${files.length} Changed file${files.length === 1 ? '' : 's'}`}
+          headerClassName="w-full cursor-pointer px-4 py-3 text-left text-sm font-semibold"
+        >
+          <ul>
             {files.map((file) => {
               let instructionFile = instructionContents.find(
                 (item) => item.path === file.path,
@@ -411,34 +414,34 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
               )
             })}
           </ul>
-        </details>
+        </AnimatedDisclosure>
       ) : null}
 
       {untracked.length > 0 ? (
-        <details className="mt-4 rounded-box border border-base-300">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-            Untracked instruction files
-          </summary>
-          <div className="space-y-4 border-t border-base-300 p-4">
-            {untracked.map((file) => (
-              <section className="space-y-2" key={file.path}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-mono text-xs font-semibold break-words">
-                    {file.path}
-                  </h3>
-                  {file.truncated ? (
-                    <span className="badge badge-xs badge-warning">
-                      truncated
-                    </span>
-                  ) : null}
-                </div>
-                <pre className="max-h-72 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed">
-                  {file.content}
-                </pre>
-              </section>
-            ))}
-          </div>
-        </details>
+        <AnimatedDisclosure
+          childrenClassName="space-y-4 border-t border-base-300 p-4"
+          className="mt-4 rounded-box border border-base-300"
+          header="Untracked instruction files"
+          headerClassName="w-full cursor-pointer px-4 py-3 text-left text-sm font-semibold"
+        >
+          {untracked.map((file) => (
+            <section className="space-y-2" key={file.path}>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-mono text-xs font-semibold break-words">
+                  {file.path}
+                </h3>
+                {file.truncated ? (
+                  <span className="badge badge-xs badge-warning">
+                    truncated
+                  </span>
+                ) : null}
+              </div>
+              <pre className="max-h-72 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed">
+                {file.content}
+              </pre>
+            </section>
+          ))}
+        </AnimatedDisclosure>
       ) : null}
 
       <InstructionFileDialog
@@ -456,16 +459,22 @@ function CompactDetailsPanel({
   title,
 }: CompactDetailsPanelProps) {
   return (
-    <details className="rounded-box border border-base-300 bg-base-100 shadow-sm">
-      <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4">
-        <div className="min-w-0">
-          <h2 className="section-title">{title}</h2>
-          <p className="truncate text-sm text-base-content/60">{summary}</p>
-        </div>
-        <span className="badge badge-outline">details</span>
-      </summary>
-      <div className="border-t border-base-300 p-5">{children}</div>
-    </details>
+    <AnimatedDisclosure
+      childrenClassName="border-t border-base-300 p-5"
+      className="rounded-box border border-base-300 bg-base-100 shadow-sm"
+      header={
+        <>
+          <div className="min-w-0">
+            <h2 className="section-title">{title}</h2>
+            <p className="truncate text-sm text-base-content/60">{summary}</p>
+          </div>
+          <span className="badge badge-outline">details</span>
+        </>
+      }
+      headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left"
+    >
+      {children}
+    </AnimatedDisclosure>
   )
 }
 
@@ -1044,55 +1053,58 @@ function TimelineItem({ event }: TimelineItemProps) {
   let process = observedProcessForEvent(event)
 
   return (
-    <details className="group rounded-box border border-base-300 bg-base-100">
-      <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 marker:hidden">
-        <div className="flex min-w-0 flex-col items-baseline gap-2">
-          {name ? (
-            <div className="flex items-baseline gap-2">
-              {name || isSemantic || warning ? (
-                <span
-                  className={`font-mono text-sm font-semibold ${eventFileNameClass(
-                    event,
-                  )}`}
-                >
-                  {name}
-                </span>
-              ) : null}
-              {isSemantic ? (
-                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                  {event.skill_name ? (
-                    <span className="badge truncate badge-outline border-indigo-500 badge-sm text-indigo-600">
-                      skill: {event.skill_name}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {warning ? (
-                <span className="badge badge-sm badge-warning" title={warning}>
-                  warning
+    <AnimatedDisclosure
+      childrenClassName="border-t border-base-300 p-4"
+      className="rounded-box border border-base-300 bg-base-100"
+      header={
+        <>
+          <div className="flex min-w-0 flex-col items-baseline gap-2">
+            {name ? (
+              <div className="flex items-baseline gap-2">
+                {name || isSemantic || warning ? (
+                  <span
+                    className={`font-mono text-sm font-semibold ${eventFileNameClass(
+                      event,
+                    )}`}
+                  >
+                    {name}
+                  </span>
+                ) : null}
+                {isSemantic ? (
+                  <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                    {event.skill_name ? (
+                      <span className="badge truncate badge-outline border-indigo-500 badge-sm text-indigo-600">
+                        skill: {event.skill_name}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {warning ? (
+                  <span className="badge badge-sm badge-warning" title={warning}>
+                    warning
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            <div className={`min-w-0 truncate ${eventTitleClass(event)}`}>
+              {event.event_type}
+              {process ? (
+                <span className="font-mono font-normal text-base-content/50">
+                  {' '}
+                  by {process}
                 </span>
               ) : null}
             </div>
-          ) : null}
-          <div className={`min-w-0 truncate ${eventTitleClass(event)}`}>
-            {event.event_type}
-            {process ? (
-              <span className="font-mono font-normal text-base-content/50">
-                {' '}
-                by {process}
-              </span>
-            ) : null}
           </div>
-        </div>
-        <span className="font-mono text-xs text-base-content/50">
-          {formatTime(event.timestamp)}
-        </span>
-      </summary>
-
-      <div className="border-t border-base-300 p-4">
-        <EventCard event={event} />
-      </div>
-    </details>
+          <span className="font-mono text-xs text-base-content/50">
+            {formatTime(event.timestamp)}
+          </span>
+        </>
+      }
+      headerClassName="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-left"
+    >
+      <EventCard event={event} />
+    </AnimatedDisclosure>
   )
 }
 

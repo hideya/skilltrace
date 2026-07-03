@@ -3,6 +3,7 @@ import { Form, redirect, useRevalidator } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
 import { deleteRunRecords, listRunSummaries } from '~/models/.server/trace'
+import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
@@ -192,92 +193,94 @@ function RunGroup({
   let canCompareSelected = isComparing && selectedCount >= 2
 
   return (
-    <details
+    <AnimatedDisclosure
+      childrenClassName="overflow-x-auto"
       className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
-      onToggle={(event) => {
-        if (!isEditing) onToggle(group.key, event.currentTarget.open)
-      }}
-      open={isOpen}
-    >
-      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-base-100 px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="section-title break-words">{group.label}</h2>
-          <p className="text-xs text-base-content/60">
-            {group.summaries.length} run
-            {group.summaries.length === 1 ? '' : 's'} · {group.targetRoot}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={group.latestStatus} />
-          {isComparing ? (
-            <>
+      header={
+        <>
+          <div className="min-w-0">
+            <h2 className="section-title break-words">{group.label}</h2>
+            <p className="text-xs text-base-content/60">
+              {group.summaries.length} run
+              {group.summaries.length === 1 ? '' : 's'} · {group.targetRoot}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <StatusBadge status={group.latestStatus} />
+            {isComparing ? (
+              <>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onCancelCompare()
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <a
+                  aria-disabled={!canCompareSelected}
+                  className={`btn bg-sky-500 text-white btn-sm ${canCompareSelected ? '' : 'btn-disabled'}`}
+                  href={canCompareSelected ? compareHref : undefined}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  Compare Selected
+                </a>
+              </>
+            ) : canCompareModes(group) && !isEditing ? (
               <button
-                className="btn btn-outline btn-sm"
+                className="btn bg-sky-400 btn-sm"
                 onClick={(event) => {
                   event.preventDefault()
                   event.stopPropagation()
-                  onCancelCompare()
+                  onStartCompare(group)
                 }}
                 type="button"
               >
-                Cancel
+                Compare Modes
               </button>
-              <a
-                aria-disabled={!canCompareSelected}
-                className={`btn bg-sky-500 text-white btn-sm ${canCompareSelected ? '' : 'btn-disabled'}`}
-                href={canCompareSelected ? compareHref : undefined}
-                onClick={(event) => event.stopPropagation()}
-              >
-                Compare Selected
-              </a>
-            </>
-          ) : canCompareModes(group) && !isEditing ? (
-            <button
-              className="btn bg-sky-400 btn-sm"
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                onStartCompare(group)
-              }}
-              type="button"
-            >
-              Compare Modes
-            </button>
-          ) : null}
-        </div>
-      </summary>
-
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr className="bg-base-200">
-              {isEditing ? <th>Select</th> : null}
-              {isComparing ? <th className="text-center">Compare</th> : null}
-              <th>Run</th>
-              <th className="text-center">Mode</th>
-              <th className="text-center">Status</th>
-              <th className="text-center">Result</th>
-              <th className="text-center">Model</th>
-              <th className="text-center">Client</th>
-              <th>Events</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {group.summaries.map((summary) => (
-              <RunRow
-                compareSelection={compareSelection}
-                isComparing={isComparing}
-                isEditing={isEditing}
-                key={summary.run.id}
-                onSelectRun={onSelectRun}
-                summary={summary}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
+            ) : null}
+          </div>
+        </>
+      }
+      headerClassName="flex cursor-pointer items-center justify-between gap-4 bg-base-100 px-4 py-3"
+      headerMode="div"
+      onOpenChange={(next) => {
+        if (!isEditing) onToggle(group.key, next)
+      }}
+      open={isOpen}
+    >
+      <table className="table">
+        <thead>
+          <tr className="bg-base-200">
+            {isEditing ? <th>Select</th> : null}
+            {isComparing ? <th className="text-center">Compare</th> : null}
+            <th>Run</th>
+            <th className="text-center">Mode</th>
+            <th className="text-center">Status</th>
+            <th className="text-center">Result</th>
+            <th className="text-center">Model</th>
+            <th className="text-center">Client</th>
+            <th>Events</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.summaries.map((summary) => (
+            <RunRow
+              compareSelection={compareSelection}
+              isComparing={isComparing}
+              isEditing={isEditing}
+              key={summary.run.id}
+              onSelectRun={onSelectRun}
+              summary={summary}
+            />
+          ))}
+        </tbody>
+      </table>
+    </AnimatedDisclosure>
   )
 }
 

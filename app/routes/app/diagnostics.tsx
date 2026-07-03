@@ -1,4 +1,5 @@
 import { getDiagnosticsData } from './+/diagnostics-data.server'
+import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 
 export async function loader() {
   return await getDiagnosticsData()
@@ -197,50 +198,54 @@ function McpRegistrationPanel({ mcp }: McpRegistrationPanelProps) {
     >
       <div className="space-y-3">
         {mcp.clients.map((client) => (
-          <details
+          <AnimatedDisclosure
+            childrenClassName="space-y-3 border-t border-base-300 p-3"
             className="rounded-box border border-base-300"
+            header={
+              <>
+                <div className="min-w-0">
+                  <h3 className="font-normal">{client.name}</h3>
+                  {/* <p className="truncate text-xs text-base-content/60">
+                    {client.message}
+                  </p> */}
+                </div>
+                <span className={`badge badge-sm ${mcpStatusBadge(client)}`}>
+                  {client.status}
+                </span>
+              </>
+            }
+            headerClassName="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-left"
             key={client.key}
           >
-            <summary className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 marker:hidden">
-              <div className="min-w-0">
-                <h3 className="font-normal">{client.name}</h3>
-                {/* <p className="truncate text-xs text-base-content/60">
-                  {client.message}
-                </p> */}
-              </div>
-              <span className={`badge badge-sm ${mcpStatusBadge(client)}`}>
-                {client.status}
-              </span>
-            </summary>
-            <div className="space-y-3 border-t border-base-300 p-3">
-              <p className="text-sm font-semibold text-base-content/70">
-                {client.message}
-              </p>
-              <KeyValues
-                rows={[
-                  ['Check', client.check_command],
-                  [
-                    'Expected',
-                    `${client.expected_command} ${client.expected_args}`,
-                  ],
-                  ['CLI installed', client.cli_installed ? 'yes' : 'no'],
-                  ['Registered', client.registered ? 'yes' : 'no'],
-                  ['Command', client.command ?? 'unknown'],
-                  ['Args', client.args ?? 'unknown'],
-                ]}
-              />
-              {client.output ? (
-                <details className="rounded-box border border-base-300">
-                  <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
-                    Output
-                  </summary>
-                  <pre className="max-h-48 overflow-auto border-t border-base-300 bg-base-200 p-3 text-xs whitespace-pre-wrap">
-                    {client.output}
-                  </pre>
-                </details>
-              ) : null}
-            </div>
-          </details>
+            <p className="text-sm font-semibold text-base-content/70">
+              {client.message}
+            </p>
+            <KeyValues
+              rows={[
+                ['Check', client.check_command],
+                [
+                  'Expected',
+                  `${client.expected_command} ${client.expected_args}`,
+                ],
+                ['CLI installed', client.cli_installed ? 'yes' : 'no'],
+                ['Registered', client.registered ? 'yes' : 'no'],
+                ['Command', client.command ?? 'unknown'],
+                ['Args', client.args ?? 'unknown'],
+              ]}
+            />
+            {client.output ? (
+              <AnimatedDisclosure
+                childrenClassName="border-t border-base-300"
+                className="rounded-box border border-base-300"
+                header="Output"
+                headerClassName="w-full cursor-pointer px-3 py-2 text-left text-sm font-medium"
+              >
+                <pre className="max-h-48 overflow-auto bg-base-200 p-3 text-xs whitespace-pre-wrap">
+                  {client.output}
+                </pre>
+              </AnimatedDisclosure>
+            ) : null}
+          </AnimatedDisclosure>
         ))}
       </div>
     </Panel>
