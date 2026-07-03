@@ -16,10 +16,14 @@ was declared, and what the agent later believed influenced the run.
 
 SkillTrace is aimed at people developing and debugging agent skills.
 
-<table>
+<video src="docs/videos/SkillTrace.mp4" controls muted playsinline loop height="250px"></video>
+<img src="docs/images/skilltrace-diagram.webp" height="250px">
+
+<!-- <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px">
+      <br>
       <sub>SkillTrace diagram</sub>
     </td>
     <td>
@@ -27,7 +31,7 @@ SkillTrace is aimed at people developing and debugging agent skills.
       <sub>SkillTrace screenshot</sub>
     </td>
   </tr>
-</table>
+</table> -->
 
 ## What It Captures
 
