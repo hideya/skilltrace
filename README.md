@@ -2,9 +2,12 @@
 
 **SkillTrace is an observability tool for AI agent skill usage.**
 
-It helps you inspect whether an agent read skill files, whether it declared
-skill usage through MCP, and how its post-run reflection attributed the work
-to specific skills, references, files, steps, and uncertainties.
+When an agent can choose from multiple skills, it can be hard to tell which
+ones it used, in what order, and why.
+
+SkillTrace helps you inspect whether an agent read skill files, whether it
+declared skill usage through MCP, and how its post-run reflection attributed
+the work to specific skills, references, files, steps, and uncertainties.
 
 Skill usage is hard to capture because it is often buried inside the LLM's
 decision-making process. Unlike MCP tool calls, skills do not necessarily cross
@@ -32,6 +35,8 @@ SkillTrace is aimed at people developing and debugging agent skills.
     </td>
   </tr>
 </table> -->
+
+At a high level, SkillTrace compares three kinds of evidence from the same run.
 
 ## What It Captures
 
@@ -69,23 +74,6 @@ compared with passive traces, semantic MCP declarations, and human judgment.
     </td>
   </tr>
 </table>
-
-## Why This Matters
-
-The longer-term idea is this:
-
-> The unit of human knowledge accumulation is shifting from documents to
-> executable work units enriched with execution evidence and failure histories.
-
-SkillTrace is based on the idea that agent skills should not become trusted
-reusable knowledge merely by being shared. To become trustworthy executable
-units of collective intelligence, skills need evidence of how they were
-activated, how they were used, where they failed, and how those failures
-informed improvement.
-
-SkillTrace is a small but concrete first step in that direction. It is not just
-a skill execution tracer; it is an attempt to make skill usage observable enough
-that failures can eventually become reusable procedural knowledge.
 
 ## Status
 
@@ -539,6 +527,23 @@ It does this by comparing three evidence streams:
 SkillTrace is not a replacement for LangSmith, Langfuse, Phoenix, Braintrust,
 Weave, or OpenTelemetry-based tracing. It is a complementary local probe for
 debugging skill usage itself.
+
+## Why This Matters
+
+The longer-term idea is this:
+
+> The unit of human knowledge accumulation is shifting from documents to
+> executable work units enriched with execution evidence and failure histories.
+
+SkillTrace is based on the idea that agent skills should not become trusted
+reusable knowledge merely by being shared. To become trustworthy executable
+units of collective intelligence, skills need evidence of how they were
+activated, how they were used, where they failed, and how those failures
+informed improvement.
+
+SkillTrace is a small but concrete first step in that direction. It is not just
+a skill execution tracer; it is an attempt to make skill usage observable enough
+that failures can eventually become reusable procedural knowledge.
 
 ## Known Limitations
 
