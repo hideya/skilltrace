@@ -272,7 +272,7 @@ npm install
 # If the daemon is not already running:
 skilltrace daemon start
 skilltrace mcp install
-skilltrace mcp status
+skilltrace diagnostics
 
 skilltrace start --note "demo type-fix run"
 codex "Fix the TypeScript error using the available skill"
