@@ -317,12 +317,19 @@ function RunContextPanel({ context, environment }: RunContextPanelProps) {
           {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
 
           {hasEnvironment ? (
-            <div className="space-y-3 border-t border-base-300 pt-4">
-              <h3 className="text-sm font-semibold text-base-content/60">
-                SkillTrace environment
-              </h3>
+            <AnimatedDisclosure
+              childrenClassName="pt-3"
+              className="border-t border-base-300 pt-4"
+              header={(
+                <CompactDisclosureHeader
+                  summary={executionEnvironmentSummary(environment)}
+                  title="SkillTrace environment"
+                />
+              )}
+              headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
+            >
               <ContextRows rows={environmentRows} />
-            </div>
+            </AnimatedDisclosure>
           ) : null}
         </div>
       ) : (
@@ -481,19 +488,28 @@ function CompactDetailsPanel({
     <AnimatedDisclosure
       childrenClassName="border-t border-base-300 p-5"
       className="rounded-box border border-base-300 bg-base-100 shadow-sm"
-      header={
-        <>
-          <div className="min-w-0">
-            <h2 className="section-title">{title}</h2>
-            <p className="truncate text-sm text-base-content/60">{summary}</p>
-          </div>
-          <span className="badge badge-outline">details</span>
-        </>
-      }
+      header={<CompactDisclosureHeader summary={summary} title={title} />}
       headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left"
     >
       {children}
     </AnimatedDisclosure>
+  )
+}
+
+function CompactDisclosureHeader({
+  summary,
+  title,
+}: CompactDisclosureHeaderProps) {
+  return (
+    <>
+      <div className="grid min-w-0 flex-1 gap-x-5 gap-y-1 sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-baseline">
+        <h2 className="section-title truncate">{title}</h2>
+        <p className="truncate font-mono text-xs text-base-content/60">
+          {summary}
+        </p>
+      </div>
+      <span className="badge shrink-0 badge-outline">details</span>
+    </>
   )
 }
 
@@ -1298,6 +1314,19 @@ function executionEnvironmentRows(
   ].filter((row): row is ContextRow => !!row[1])
 }
 
+function executionEnvironmentSummary(
+  environment?: Record<string, any> | null,
+) {
+  if (!environment) return 'not recorded'
+
+  let version = environment.skilltrace_version || 'unknown'
+  let mode = environment.skilltrace_mode || 'unknown'
+  let platform = environment.platform || 'unknown'
+  let backend = environment.probe_backend || 'unknown'
+
+  return `${version} / ${mode} / ${platform} / ${backend}`
+}
+
 function reflectionLabel(key: string) {
   let labels: Record<string, string> = {
     task_outcome: 'Task outcome',
@@ -1415,6 +1444,11 @@ type InstructionSurfacesPanelProps = {
 
 type CompactDetailsPanelProps = {
   children: ReactNode
+  summary: string
+  title: string
+}
+
+type CompactDisclosureHeaderProps = {
   summary: string
   title: string
 }
