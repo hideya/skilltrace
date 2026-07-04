@@ -278,7 +278,7 @@ codex "Fix the TypeScript error using the available skill"
 skilltrace stop
 ```
 
-Open `http://localhost:7555` in your browser.
+Open `http://localhost:7555` in your browser after `skilltrace daemon start`.
 
 To retry the toy demo from a clean copy:
 

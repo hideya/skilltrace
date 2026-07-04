@@ -145,28 +145,28 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
 
   return (
     <section className="flex min-h-0 flex-1 flex-col rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="section-title">Run reflection</h2>
-          <p className="text-sm text-base-content/60">
-            Declared post-run diagnostic summary
-          </p>
-        </div>
+      <div className="mb-2 flex flex-col gap-2 sm:flex-col sm:items-start sm:justify-between">
+        <SectionSummaryHeader
+          summary="Post-run self-report"
+          title="Run reflection"
+        />
         {reflection ? (
-          <div className="join gap-2">
-            {reflectionModes.map((option) => (
-              <button
-                aria-pressed={mode === option}
-                className={`btn join-item btn-xs ${
-                  mode === option ? 'btn-primary' : 'btn-outline'
-                }`}
-                key={option}
-                onClick={() => setMode(option)}
-                type="button"
-              >
-                {capitalize(option)}
-              </button>
-            ))}
+          <div className=" flex w-full flex-col items-end">
+            <div className="join gap-2">
+              {reflectionModes.map((option) => (
+                <button
+                  aria-pressed={mode === option}
+                  className={`btn join-item btn-xs ${
+                    mode === option ? 'btn-primary' : 'btn-outline'
+                  }`}
+                  key={option}
+                  onClick={() => setMode(option)}
+                  type="button"
+                >
+                  {capitalize(option)}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
@@ -175,7 +175,7 @@ function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
         mode === 'pretty' ? (
           <ReflectionPretty value={reflection} />
         ) : (
-          <div className="min-h-0 flex-1">
+          <div className="min-h-0 w-full flex-1 items-end">
             <JsonBlock className="h-full max-h-none" flush value={reflection} />
           </div>
         )
@@ -301,14 +301,11 @@ function RunContextPanel({ context, environment }: RunContextPanelProps) {
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="section-title">Run context</h2>
-          <p className="text-sm text-base-content/60">
-            Agent-declared and SkillTrace-collected metadata
-          </p>
-        </div>
-      </div>
+      <SectionSummaryHeader
+        className="mb-4"
+        summary="Agent-declared and SkillTrace-collected metadata"
+        title="Run context"
+      />
 
       {hasContext || hasEnvironment ? (
         <div className="space-y-4">
@@ -320,12 +317,13 @@ function RunContextPanel({ context, environment }: RunContextPanelProps) {
             <AnimatedDisclosure
               childrenClassName="pt-3"
               className="border-t border-base-300 pt-4"
-              header={(
+              header={
                 <CompactDisclosureHeader
+                  subsection
                   summary={executionEnvironmentSummary(environment)}
                   title="SkillTrace environment"
                 />
-              )}
+              }
               headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
             >
               <ContextRows rows={environmentRows} />
@@ -497,14 +495,19 @@ function CompactDetailsPanel({
 }
 
 function CompactDisclosureHeader({
+  subsection = false,
   summary,
   title,
 }: CompactDisclosureHeaderProps) {
+  let titleClassName = subsection
+    ? 'truncate font-semibold text-base-content/70'
+    : 'section-title shrink-0'
+
   return (
     <>
-      <div className="grid min-w-0 flex-1 gap-x-5 gap-y-1 sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-baseline">
-        <h2 className="section-title truncate">{title}</h2>
-        <p className="truncate font-mono text-xs text-base-content/60">
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-5 gap-y-1">
+        <h2 className={titleClassName}>{title}</h2>
+        <p className="min-w-0 flex-1 truncate font-mono text-xs text-base-content/60">
           {summary}
         </p>
       </div>
@@ -827,14 +830,11 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="section-title">Consistency</h2>
-          <p className="text-sm text-base-content/60">
-            {rows.length} file{rows.length === 1 ? '' : 's'} · {description}
-          </p>
-        </div>
-      </div>
+      <SectionSummaryHeader
+        className="mb-4"
+        summary={`${rows.length} file${rows.length === 1 ? '' : 's'} · ${description}`}
+        title="Consistency"
+      />
 
       {rows.length > 0 ? (
         <div className="overflow-x-auto">
@@ -901,13 +901,17 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
   )
 }
 
-function PanelHeader({ description, title }: PanelHeaderProps) {
+function SectionSummaryHeader({
+  className = '',
+  summary,
+  title,
+}: SectionSummaryHeaderProps) {
   return (
-    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 className="section-title">{title}</h2>
-        <p className="text-sm text-base-content/60">{description}</p>
-      </div>
+    <div
+      className={`flex min-w-0 flex-wrap items-baseline gap-x-5 gap-y-1 ${className}`}
+    >
+      <h2 className="section-title shrink-0">{title}</h2>
+      <p className="min-w-0 text-sm text-base-content/60">{summary}</p>
     </div>
   )
 }
@@ -1041,7 +1045,9 @@ function Metric({ label, value }: MetricProps) {
       <p className="text-left text-xs tracking-[0.2em] text-base-content/50 uppercase">
         {label}
       </p>
-      <p className="mt-2 truncate text-right text-1.5xl font-bold">{value}</p>
+      <p className="mt-2 truncate text-right text-1.5xl font-semibold">
+        {value}
+      </p>
     </div>
   )
 }
@@ -1049,15 +1055,11 @@ function Metric({ label, value }: MetricProps) {
 function Timeline({ events }: TimelineProps) {
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="mb-5">
-        <div>
-          <h2 className="section-title">Timeline</h2>
-          <p className="text-sm text-base-content/60">
-            {events.length} event
-            {events.length === 1 ? '' : 's'}
-          </p>
-        </div>
-      </div>
+      <SectionSummaryHeader
+        className="mb-5"
+        summary={`${events.length} event${events.length === 1 ? '' : 's'}`}
+        title="Timeline"
+      />
 
       {events.length > 0 ? (
         <ol className="relative space-y-4 before:absolute before:top-2 before:bottom-0 before:left-3 before:w-px before:bg-base-300">
@@ -1115,7 +1117,10 @@ function TimelineItem({ event }: TimelineItemProps) {
                   </div>
                 ) : null}
                 {warning ? (
-                  <span className="badge badge-sm badge-warning" title={warning}>
+                  <span
+                    className="badge badge-sm badge-warning"
+                    title={warning}
+                  >
                     warning
                   </span>
                 ) : null}
@@ -1314,9 +1319,7 @@ function executionEnvironmentRows(
   ].filter((row): row is ContextRow => !!row[1])
 }
 
-function executionEnvironmentSummary(
-  environment?: Record<string, any> | null,
-) {
+function executionEnvironmentSummary(environment?: Record<string, any> | null) {
   if (!environment) return 'not recorded'
 
   let version = environment.skilltrace_version || 'unknown'
@@ -1449,6 +1452,7 @@ type CompactDetailsPanelProps = {
 }
 
 type CompactDisclosureHeaderProps = {
+  subsection?: boolean
   summary: string
   title: string
 }
@@ -1532,9 +1536,10 @@ type InstructionFileDialogProps = {
   onClose: () => void
 }
 
-type PanelHeaderProps = {
+type SectionSummaryHeaderProps = {
+  className?: string
+  summary: string
   title: string
-  description: string
 }
 
 type EmptyPanelProps = {
