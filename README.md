@@ -19,22 +19,23 @@ was declared, and what the agent later believed influenced the run.
 
 SkillTrace is aimed at people developing and debugging agent skills.
 
-<video src="docs/videos/SkillTrace.mp4" controls muted playsinline loop height="250px"></video>
-<img src="docs/images/skilltrace-diagram.webp" height="250px">
-
-<!-- <table>
+<table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px">
-      <br>
-      <sub>SkillTrace diagram</sub>
+      <a href="https://github.com/user-attachments/assets/dbb66690-06b1-4ef5-8913-0c4eccfb027d" target=”_blank”>
+        <img src="docs/images/skilltrace-video-cover.webp" height="250px" />
+      </a>
+      <br />
+      <sub>Demo movie clip</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-screenshot.webp" height="250px"><br>
-      <sub>SkillTrace screenshot</sub>
+      <!-- <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"> -->
+      <img src="docs/images/skilltrace-diagram.webp" height="250px" />
+      <br />
+      <sub>System diagram</sub>
     </td>
   </tr>
-</table> -->
+</table>
 
 At a high level, SkillTrace compares three kinds of evidence from the same run.
 
