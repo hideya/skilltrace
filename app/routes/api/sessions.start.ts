@@ -32,6 +32,7 @@ export async function action({ request }) {
       git_snapshot: input.git_snapshot,
       instruction_surfaces: input.instruction_surfaces,
       instruction_profile: input.instruction_profile,
+      execution_environment: input.execution_environment,
     })
   } catch (error) {
     if (error instanceof Error && error.message.includes('sudo is not ready')) {

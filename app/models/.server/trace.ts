@@ -212,6 +212,7 @@ export async function getRunTimeline(publicId: string) {
     result: lifecycle ?? summarizeConsistencyMatrix(consistencyMatrix),
     trace_mode: traceMode,
     context: latestRunContext(events),
+    execution_environment: runExecutionEnvironment(run, events),
     git_snapshot: runGitSnapshot(run, events),
     instruction_surfaces: runInstructionSurfaces(run, events),
     instruction_profile: runInstructionProfile(run, events),
@@ -424,6 +425,15 @@ function runInstructionProfile(run: any, events: any[]) {
     event.event_type === 'trace_session_started'
   )
   return started?.payload?.instruction_profile ?? null
+}
+
+function runExecutionEnvironment(run: any, events: any[]) {
+  if (run.bag?.execution_environment) return run.bag.execution_environment
+
+  let started = events.find((event) =>
+    event.event_type === 'trace_session_started'
+  )
+  return started?.payload?.execution_environment ?? null
 }
 
 function runTraceMode(run: any, events: any[]) {

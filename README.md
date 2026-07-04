@@ -58,6 +58,11 @@ probing saw something the reflection omitted.
 Reflection is a self-report, not ground truth. Its value comes from being
 compared with passive traces, semantic MCP declarations, and human judgment.
 
+Each run also records basic SkillTrace execution metadata, such as the
+SkillTrace version, dev/package mode, OS platform, Node.js version, and passive
+probe backend. This helps interpret runs collected across different machines,
+containers, operating systems, and SkillTrace versions.
+
 <table>
   <tr>
     <td>
@@ -583,6 +588,8 @@ Depending on the trace mode and repository state, captured data may include:
 - bounded plain-text contents for changed instruction-relevant files
 - agent-declared summaries, uncertainties, and file attribution
 - MCP semantic logging events
+- SkillTrace version and local runtime metadata such as OS platform, CPU
+  architecture, Node.js version, and probe backend
 
 Do not run SkillTrace on sensitive repositories unless you understand what is
 being recorded. Review captured runs before sharing logs, screenshots, or run

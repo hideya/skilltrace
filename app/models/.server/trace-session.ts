@@ -25,6 +25,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
     skill_roots: config.skillRoots,
     trace_mode: normalizeTraceMode(input.trace_mode),
     note: normalizedNote(input.note),
+    execution_environment: input.execution_environment,
     started_at: new Date().toISOString(),
   }
 
@@ -44,6 +45,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
       git_snapshot: input.git_snapshot,
       instruction_surfaces: input.instruction_surfaces,
       instruction_profile: input.instruction_profile,
+      execution_environment: input.execution_environment,
     },
   })
   await appendSessionEvent(run.id, 'trace_session_started', session, {
@@ -53,6 +55,7 @@ export async function startTraceSession(input: StartTraceSessionInput) {
     git_snapshot: input.git_snapshot,
     instruction_surfaces: input.instruction_surfaces,
     instruction_profile: input.instruction_profile,
+    execution_environment: input.execution_environment,
   })
 
   return session
@@ -270,6 +273,7 @@ type StartTraceSessionInput = {
   instruction_surfaces?: Record<string, unknown>
   instruction_profile?: Record<string, unknown>
   git_snapshot?: Record<string, unknown>
+  execution_environment?: Record<string, unknown>
   trace_mode?: unknown
   note?: unknown
   now?: Date
@@ -304,6 +308,7 @@ type TraceSession = {
   skill_roots: string[]
   trace_mode: TraceMode
   note?: string
+  execution_environment?: Record<string, unknown>
   started_at: string
   probe_pid?: number
   probe_log_path?: string

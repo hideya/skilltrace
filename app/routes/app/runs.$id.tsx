@@ -79,7 +79,10 @@ export default function Page({ loaderData }: PageProps) {
         <Metric label="Semantic" value={timeline.semantic_events.length} />
       </section>
 
-      <RunContextPanel context={timeline.context} />
+      <RunContextPanel
+        context={timeline.context}
+        environment={timeline.execution_environment}
+      />
       <RunSnapshotPanel snapshot={timeline.git_snapshot} />
       {timeline.instruction_surfaces ? (
         <InstructionSurfacesPanel
@@ -282,16 +285,19 @@ function ReflectionValue({ item }: ReflectionValueProps) {
   return <p className="text-sm leading-relaxed break-words">{String(item)}</p>
 }
 
-function RunContextPanel({ context }: RunContextPanelProps) {
-  let rows = [
+function RunContextPanel({ context, environment }: RunContextPanelProps) {
+  let rows: ContextRow[] = [
     ['Agent', context?.agent],
     ['Model', context?.model],
     ['Client', context?.client],
     ['Working directory', context?.cwd],
     ['Task', context?.task_summary],
     ['Agent notes', context?.notes],
-  ].filter(([_, value]) => value)
+  ].filter((row): row is ContextRow => !!row[1])
   let extra = extraContext(context)
+  let environmentRows = executionEnvironmentRows(environment)
+  let hasContext = rows.length > 0 || Object.keys(extra).length > 0
+  let hasEnvironment = environmentRows.length > 0
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -299,28 +305,25 @@ function RunContextPanel({ context }: RunContextPanelProps) {
         <div>
           <h2 className="section-title">Run context</h2>
           <p className="text-sm text-base-content/60">
-            Declared execution metadata
+            Agent-declared and SkillTrace-collected metadata
           </p>
         </div>
       </div>
 
-      {rows.length > 0 || Object.keys(extra).length > 0 ? (
+      {hasContext || hasEnvironment ? (
         <div className="space-y-4">
-          {rows.length > 0 ? (
-            <dl className="grid gap-x-6 gap-y-3 text-sm lg:grid-cols-2">
-              {rows.map(([label, value]) => (
-                <div
-                  className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]"
-                  key={label}
-                >
-                  <dt className="text-base-content/50">{label}</dt>
-                  <dd className="min-w-0 break-words">{String(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
+          {rows.length > 0 ? <ContextRows rows={rows} /> : null}
 
           {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
+
+          {hasEnvironment ? (
+            <div className="space-y-3 border-t border-base-300 pt-4">
+              <h3 className="text-sm font-semibold text-base-content/60">
+                SkillTrace environment
+              </h3>
+              <ContextRows rows={environmentRows} />
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
@@ -328,6 +331,22 @@ function RunContextPanel({ context }: RunContextPanelProps) {
         </div>
       )}
     </section>
+  )
+}
+
+function ContextRows({ rows }: ContextRowsProps) {
+  return (
+    <dl className="grid gap-x-6 gap-y-3 text-sm lg:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div
+          className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]"
+          key={label}
+        >
+          <dt className="text-base-content/50">{label}</dt>
+          <dd className="min-w-0 break-words">{String(value)}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -1261,6 +1280,24 @@ function extraContext(context?: Record<string, any> | null) {
   return extra
 }
 
+function executionEnvironmentRows(
+  environment?: Record<string, any> | null,
+): ContextRow[] {
+  if (!environment) return []
+
+  return [
+    ['SkillTrace', environment.skilltrace_version],
+    ['Mode', environment.skilltrace_mode],
+    ['Command', environment.skilltrace_command],
+    ['Platform', environment.platform],
+    ['Architecture', environment.arch],
+    ['OS release', environment.os_release],
+    ['Node', environment.node],
+    ['Probe backend', environment.probe_backend],
+    ['Probe mode', environment.probe_mode],
+  ].filter((row): row is ContextRow => !!row[1])
+}
+
 function reflectionLabel(key: string) {
   let labels: Record<string, string> = {
     task_outcome: 'Task outcome',
@@ -1358,11 +1395,18 @@ type ConsistencyPanelProps = {
 
 type RunContextPanelProps = {
   context?: Record<string, any> | null
+  environment?: Record<string, any> | null
+}
+
+type ContextRowsProps = {
+  rows: ContextRow[]
 }
 
 type RunSnapshotPanelProps = {
   snapshot?: RunSnapshot | null
 }
+
+type ContextRow = [string, unknown]
 
 type InstructionSurfacesPanelProps = {
   profile?: SelectedInstructionProfile | null

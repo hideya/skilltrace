@@ -33,6 +33,7 @@ const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', '
 const RUNTIME_ENV_IMPORT_PATH = DIST_MODE
   ? path.join(ENTRY_DIR, 'skilltrace-runtime-env.js')
   : path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
+const PACKAGE_JSON_PATH = path.join(PROJECT_ROOT, 'package.json')
 const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
 const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
@@ -134,6 +135,7 @@ async function start(args: string[]) {
   if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
+  let executionEnvironment = runExecutionEnvironment(probe, sharedProbe)
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -143,6 +145,7 @@ async function start(args: string[]) {
     git_snapshot: gitSnapshot,
     instruction_surfaces: instructionSurfaces,
     instruction_profile: instructionProfile,
+    execution_environment: executionEnvironment,
   })
   printInstrumentationWarning(instrumentation, shouldInjectInstructions)
   let injection = shouldInjectInstructions
@@ -1699,6 +1702,44 @@ function passiveProbeSupport() {
     platform: process.platform,
     reason: `Passive file probing is not available on ${process.platform} yet; semantic tracing will still run.`,
   }
+}
+
+function runExecutionEnvironment(
+  probe: PassiveProbeSupport,
+  sharedProbe: SharedProbeStatus,
+) {
+  return {
+    skilltrace_version: skilltraceVersion(),
+    skilltrace_mode: DEV_MODE ? 'dev' : 'package',
+    skilltrace_command: expectedMcpServerCommand(),
+    platform: process.platform,
+    arch: process.arch,
+    os_release: os.release(),
+    node: process.version,
+    probe_backend: passiveProbeBackend(probe),
+    probe_mode: sharedProbe.available
+      ? 'shared'
+      : probe.supported
+        ? 'run'
+        : 'unavailable',
+  }
+}
+
+function skilltraceVersion() {
+  try {
+    let content = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
+    let json = JSON.parse(content)
+    return typeof json.version === 'string' ? json.version : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+function passiveProbeBackend(probe: PassiveProbeSupport) {
+  if (!probe.supported) return 'unavailable'
+  if (probe.platform === 'darwin') return 'fs_usage'
+  if (probe.platform === 'linux') return 'inotifywait'
+  return 'unknown'
 }
 
 function sharedProbeRequested(options: Options) {
