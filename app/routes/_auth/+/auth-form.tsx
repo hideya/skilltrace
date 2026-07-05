@@ -66,7 +66,7 @@ export function AuthForm({
         {fields.includes('name') && (
           <div className="space-y-2">
             <input
-              className="input w-full px-5"
+              className="input w-full px-5 font-mono"
               name="name"
               type="text"
               placeholder="Full name"
@@ -77,7 +77,7 @@ export function AuthForm({
         )}
 
         {fields.includes('email') && (
-          <div className="space-y-2">
+          <div className="space-y-2 font-mono">
             <input
               className="input w-full px-5"
               name="email"
@@ -93,7 +93,7 @@ export function AuthForm({
           <div className="space-y-2">
             <label className="input flex w-full items-center pr-2">
               <input
-                className="grow px-5"
+                className="grow px-5 font-mono"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
