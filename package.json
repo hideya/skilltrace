@@ -52,8 +52,6 @@
     "skilltrace:mcp": "tsx scripts/skilltrace-mcp.ts",
     "skilltrace:install": "tsx scripts/install-traceskill-bin.ts install",
     "skilltrace:uninstall": "tsx scripts/install-traceskill-bin.ts uninstall",
-    "skilltrace:probe-mcp": "tsx scripts/skilltrace-probe-mcp.ts",
-    "skilltrace:probe-session": "tsx scripts/skilltrace-probe-session.ts",
     "skilltrace": "tsx scripts/traceskill.ts",
     "skilltrace-dev": "SKILLTRACE_DEV=1 SKILLTRACE_SERVER=http://localhost:5777 PORT=5777 tsx scripts/traceskill.ts",
     "demo:reset": "tsx scripts/reset-demo.ts",

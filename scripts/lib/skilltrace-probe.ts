@@ -143,7 +143,7 @@ export function buildProbeReadEvent(options: BuildProbeReadEventOptions) {
     filePath: options.filePath,
     content,
     baseDir: options.targetRoot,
-    reader: 'skilltrace-probe-mcp',
+    reader: 'skilltrace-probe-worker',
     observedProcess: options.observedProcess,
     observedProcessName: options.observedProcessName,
     observedProcessId: options.observedProcessId,

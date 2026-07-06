@@ -1412,7 +1412,7 @@ function startProbeWorker(options: ProbeWorkerOptions) {
   fs.closeSync(logFd)
 
   if (typeof child.pid !== 'number') {
-    throw new Error('Failed to start TraceSkill probe worker')
+    throw new Error('Failed to start SkillTrace probe worker')
   }
 
   return {
@@ -1451,7 +1451,7 @@ function startSharedProbeWorker(options: SharedProbeWorkerOptions) {
   fs.closeSync(logFd)
 
   if (typeof child.pid !== 'number') {
-    throw new Error('Failed to start TraceSkill shared probe worker')
+    throw new Error('Failed to start SkillTrace shared probe worker')
   }
 
   return {
