@@ -69,7 +69,7 @@ async function fetchJson(
 async function jsonResponse(response: Response) {
   if (!response.ok) {
     let body = await response.text()
-    throw new Error(`TraceSkill request failed: ${response.status} ${body}`)
+    throw new Error(`SkillTrace request failed: ${response.status} ${body}`)
   }
 
   return await response.json()

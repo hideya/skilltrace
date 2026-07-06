@@ -12,6 +12,7 @@ import {
   parseInotifywaitPath,
   parseOpenSnoopPath,
 } from './lib/skilltrace-probe'
+import { getJson, postJson } from './lib/skilltrace-http'
 
 const SHARED_POLL_INTERVAL_MS = 500
 const SHARED_POLL_FAILURE_LIMIT = 1200
@@ -43,16 +44,16 @@ async function main() {
     serverUrl: options.server,
     targetRoot: config.targetRoot,
     skillRoots: config.skillRoots,
-    debug: options.debug ?? process.env.TRACESKILL_PROBE_DEBUG === '1',
+    debug: options.debug ?? process.env.SKILLTRACE_PROBE_DEBUG === '1',
   })
 
   bindCleanup(probe)
 
-  console.error(`TraceSkill probe worker started: ${process.pid}`)
-  console.error(`TraceSkill probe backend: ${backend}`)
-  console.error(`TraceSkill run ID: ${options.run}`)
-  console.error(`TraceSkill target root: ${config.targetRoot}`)
-  console.error(`TraceSkill skill roots: ${config.skillRoots.join(', ')}`)
+  console.error(`SkillTrace probe worker started: ${process.pid}`)
+  console.error(`SkillTrace probe backend: ${backend}`)
+  console.error(`SkillTrace run ID: ${options.run}`)
+  console.error(`SkillTrace target root: ${config.targetRoot}`)
+  console.error(`SkillTrace skill roots: ${config.skillRoots.join(', ')}`)
 }
 
 async function startSharedWorker(options: Options) {
@@ -65,16 +66,16 @@ async function startSharedWorker(options: Options) {
   let state = createSharedState(options.server!)
   let probe = startSharedProbe(backend, {
     serverUrl: options.server!,
-    debug: options.debug ?? process.env.TRACESKILL_PROBE_DEBUG === '1',
+    debug: options.debug ?? process.env.SKILLTRACE_PROBE_DEBUG === '1',
     sharedState: state,
   })
 
   bindCleanup(probe)
   void pollSharedSession(state)
 
-  console.error(`TraceSkill shared probe worker started: ${process.pid}`)
-  console.error(`TraceSkill probe backend: ${backend}`)
-  console.error(`TraceSkill server: ${options.server}`)
+  console.error(`SkillTrace shared probe worker started: ${process.pid}`)
+  console.error(`SkillTrace probe backend: ${backend}`)
+  console.error(`SkillTrace server: ${options.server}`)
 }
 
 function parseArgs(args: string[]) {
@@ -159,7 +160,7 @@ function handleProbeOutput(
   let deduper = new ProbeDeduper(Number.POSITIVE_INFINITY)
   let buffer = ''
   if (!probe.stdout || !probe.stderr) {
-    throw new Error(`TraceSkill ${backend} did not expose stdout/stderr`)
+    throw new Error(`SkillTrace ${backend} did not expose stdout/stderr`)
   }
 
   probe.stdout.setEncoding('utf8')
@@ -172,7 +173,7 @@ function handleProbeOutput(
 
     for (let line of lines) {
       void handleProbeLine(line, options, deduper, backend, parsePath).catch((error) => {
-        console.error(`TraceSkill passive event failed: ${error.message}`)
+        console.error(`SkillTrace passive event failed: ${error.message}`)
       })
     }
   })
@@ -182,12 +183,12 @@ function handleProbeOutput(
   })
 
   probe.on('error', (error) => {
-    console.error(`TraceSkill ${backend} failed: ${error.message}`)
+    console.error(`SkillTrace ${backend} failed: ${error.message}`)
     process.exit(1)
   })
 
   probe.on('exit', (code, signal) => {
-    console.error(`TraceSkill ${backend} exited: code=${code} signal=${signal}`)
+    console.error(`SkillTrace ${backend} exited: code=${code} signal=${signal}`)
     process.exit(code ?? 1)
   })
 
@@ -208,7 +209,7 @@ async function handleProbeLine(
       let rootHint = debugRootHintForLine(line, active)
       if (rootHint) {
         console.error(
-          `TraceSkill ${backend} metadata ignored (${rootHint}): ${line}`,
+          `SkillTrace ${backend} metadata ignored (${rootHint}): ${line}`,
         )
       }
     }
@@ -220,23 +221,23 @@ async function handleProbeLine(
     if (options.debug) {
       let rootHint = debugRootHintForLine(line, active)
       if (rootHint) {
-        console.error(`TraceSkill ${backend} unmatched (${rootHint}): ${line}`)
+        console.error(`SkillTrace ${backend} unmatched (${rootHint}): ${line}`)
       }
     }
     return
   }
   if (options.debug) {
-    console.error(`TraceSkill ${backend} matched: ${line}`)
+    console.error(`SkillTrace ${backend} matched: ${line}`)
   }
   if (!isWatchedSkillPath(filePath, active.skillRoots)) {
     if (options.debug) {
-      console.error(`TraceSkill ${backend} outside watched roots: ${filePath}`)
+      console.error(`SkillTrace ${backend} outside watched roots: ${filePath}`)
     }
     return
   }
   if (!isReadableFile(filePath)) {
     if (options.debug) {
-      console.error(`TraceSkill ${backend} unreadable: ${filePath}`)
+      console.error(`SkillTrace ${backend} unreadable: ${filePath}`)
     }
     return
   }
@@ -245,7 +246,7 @@ async function handleProbeLine(
   if (isIgnoredObservedProcess(observedProcess.observedProcessName)) {
     if (options.debug) {
       console.error(
-        `TraceSkill ${backend} ignored ${filePath} from ${observedProcess.observedProcess}`,
+        `SkillTrace ${backend} ignored ${filePath} from ${observedProcess.observedProcess}`,
       )
     }
     return
@@ -259,7 +260,7 @@ async function handleProbeLine(
   })
 
   await postJson(options.serverUrl, '/api/passive-events', event)
-  console.error(`TraceSkill passive event: ${event.event_type} ${filePath}`)
+  console.error(`SkillTrace passive event: ${event.event_type} ${filePath}`)
 }
 
 function debugRootHintForLine(line: string, options: ActiveProbeOptions) {
@@ -355,34 +356,6 @@ function bindCleanup(probe: ChildProcess) {
   process.on('exit', cleanup)
 }
 
-async function postJson(serverUrl: string, pathname: string, body: any) {
-  let response = await fetch(new URL(pathname, serverUrl), {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) {
-    let text = await response.text()
-    throw new Error(`TraceSkill POST failed: ${response.status} ${text}`)
-  }
-
-  return await response.json()
-}
-
-async function getJson(serverUrl: string, pathname: string) {
-  let response = await fetch(new URL(pathname, serverUrl))
-
-  if (!response.ok) {
-    let text = await response.text()
-    throw new Error(`TraceSkill GET failed: ${response.status} ${text}`)
-  }
-
-  return await response.json()
-}
-
 function createSharedState(serverUrl: string): SharedProbeState {
   return {
     serverUrl,
@@ -400,7 +373,7 @@ async function pollSharedSession(state: SharedProbeState) {
     } else {
       if (state.pollFailures > 0) {
         console.error(
-          `TraceSkill shared session poll recovered after ${state.pollFailures} failed poll${state.pollFailures === 1 ? '' : 's'}`,
+          `SkillTrace shared session poll recovered after ${state.pollFailures} failed poll${state.pollFailures === 1 ? '' : 's'}`,
         )
       }
       state.pollFailures = 0
@@ -408,7 +381,7 @@ async function pollSharedSession(state: SharedProbeState) {
 
     if (state.pollFailures >= SHARED_POLL_FAILURE_LIMIT) {
       console.error(
-        `TraceSkill shared probe lost contact with daemon after ${state.pollFailures} failed polls; exiting`,
+        `SkillTrace shared probe lost contact with daemon after ${state.pollFailures} failed polls; exiting`,
       )
       process.exit(1)
     }
@@ -423,7 +396,7 @@ async function refreshSharedSession(state: SharedProbeState) {
     let session = result.session
     if (!session || session.probe_kind !== 'shared') {
       if (state.session) {
-        console.error('TraceSkill shared probe detached from active session')
+        console.error('SkillTrace shared probe detached from active session')
       }
       state.session = undefined
       return null
@@ -435,9 +408,9 @@ async function refreshSharedSession(state: SharedProbeState) {
       skillRoots: session.skill_roots ?? [],
     }
     if (state.session?.runId !== next.runId) {
-      console.error(`TraceSkill shared probe attached to run: ${next.runId}`)
-      console.error(`TraceSkill target root: ${next.targetRoot}`)
-      console.error(`TraceSkill skill roots: ${next.skillRoots.join(', ')}`)
+      console.error(`SkillTrace shared probe attached to run: ${next.runId}`)
+      console.error(`SkillTrace target root: ${next.targetRoot}`)
+      console.error(`SkillTrace skill roots: ${next.skillRoots.join(', ')}`)
     }
     state.session = next
     return null
@@ -451,7 +424,7 @@ function logSharedPollFailure(count: number, message: string) {
   if (count !== 1 && count % SHARED_POLL_FAILURE_LOG_INTERVAL !== 0) return
 
   console.error(
-    `TraceSkill shared session poll failed (${count}/${SHARED_POLL_FAILURE_LIMIT}): ${truncateLogMessage(message)}`,
+    `SkillTrace shared session poll failed (${count}/${SHARED_POLL_FAILURE_LIMIT}): ${truncateLogMessage(message)}`,
   )
 }
 
@@ -467,7 +440,7 @@ function sleep(ms: number) {
 function usage(message: string): never {
   console.error(message)
   console.error(
-    'Usage: traceskill-probe-worker --run <run_id> --target <repo> --server <url>',
+    'Usage: skilltrace probe worker --run <run_id> --target <repo> --server <url>',
   )
   process.exit(1)
 }
