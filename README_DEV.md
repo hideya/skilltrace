@@ -163,15 +163,16 @@ skilltrace start
 ```
 
 This writes `.skilltrace/instrumentation.md` from SkillTrace's bundled template,
-creates `.skilltrace.json` with a default `.skills` passive probe root when
-needed, prepends a single tracing instruction to `AGENTS.md`, and records a
-manifest at `.skilltrace/injection.json`. `skilltrace stop` removes only the
-exact inserted instruction and only removes generated files if SkillTrace
-created them and they were not changed.
+creates `.skilltrace.json` with the selected instruction profile's passive
+skill roots when needed, prepends a single tracing instruction to the selected
+instruction file, and records a manifest at `.skilltrace/injection.json`.
+`skilltrace stop` removes only the exact inserted instruction and only removes
+generated files if SkillTrace created them and they were not changed.
 
-`skilltrace start` expects to run from a target repo that contains `AGENTS.md`
-and `.skills/`. If either is missing, it refuses before creating a run so an
-accidental parent-directory command does not create misleading trace records.
+`skilltrace start` expects to run from a supported target repo, such as one with
+`AGENTS.md` and `.skills/`, or one with `CLAUDE.md` and `.claude/skills/`. If no
+supported instruction profile is available, it refuses before creating a run so
+an accidental parent-directory command does not create misleading trace records.
 
 The injection is experimental but now part of the default local tracing path.
 If existing files or unexpected edits are detected, SkillTrace prints warnings
@@ -194,8 +195,8 @@ remains available as an alias for passive-only troubleshooting.
 Only one trace session can be active at a time. If a session is already active,
 `skilltrace start` refuses and asks you to run `skilltrace stop` first.
 
-`skilltrace serve` runs the local server in the foreground. For early daemon
-dogfooding, there is also an explicit experimental background mode:
+`skilltrace serve` runs the local server in the foreground. The usual local
+workflow uses daemon mode:
 
 ```bash
 skilltrace daemon start

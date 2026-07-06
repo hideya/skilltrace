@@ -21,11 +21,11 @@ SkillTrace MCP tools to the agent session, even though `/mcp` showed the
 `skilltrace` server as enabled.
 
 The current recommended checkout flow uses `skilltrace-dev start`. It asks the
-local SkillTrace server to create an active session, then launches a passive
-probe worker for the current repo before the agent starts reading the target
-repo. The probe uses `fs_usage` on macOS and `inotifywait` on Linux. The MCP
-server resolves the one active session from the server, so passive skill reads
-and semantic declarations share the same run ID.
+local SkillTrace daemon to create an active session before the agent starts
+reading the target repo. On macOS, the daemon-owned shared `fs_usage` probe
+normally observes the active session. On Linux, the run uses `inotifywait`. The
+MCP server resolves the one active session from the server, so passive skill
+reads and semantic declarations share the same run ID.
 
 ## Pieces
 
@@ -34,7 +34,7 @@ and semantic declarations share the same run ID.
 - Generated demo working copy: `tmp/type-fix-demo`.
 - Local checkout CLI: `skilltrace-dev`.
 - Local checkout MCP server command: `skilltrace-dev mcp serve`.
-- Passive probe: macOS `sudo -n fs_usage -w -f filesys`, or Linux `inotifywait`.
+- Passive probe: macOS daemon-owned `fs_usage`, or Linux `inotifywait`.
 - MCP tools exposed to the agent: `skill_trace_context`, `skill_log_event`, and
   `skill_trace_reflection`.
 
@@ -61,13 +61,7 @@ fi
 `pnpm skilltrace:uninstall` also removes generated wrappers from older
 installer locations.
 
-Start the local SkillTrace server in another terminal:
-
-```bash
-skilltrace-dev serve
-```
-
-For experimental background operation, use:
+Start the local SkillTrace daemon in another terminal:
 
 ```bash
 skilltrace-dev daemon start
@@ -103,13 +97,16 @@ same command surface cleans up stale shared workers for that server, and a
 shared worker exits automatically if it cannot reach its daemon for about 30
 seconds.
 
-The foreground `serve` command is still the default dogfooding path. The daemon
-mode writes state to `~/.skilltrace/daemon.json` and server logs to
-`~/.skilltrace/logs/daemon.log`.
+Daemon mode writes state to `~/.skilltrace/daemon.json` and server logs to
+`~/.skilltrace/logs/daemon.log`. The foreground `skilltrace-dev serve` command
+is still available for focused server debugging, but it is no longer the
+recommended end-to-end dogfooding path.
 
-`skilltrace-dev start` launches the passive probe worker from your terminal. On
-macOS, that keeps the sudo prompt in the user's terminal instead of inside the
-web server process. On Linux, the `inotifywait` probe does not need sudo.
+`skilltrace-dev start` marks the demo repo as the one active SkillTrace
+session. On macOS, the daemon-owned shared probe normally observes the active
+session after `skilltrace-dev daemon start`; if shared probing is disabled or
+unavailable, SkillTrace records a warning and may fall back to a per-run probe.
+On Linux, each run uses `inotifywait` and does not need sudo.
 
 The examples below assume SkillTrace is running at:
 
@@ -659,17 +656,23 @@ For dev trials, the command should usually be `skilltrace-dev mcp serve`. For
 package trials, it should usually be `skilltrace mcp serve`. Restart the agent
 after changing MCP registration, and confirm the run mode is not `passive_only`.
 
-If the MCP server fails to start, run:
+If semantic MCP events appear but passive events do not on macOS, first check
+the shared probe:
+
+```bash
+skilltrace-dev daemon status
+```
+
+If the daemon was started without the shared probe, or the shared probe fell
+back to a per-run probe, you may need to refresh sudo once from your terminal
+before starting a fresh command-line agent session:
 
 ```bash
 sudo -v
 ```
 
-then start a fresh command-line Codex session. On macOS, the probe intentionally
-uses `sudo -n` so it cannot ask for a password through MCP stdio.
-
-This sudo step is macOS-only. Linux uses `inotifywait` and does not need sudo
-for the passive probe.
+This sudo step is macOS-only and only applies to `fs_usage` probing. Linux uses
+`inotifywait` and does not need sudo for the passive probe.
 
 On Alpine Linux, install the passive probe dependency with:
 

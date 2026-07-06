@@ -257,7 +257,10 @@ This should stay diagnostic-only, like the current Codex check. SkillTrace
 should report whether Claude Code appears installed and whether its MCP
 registration points to the expected command for the current package/dev mode.
 
-Status: not implemented yet. Claude Code itself can be registered manually with:
+Status: implemented as a read-only diagnostics check. SkillTrace inspects
+`claude mcp get skilltrace` when the `claude` CLI is available to the server
+process and compares the registered command with the current package/dev mode.
+Claude Code itself can also be registered manually with:
 
 ```bash
 claude mcp add skilltrace --scope user -- skilltrace mcp serve

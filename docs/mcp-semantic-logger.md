@@ -35,7 +35,7 @@ For the current best local prototype, prefer the local server flow:
 
 ```bash
 pnpm skilltrace:install
-skilltrace-dev serve
+skilltrace-dev daemon start
 cd <repo>
 skilltrace-dev start
 ```
@@ -118,12 +118,13 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.skilltrace/bin"; then
 fi
 ```
 
-That starts a passive probe before the agent reads the target repo. On macOS
-the probe uses `fs_usage`; on Linux it uses `inotifywait`. The MCP server asks
-the SkillTrace server for the one active session ID when the model calls one of
-the SkillTrace MCP tools. On macOS, `skilltrace-dev start` prompts for sudo
-from your terminal before launching the probe worker. On Linux, the
-`inotifywait` probe does not need sudo.
+`skilltrace-dev start` marks the current repo as the one active SkillTrace
+session before the agent reads the target repo. On macOS, the daemon normally
+owns a shared `fs_usage` probe after `skilltrace-dev daemon start`, so later
+run sessions should not ask for the password again during that daemon lifetime.
+On Linux, each run uses `inotifywait` and does not need sudo. The MCP server
+asks the SkillTrace server for the one active session ID when the model calls
+one of the SkillTrace MCP tools.
 
 ## Start Command
 
@@ -253,10 +254,13 @@ resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown
 below.
 
-To remove the SkillTrace MCP server later:
+To remove the SkillTrace MCP server later, use the command surface you
+registered:
 
 ```bash
 skilltrace-dev mcp uninstall
+# or
+skilltrace mcp uninstall
 ```
 
 When `SKILLTRACE_RUN_STEM` is set, the MCP server generates one run ID at startup:
