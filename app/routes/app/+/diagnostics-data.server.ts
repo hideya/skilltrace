@@ -4,6 +4,10 @@ import os from 'os'
 import path from 'path'
 import { getTraceSession } from '~/models/.server/trace-session'
 import {
+  readDaemonState,
+  type DaemonState,
+} from '../../../../scripts/lib/skilltrace-daemon-state'
+import {
   parseGeminiArgs,
   parseGeminiCommand,
   parseMcpValue,
@@ -70,17 +74,6 @@ export function sharedProbeVisible(
     !!state?.shared_probe_pid ||
     !!state?.shared_probe_warning
   )
-}
-
-function readDaemonState() {
-  let filePath = path.join(os.homedir(), '.skilltrace/daemon.json')
-  if (!fs.existsSync(filePath)) return null
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')) as DaemonState
-  } catch {
-    return null
-  }
 }
 
 function sharedProbeCheck(state: DaemonState | null) {
@@ -507,22 +500,6 @@ export type DiagnosticsData = {
   mcp: McpStatusReport
   process: ProcessInfo
   checks: Checks
-}
-
-export type DaemonState = {
-  pid: number
-  server: string
-  bind_host?: string
-  bind_port?: string
-  ui_urls?: string[]
-  log_path: string
-  started_at: string
-  shared_probe_requested?: boolean
-  shared_probe_pid?: number
-  shared_probe_log_path?: string
-  shared_probe_platform?: string
-  shared_probe_warning?: string
-  shared_probe_blocks_run_probe?: boolean
 }
 
 export type TraceSession = {

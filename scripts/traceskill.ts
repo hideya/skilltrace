@@ -25,6 +25,14 @@ import {
   postJson as sendJson,
 } from './lib/skilltrace-http'
 import { captureGitSnapshot } from './lib/skilltrace-git-snapshot'
+import {
+  DAEMON_DIR,
+  DAEMON_LOG_PATH,
+  readDaemonState,
+  removeDaemonState,
+  type DaemonState,
+  writeDaemonState,
+} from './lib/skilltrace-daemon-state'
 
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -36,9 +44,6 @@ const RUNTIME_ENV_IMPORT_PATH = DIST_MODE
   : path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
 const PACKAGE_JSON_PATH = path.join(PROJECT_ROOT, 'package.json')
 const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
-const DAEMON_DIR = path.join(os.homedir(), '.skilltrace')
-const DAEMON_LOG_PATH = path.join(DAEMON_DIR, 'logs', 'daemon.log')
-const DAEMON_STATE_PATH = path.join(DAEMON_DIR, 'daemon.json')
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
@@ -1763,25 +1768,6 @@ function printDisplayUrls(urls?: string[]) {
   }
 }
 
-function readDaemonState() {
-  if (!fs.existsSync(DAEMON_STATE_PATH)) return null
-
-  try {
-    return JSON.parse(fs.readFileSync(DAEMON_STATE_PATH, 'utf8'))
-  } catch {
-    return null
-  }
-}
-
-function writeDaemonState(state: DaemonState) {
-  fs.mkdirSync(path.dirname(DAEMON_STATE_PATH), { recursive: true })
-  fs.writeFileSync(DAEMON_STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
-}
-
-function removeDaemonState() {
-  if (fs.existsSync(DAEMON_STATE_PATH)) fs.rmSync(DAEMON_STATE_PATH)
-}
-
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: skilltrace <serve|start|status|diagnostics|end|stop|mcp>')
@@ -1863,22 +1849,6 @@ type ProbeWorker = {
 type SharedProbeWorkerOptions = {
   server: string
   debug?: boolean
-}
-
-type DaemonState = {
-  pid: number
-  server: string
-  bind_host?: string
-  bind_port?: string
-  ui_urls?: string[]
-  log_path: string
-  started_at: string
-  shared_probe_requested?: boolean
-  shared_probe_pid?: number
-  shared_probe_log_path?: string
-  shared_probe_platform?: NodeJS.Platform
-  shared_probe_warning?: string
-  shared_probe_blocks_run_probe?: boolean
 }
 
 type PassiveProbeSupport = {
