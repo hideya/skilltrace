@@ -87,6 +87,18 @@ export function StatTile({ label, value }: StatTileProps) {
   )
 }
 
+export function JsonBlock({ className = '', flush = false, value }: JsonBlockProps) {
+  if (!value || Object.keys(value).length === 0) return null
+
+  return (
+    <pre
+      className={`${flush ? '' : 'mt-4'} max-h-80 overflow-auto rounded-box bg-base-200 p-3 text-xs leading-relaxed ${className}`}
+    >
+      {JSON.stringify(value, null, 2)}
+    </pre>
+  )
+}
+
 type CompactDetailsPanelProps = {
   children: ReactNode
   summary: string
@@ -117,4 +129,10 @@ type MetricProps = {
 type StatTileProps = {
   label: string
   value: any
+}
+
+type JsonBlockProps = {
+  className?: string
+  flush?: boolean
+  value: Record<string, any> | null
 }
