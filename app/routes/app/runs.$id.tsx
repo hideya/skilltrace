@@ -1,9 +1,17 @@
 import { ChevronLeftIcon } from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, redirect, useNavigate, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
+import {
+  CompactDetailsPanel,
+  CompactDisclosureHeader,
+  EmptyPanel,
+  Metric,
+  SectionSummaryHeader,
+  StatTile,
+} from './+/run-detail-ui'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
@@ -394,13 +402,13 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
       title="Run snapshot"
     >
       <div className="grid gap-3 sm:grid-cols-4">
-        <SnapshotStat label="HEAD" value={shortHash(snapshot.head)} />
-        <SnapshotStat label="Branch" value={snapshot.branch || 'detached'} />
-        <SnapshotStat
+        <StatTile label="HEAD" value={shortHash(snapshot.head)} />
+        <StatTile label="Branch" value={snapshot.branch || 'detached'} />
+        <StatTile
           label="State"
           value={snapshot.dirty ? 'dirty' : 'clean'}
         />
-        <SnapshotStat label="Changed" value={files.length} />
+        <StatTile label="Changed" value={files.length} />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -477,45 +485,6 @@ function RunSnapshotPanel({ snapshot }: RunSnapshotPanelProps) {
   )
 }
 
-function CompactDetailsPanel({
-  children,
-  summary,
-  title,
-}: CompactDetailsPanelProps) {
-  return (
-    <AnimatedDisclosure
-      childrenClassName="border-t border-base-300 p-5"
-      className="rounded-box border border-base-300 bg-base-100 shadow-sm"
-      header={<CompactDisclosureHeader summary={summary} title={title} />}
-      headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left"
-    >
-      {children}
-    </AnimatedDisclosure>
-  )
-}
-
-function CompactDisclosureHeader({
-  subsection = false,
-  summary,
-  title,
-}: CompactDisclosureHeaderProps) {
-  let titleClassName = subsection
-    ? 'truncate font-semibold text-base-content/70'
-    : 'section-title shrink-0'
-
-  return (
-    <>
-      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-5 gap-y-1">
-        <h2 className={titleClassName}>{title}</h2>
-        <p className="min-w-0 flex-1 truncate font-mono text-xs text-base-content/60">
-          {summary}
-        </p>
-      </div>
-      <span className="badge shrink-0 badge-outline">details</span>
-    </>
-  )
-}
-
 function InstructionSurfacesPanel({
   profile,
   report,
@@ -539,15 +508,15 @@ function InstructionSurfacesPanel({
         <div className="space-y-4">
           {profile ? (
             <div className="grid gap-3 sm:grid-cols-3">
-              <SurfaceStat
+              <StatTile
                 label="Instruction profile"
                 value={instructionProfileLabel(profile.selected)}
               />
-              <SurfaceStat
+              <StatTile
                 label="Requested"
                 value={profile.requested || 'auto'}
               />
-              <SurfaceStat label="Reason" value={profile.reason || 'unknown'} />
+              <StatTile label="Reason" value={profile.reason || 'unknown'} />
             </div>
           ) : null}
 
@@ -643,17 +612,6 @@ function InstructionSurfacesPanel({
 
 function isInstructionProfileDefaultWarning(warning: string) {
   return warning.startsWith('Multiple instruction profiles were detected')
-}
-
-function SurfaceStat({ label, value }: SurfaceStatProps) {
-  return (
-    <div className="rounded-box bg-base-200 p-3">
-      <p className="text-xs tracking-[0.16em] text-base-content/50 uppercase">
-        {label}
-      </p>
-      <p className="mt-1 truncate font-mono text-sm font-semibold">{value}</p>
-    </div>
-  )
 }
 
 function runSnapshotSummary(snapshot: RunSnapshot, changedCount: number) {
@@ -901,40 +859,6 @@ function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
   )
 }
 
-function SectionSummaryHeader({
-  className = '',
-  summary,
-  title,
-}: SectionSummaryHeaderProps) {
-  return (
-    <div
-      className={`flex min-w-0 flex-wrap items-baseline gap-x-5 gap-y-1 ${className}`}
-    >
-      <h2 className="section-title shrink-0">{title}</h2>
-      <p className="min-w-0 text-sm text-base-content/60">{summary}</p>
-    </div>
-  )
-}
-
-function EmptyPanel({ children }: EmptyPanelProps) {
-  return (
-    <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
-      {children}
-    </div>
-  )
-}
-
-function SnapshotStat({ label, value }: SnapshotStatProps) {
-  return (
-    <div className="rounded-box bg-base-200 p-3">
-      <p className="text-xs tracking-[0.16em] text-base-content/50 uppercase">
-        {label}
-      </p>
-      <p className="mt-1 truncate font-mono text-sm font-semibold">{value}</p>
-    </div>
-  )
-}
-
 function ConsistencyDot({
   active,
   expected = true,
@@ -1037,19 +961,6 @@ function resultLabel(result?: string, mode?: string) {
 function shortHash(value?: string | null) {
   if (!value) return 'unknown'
   return value.slice(0, 8)
-}
-
-function Metric({ label, value }: MetricProps) {
-  return (
-    <div className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
-      <p className="text-left text-xs tracking-[0.2em] text-base-content/50 uppercase">
-        {label}
-      </p>
-      <p className="mt-2 truncate text-right text-1.5xl font-semibold">
-        {value}
-      </p>
-    </div>
-  )
 }
 
 function Timeline({ events }: TimelineProps) {
@@ -1415,11 +1326,6 @@ type PageProps = {
   }
 }
 
-type MetricProps = {
-  label: string
-  value: any
-}
-
 type ConsistencyPanelProps = {
   rows: any[]
   traceMode?: string
@@ -1443,18 +1349,6 @@ type ContextRow = [string, unknown]
 type InstructionSurfacesPanelProps = {
   profile?: SelectedInstructionProfile | null
   report?: InstructionSurfaceReport | null
-}
-
-type CompactDetailsPanelProps = {
-  children: ReactNode
-  summary: string
-  title: string
-}
-
-type CompactDisclosureHeaderProps = {
-  subsection?: boolean
-  summary: string
-  title: string
 }
 
 type SelectedInstructionProfile = {
@@ -1481,11 +1375,6 @@ type InstructionSurface = {
 type InstructionSurfaceAliasGroup = {
   resolved_path?: string
   logical_paths: string[]
-}
-
-type SurfaceStatProps = {
-  label: string
-  value: any
 }
 
 type RunSnapshot = {
@@ -1534,21 +1423,6 @@ type InstructionFileDialogProps = {
   diff?: string
   file: RunSnapshotInstructionFile | null
   onClose: () => void
-}
-
-type SectionSummaryHeaderProps = {
-  className?: string
-  summary: string
-  title: string
-}
-
-type EmptyPanelProps = {
-  children: any
-}
-
-type SnapshotStatProps = {
-  label: string
-  value: any
 }
 
 type RunReflectionPanelProps = {
