@@ -159,7 +159,11 @@ Required views:
 - Run timeline showing all events in chronological order as compact expandable rows.
 - Consistency summary showing pass, warning, or incomplete states.
 - Run context panel showing declared model, client, working directory, and task summary.
+- Run snapshot panel showing Git state and captured instruction file contents when available.
+- Instruction surfaces panel showing detected agent instruction files and skill roots.
 - Run reflection side panel showing a readable post-run diagnostic summary with a raw JSON toggle.
+- Diagnostics page showing daemon/server state, active session, passive probe state, and MCP registration.
+- Compare Modes page for checking evidence across full, passive plus reflection, and passive-only runs.
 
 The UI should be operational and scannable rather than decorative.
 

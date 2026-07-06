@@ -363,10 +363,12 @@ SkillTrace local daemon
   ├─ Web UI
   │    ├─ run timeline
   │    ├─ run context view
+  │    ├─ run snapshot and instruction surface views
+  │    ├─ consistency matrix
   │    ├─ run reflection view
+  │    ├─ mode comparison view
   │    ├─ daemon diagnostics view
-  │    ├─ Codex MCP registration check
-  │    └─ mismatch detection
+  │    └─ MCP registration checks for supported CLI clients
   │
   ├─ Local HTTP API
   │    ├─ active session lifecycle
@@ -393,6 +395,28 @@ SkillTrace keeps normal agent execution as intact as possible and adds
 observability around it.
 
 > Keep execution as natural as possible. Add observability around it.
+
+### Run detail route structure
+
+The run detail route is intentionally a thin page shell. Its loader/action,
+top metrics, back button, and refresh polling stay in
+`app/routes/app/runs.$id.tsx`. The larger route-local panels live in
+`app/routes/app/+`:
+
+- `run-context-panel.tsx` shows agent-declared context and SkillTrace
+  environment metadata.
+- `run-snapshot-panel.tsx` shows Git provenance, changed instruction files,
+  untracked instruction files, and captured instruction contents.
+- `run-instruction-surfaces-panel.tsx` shows detected instruction files,
+  skill roots, symlink aliases, and profile-selection warnings.
+- `run-consistency-panel.tsx` shows the file-oriented passive / semantic /
+  reflection evidence matrix.
+- `run-timeline-panel.tsx` shows compact expandable events.
+- `run-reflection-panel.tsx` shows pretty and raw run reflection data.
+
+Shared small presentation primitives live in `run-detail-ui.tsx`. Keep new
+single-route panels colocated in this `+` folder unless they become reused
+outside the run detail page.
 
 ---
 
