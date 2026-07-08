@@ -147,7 +147,6 @@ function instructionProfileRequestLabel(profile?: string) {
 
 function instructionProfileLabel(profile?: string) {
   if (profile === 'agents') return 'Agent Skills'
-  if (profile === 'agents_md') return 'Legacy AGENTS.md'
   if (profile === 'claude_code') return 'Claude Code'
   return profile || 'unknown'
 }
