@@ -185,8 +185,8 @@ symlinks or shared instruction directories to support multiple agent clients.
 ## AGENTS.md-Compatible Clients Can Share One Instruction Profile
 
 In Gemini CLI testing on July 2, 2026, we confirmed that Gemini CLI can use the
-existing `agents_md` instruction profile for a repository with `AGENTS.md` and
-`.skills/`.
+existing `agents` instruction profile for a repository with `AGENTS.md` and
+`.agents/skills/`.
 
 One run with a smaller, faster model produced useful MCP events but used a
 slightly different semantic event shape than requested. A later run with a
@@ -203,7 +203,7 @@ particular run followed the semantic reporting schema exactly."
 
 An instruction profile describes repository surfaces such as:
 
-- `agents_md`: `AGENTS.md` and `.skills/`
+- `agents`: `AGENTS.md` and `.agents/skills/`
 - `claude_code`: `CLAUDE.md` and `.claude/skills/`
 
 An agent client is the program that actually runs the task, such as Codex CLI,

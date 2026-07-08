@@ -243,8 +243,8 @@ Then confirm the server is registered:
 gemini mcp list
 ```
 
-Gemini CLI uses the existing `agents_md` instruction profile when the target
-repo uses `AGENTS.md` and `.skills/`.
+Gemini CLI uses the existing `agents` instruction profile when the target
+repo uses `AGENTS.md` and `.agents/skills/`.
 
 SkillTrace also shows a read-only Gemini CLI MCP registration check in
 `/app/diagnostics` when the `gemini` CLI is available to the server process.
@@ -286,7 +286,7 @@ pnpm skilltrace:mcp
 For real-repo trials, prefer putting generic SkillTrace MCP instructions in a
 repo-local `.skilltrace/instrumentation.md` overlay and pointing to it from
 `AGENTS.md`. Passive probing also needs `.skilltrace.json` to declare skill
-roots, usually `{"skill_roots":[".skills"]}`. Task skills should provide only
+roots, usually `{"skill_roots":[".agents/skills"]}`. Task skills should provide only
 task-specific metadata, such as skill name, version, path, summaries, and
 required references.
 
@@ -329,14 +329,14 @@ Ask the agent to call it after completing the task and after emitting
   "task_outcome": "completed",
   "skills_used": ["type-fix"],
   "skills_read": [
-    ".skills/type-fix/SKILL.md"
+    ".agents/skills/type-fix/SKILL.md"
   ],
   "references_read": [
-    ".skills/type-fix/references/checklist.md"
+    ".agents/skills/type-fix/references/checklist.md"
   ],
   "files_believed_to_influence_work": [
-    ".skills/type-fix/SKILL.md",
-    ".skills/type-fix/references/checklist.md"
+    ".agents/skills/type-fix/SKILL.md",
+    ".agents/skills/type-fix/references/checklist.md"
   ],
   "file_usage_uncertainties": [],
   "steps_followed": [
@@ -395,14 +395,14 @@ as skill support material.
   "event_type": "skill_reference_read",
   "skill_name": "type-fix",
   "skill_version": "0.1.0",
-  "skill_path": ".skills/type-fix/SKILL.md",
+  "skill_path": ".agents/skills/type-fix/SKILL.md",
   "summary": "Read the type-fix checklist reference.",
   "confidence": "medium",
   "related_artifacts": [
-    ".skills/type-fix/references/checklist.md"
+    ".agents/skills/type-fix/references/checklist.md"
   ],
   "data": {
-    "reference_path": ".skills/type-fix/references/checklist.md",
+    "reference_path": ".agents/skills/type-fix/references/checklist.md",
     "reference_role": "required checklist"
   }
 }

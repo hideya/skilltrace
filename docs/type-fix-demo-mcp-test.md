@@ -282,8 +282,8 @@ For package-style Gemini CLI trials, use:
 gemini mcp add skilltrace skilltrace mcp serve --scope user
 ```
 
-Gemini CLI uses the existing `agents_md` profile for repos with `AGENTS.md` and
-`.skills/`. SkillTrace also shows a read-only Gemini CLI MCP registration check
+Gemini CLI uses the existing `agents` profile for repos with `AGENTS.md` and
+`.agents/skills/`. SkillTrace also shows a read-only Gemini CLI MCP registration check
 in `/app/diagnostics` when the `gemini` CLI is available to the server process.
 
 ## Run The Experiment
@@ -303,7 +303,7 @@ purpose of a particular trial.
 This creates `.skilltrace/instrumentation.md` and `.skilltrace.json` if needed,
 inserts one SkillTrace instruction at the top of the selected instruction file,
 and records `.skilltrace/injection.json` so `skilltrace-dev stop` can clean up
-the exact injected changes. For the default `agents_md` profile, the
+the exact injected changes. For the default `agents` profile, the
 instruction file is `AGENTS.md`. For the `claude_code` profile, it is
 `CLAUDE.md` or `.claude/CLAUDE.md`.
 
@@ -322,7 +322,7 @@ Run `skilltrace-dev start` from the demo working copy root, or pass
 `--target <repo>`. The command refuses if the target does not contain the
 expected instruction surfaces for the selected profile, which catches
 accidental parent-directory runs before they create misleading records.
-`agents_md` expects `AGENTS.md` and `.skills/`; `claude_code` expects
+`agents` expects `AGENTS.md` and `.agents/skills/`; `claude_code` expects
 `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`.
 
 For mode comparison trials, use:
@@ -365,15 +365,15 @@ The `claude_code` profile injects into the Claude instruction file and writes
 SkillTrace also records a resolved repo-local root so passive probing can match
 either spelling.
 
-For Gemini CLI trials, use the normal AGENTS.md-shaped sandbox:
+For Gemini CLI trials, use the normal Agent Skills demo surface:
 
 ```bash
-skilltrace-dev start --instruction-profile agents-md
+skilltrace-dev start --instruction-profile agents
 gemini
 skilltrace-dev stop
 ```
 
-In July 2026 testing, Gemini CLI worked with the existing `agents_md` profile.
+In July 2026 testing, Gemini CLI worked with the existing `agents` profile.
 As with other clients, smaller or faster models may vary in how precisely they
 follow the semantic logging schema, so compare passive, semantic, and
 reflection evidence rather than trusting one stream alone.
@@ -407,7 +407,7 @@ with:
 
 ```json
 {
-  "skill_roots": [".skills"]
+  "skill_roots": [".agents/skills"]
 }
 ```
 
@@ -430,7 +430,7 @@ for reusable SkillTrace MCP tracing policy. The sandbox `AGENTS.md` asks the
 agent to read:
 
 ```text
-.skills/type-fix/SKILL.md
+.agents/skills/type-fix/SKILL.md
 ```
 
 The instrumentation overlay asks the agent to call `skill_trace_context`,
@@ -443,10 +443,10 @@ In the sandbox Codex session, the agent should:
 
 - notice the TypeScript repair task
 - read `.skilltrace/instrumentation.md`
-- read `.skills/type-fix/SKILL.md`
+- read `.agents/skills/type-fix/SKILL.md`
 - call `skill_log_event` with `event_type: skill_use_started`
 - inspect or run `pnpm tsc`
-- read `.skills/type-fix/references/checklist.md`
+- read `.agents/skills/type-fix/references/checklist.md`
 - call `skill_log_event` with `event_type: skill_reference_read`
 - fix `src/profile.ts`
 - call `skill_log_event` with `event_type: skill_use_finished`
@@ -479,13 +479,13 @@ passive_file_harness
 ```
 
 The timeline should show the semantic started, reference-read, and finished
-events. It should also show passive file access for `.skills/type-fix/SKILL.md`
-and `.skills/type-fix/references/checklist.md`.
+events. It should also show passive file access for `.agents/skills/type-fix/SKILL.md`
+and `.agents/skills/type-fix/references/checklist.md`.
 
-The consistency table should show aligned rows for `.skills/type-fix/SKILL.md`
-and `.skills/type-fix/references/checklist.md`.
+The consistency table should show aligned rows for `.agents/skills/type-fix/SKILL.md`
+and `.agents/skills/type-fix/references/checklist.md`.
 
-If the demo working copy has local changes to `AGENTS.md`, `.skills/**`,
+If the demo working copy has local changes to `AGENTS.md`, `.agents/skills/**`,
 `.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a
 Run snapshot panel. Changed instruction files appear in its changed-files list;
 click one to inspect the exact captured plain-text contents used by that run.
@@ -570,11 +570,11 @@ skill file:
 
 - `skill_name`: `example-skill`
 - `skill_version`: `0.1.0`
-- `skill_path`: `.skills/example-skill/SKILL.md`
+- `skill_path`: `.agents/skills/example-skill/SKILL.md`
 - start summary: `Using example-skill for the current task.`
 - finish summary: `Finished example-skill guided work.`
 - required references:
-  - path: `.skills/example-skill/references/checklist.md`
+  - path: `.agents/skills/example-skill/references/checklist.md`
   - role: `required checklist`
 ```
 
@@ -597,7 +597,7 @@ pnpm skilltrace:read \
   --run <generated_run_id> \
   --skill type-fix \
   --server http://localhost:5777 \
-  tmp/type-fix-demo/.skills/type-fix/SKILL.md
+  tmp/type-fix-demo/.agents/skills/type-fix/SKILL.md
 ```
 
 Then refresh the run detail page. The consistency panel can compare the passive skill read with the semantic MCP declarations.
@@ -683,14 +683,14 @@ apk add inotify-tools
 With `inotify-tools` installed, a successful Linux run should show passive
 `skill_file_read` and `skill_reference_read` events as well as MCP semantic
 events. If the MCP semantic events appear but passive events do not, check that
-the target repo has `.skilltrace.json` and `.skills`, and that
+the target repo has `.skilltrace.json` and `.agents/skills`, and that
 `skilltrace-dev start` or `skilltrace start` was run before Codex started. Run
 `skilltrace-dev status` or `skilltrace status` and confirm the probe says
 `running`. If it is not running, inspect the printed probe log.
 
 For Claude Code trials, also check the selected instruction profile and copied
-fixture shape. If a repo has both `AGENTS.md`/`.skills/` and
-`CLAUDE.md`/`.claude/skills/`, auto-selection may choose `agents_md` while
+fixture shape. If a repo has both `AGENTS.md`/`.agents/skills/` and
+`CLAUDE.md`/`.claude/skills/`, auto-selection may choose `agents` while
 Claude reads its native `.claude/skills/` files. That can make the passive probe
 look like it missed `SKILL.md` even though it was watching the other copied
 surface. Use `--instruction-profile claude-code` for Claude-specific runs, or

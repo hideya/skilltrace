@@ -115,14 +115,14 @@ Proposed reflection fields:
 ```json
 {
   "skills_read": [
-    ".skills/type-fix/SKILL.md"
+    ".agents/skills/type-fix/SKILL.md"
   ],
   "references_read": [
-    ".skills/type-fix/references/checklist.md"
+    ".agents/skills/type-fix/references/checklist.md"
   ],
   "files_believed_to_influence_work": [
-    ".skills/type-fix/SKILL.md",
-    ".skills/type-fix/references/checklist.md"
+    ".agents/skills/type-fix/SKILL.md",
+    ".agents/skills/type-fix/references/checklist.md"
   ],
   "file_usage_uncertainties": [
     "I may have read other project Markdown files for context, but they were not task skill references."

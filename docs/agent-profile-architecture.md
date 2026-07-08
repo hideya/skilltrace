@@ -1,15 +1,15 @@
 # Instruction Profile Architecture
 
 > Historical note: this document describes the profile architecture that grew
-> out of the original `.skills/` prototype. The forward-looking location policy
-> is now recorded in
+> out of the original `.skills/` prototype and the first Claude Code support
+> pass. The current location policy is recorded in
 > [`agent-skills-location-policy.md`](./agent-skills-location-policy.md), which
 > makes `.agents/skills/` the preferred generic Agent Skills location and plans
 > to drop legacy `.skills/` support.
 
 This note records the design and current status for extending SkillTrace beyond
 one repository instruction convention. Claude Code is the first non-AGENTS.md
-profile. Gemini CLI currently reuses the AGENTS.md-compatible profile.
+profile. Gemini CLI currently reuses the Agent Skills-compatible profile.
 
 The goal is not to make SkillTrace clever about every agent convention at once.
 The goal is to keep each instruction surface safe, inspectable, and generic
@@ -18,10 +18,11 @@ model without pretending their repository conventions are identical.
 
 ## Motivation
 
-SkillTrace originally assumed an AGENTS.md-shaped target repo:
+SkillTrace originally assumed an AGENTS.md-shaped target repo. The current
+generic Agent Skills surface is:
 
 - `AGENTS.md`
-- `.skills/**`
+- `.agents/skills/**`
 
 Claude Code commonly uses a different visible surface:
 
@@ -33,8 +34,8 @@ agent convention to another, such as:
 
 - `CLAUDE.md -> AGENTS.md`
 - `AGENTS.md -> CLAUDE.md`
-- `.claude/skills -> .skills`
-- `.skills -> .claude/skills`
+- `.claude/skills -> .agents/skills`
+- `.agents/skills -> .claude/skills`
 
 SkillTrace must support both shapes without double-injecting into the same
 resolved file or reporting the same underlying skill as unrelated evidence.
@@ -48,10 +49,10 @@ tracing.
 
 Supported profiles:
 
-- `agents_md`
+- `agents`
 - `claude_code`
 
-Gemini CLI uses `agents_md` when a repo exposes `AGENTS.md` and `.skills/`.
+Gemini CLI uses `agents` when a repo exposes `AGENTS.md` and `.agents/skills/`.
 Future instruction profiles may cover other repo instruction conventions.
 
 One run uses one active instruction profile. Mixed-profile tracing can wait
@@ -83,7 +84,7 @@ logical:  CLAUDE.md
 resolved: /repo/AGENTS.md
 
 logical:  .claude/skills
-resolved: /repo/.skills
+resolved: /repo/.agents/skills
 ```
 
 The logical path explains the user and agent convention. The resolved path keeps
@@ -125,7 +126,7 @@ record the alias relationship in metadata
 SkillTrace should inject through the logical path used by the active instruction
 profile:
 
-- `agents_md` uses `AGENTS.md`
+- `agents` uses `AGENTS.md`
 - `claude_code` uses `CLAUDE.md` or `.claude/CLAUDE.md`
 
 If that logical path is a symlink, the write naturally affects the resolved
@@ -151,7 +152,7 @@ or:
 
 ```text
 .claude/skills/type-fix/SKILL.md
-.skills/type-fix/SKILL.md
+.agents/skills/type-fix/SKILL.md
 ```
 
 ### Warn On Ambiguous Auto Detection
@@ -162,7 +163,7 @@ silently.
 
 The first safe behavior can be:
 
-- continue to default to the current AGENTS.md-compatible profile
+- continue to default to the current Agent Skills-compatible profile
 - record detected surfaces in run metadata
 - ask the user to pass an explicit instruction profile once selection exists
 
@@ -180,7 +181,7 @@ unchanged.
 Detect:
 
 - `AGENTS.md`
-- `.skills/`
+- `.agents/skills/`
 - `CLAUDE.md`
 - `.claude/CLAUDE.md`
 - `.claude/skills/`
@@ -202,20 +203,20 @@ run context. This phase should not change injection behavior yet.
 Add explicit instruction profile selection:
 
 ```bash
-skilltrace start --instruction-profile agents-md
+skilltrace start --instruction-profile agents
 skilltrace start --instruction-profile claude-code
 skilltrace start --instruction-profile auto
 ```
 
 Status: metadata selection is implemented. `skilltrace start` accepts
-`--instruction-profile auto|agents-md|claude-code` and stores the selected
+`--instruction-profile auto|agents|claude-code` and stores the selected
 instruction profile as `instruction_profile` in run metadata and the
 `trace_session_started` event. `auto` selects the only detected instruction
 profile and records a warning when both profiles are present.
 
 Target validation is profile-aware:
 
-- `agents_md` expects `AGENTS.md` and `.skills/`
+- `agents` expects `AGENTS.md` and `.agents/skills/`
 - `claude_code` expects `CLAUDE.md` or `.claude/CLAUDE.md`, plus
   `.claude/skills/`
 
@@ -245,16 +246,16 @@ Implement the first Claude Code instruction profile:
   appropriate
 - watch `.claude/skills/**`
 - include Claude instruction paths in Git run snapshots
-- normalize `.claude/skills` and `.skills` evidence when they resolve to the
-  same directory
+- normalize `.claude/skills` and `.agents/skills` evidence when they resolve
+  to the same directory
 
 Status: first-pass implementation is in place. `claude_code` injection writes
 the normal SkillTrace instrumentation overlay, inserts the tracing-policy line
 into `CLAUDE.md` or `.claude/CLAUDE.md`, and writes `.skilltrace.json` with
 `.claude/skills` as the logical passive root. If `.claude/skills` resolves to a
-repo-local path such as `.skills`, SkillTrace includes that resolved repo-local
-root as an additional passive root so symlinked setups are observed through
-either spelling.
+repo-local path such as `.agents/skills`, SkillTrace includes that resolved
+repo-local root as an additional passive root so symlinked setups are observed
+through either spelling.
 
 ### Phase 5: Claude Code Diagnostics
 
@@ -275,12 +276,12 @@ claude mcp add skilltrace --scope user -- skilltrace mcp serve
 
 For checkout trials, use `skilltrace-dev mcp serve` instead.
 
-### Phase 6: Gemini CLI As An AGENTS.md-Compatible Client
+### Phase 6: Gemini CLI As An Agent Skills-Compatible Client
 
 Test Gemini CLI without introducing a new instruction profile.
 
 Status: first-pass manual testing succeeded. Gemini CLI can register the
-SkillTrace MCP server and use the existing `agents_md` profile in an
+SkillTrace MCP server and use the existing `agents` profile in an
 AGENTS.md-shaped sandbox. SkillTrace diagnostics now inspect `gemini mcp list`
 when the `gemini` CLI is available to the server process.
 
@@ -295,7 +296,7 @@ The comparison should show:
 - logical paths used by each agent
 - resolved paths used for normalization
 - warnings when instruction profiles used different instruction surfaces
-- visibility into AGENTS.md-compatible clients, such as Codex CLI and Gemini
+- visibility into Agent Skills-compatible clients, such as Codex CLI and Gemini
   CLI, that share the same instruction profile
 
 This is the point where SkillTrace becomes a generic skill observability tool

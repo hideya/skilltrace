@@ -217,7 +217,7 @@ For passive probing, add `.skilltrace.json` with the repo's skill roots:
 
 ```json
 {
-  "skill_roots": [".skills"]
+  "skill_roots": [".agents/skills"]
 }
 ```
 

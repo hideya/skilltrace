@@ -391,7 +391,7 @@ sudo -n fs_usage -w -f filesys
 Complications discovered:
 
 - `fs_usage` may emit lowercase absolute paths
-- `fs_usage` may emit repo-relative paths such as `.skills/type-fix/SKILL.md`
+- `fs_usage` may emit repo-relative paths such as `.agents/skills/type-fix/SKILL.md`
 - path matching must be case-insensitive on macOS
 - probe logs are essential for debugging parser misses
 
@@ -429,10 +429,10 @@ Claude Code is now supported through the `claude_code` instruction profile and
 Claude's command-line MCP registration. The design is captured in
 [agent-profile-architecture.md](agent-profile-architecture.md), with special
 attention to symlinked instruction surfaces such as `CLAUDE.md -> AGENTS.md`
-and `.claude/skills -> .skills`.
+and `.claude/skills -> .agents/skills`.
 
-Gemini CLI is supported as an AGENTS.md-compatible command-line MCP client. It
-uses the existing `agents_md` instruction profile rather than introducing a new
+Gemini CLI is supported as an Agent Skills-compatible command-line MCP client. It
+uses the existing `agents` instruction profile rather than introducing a new
 repository surface.
 
 ## Pluggable Instrumentation Overlay
@@ -449,7 +449,7 @@ The current pattern is:
 For lower-friction real-repo trials, `skilltrace start` applies the reusable
 SkillTrace pieces automatically for the current trace session. It writes
 `.skilltrace/instrumentation.md`, creates a minimal `.skilltrace.json` with
-`skill_roots: ['.skills']` when needed, and prepends the single `AGENTS.md`
+`skill_roots: ['.agents/skills']` when needed, and prepends the single `AGENTS.md`
 instruction. The mutation is manifest-backed in `.skilltrace/injection.json`,
 and `skilltrace stop` removes only the exact inserted instruction block and only
 removes generated files when SkillTrace created them and they are unchanged.
@@ -494,7 +494,7 @@ Captured data:
 Instruction-relevant paths currently include:
 
 - `AGENTS.md`
-- `.skills/**`
+- `.agents/skills/**`
 - `.skilltrace.json`
 - `.skilltrace/**`
 
