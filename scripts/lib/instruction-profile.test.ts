@@ -80,7 +80,7 @@ describe('instruction profiles', () => {
     )
   })
 
-  test('auto selection defaults to agents_md when profiles are ambiguous', () => {
+  test('auto selection keeps legacy agents_md when no generic agents profile exists', () => {
     let report: InstructionSurfaceReport = {
       detected_at: '2026-07-02T00:00:00.000Z',
       surfaces: [],
@@ -92,7 +92,7 @@ describe('instruction profiles', () => {
 
     expect(selected.selected).toBe('agents_md')
     expect(selected.reason).toBe('ambiguous_detected_profiles')
-    expect(selected.warnings?.[0]).toContain('Multiple instruction profiles')
+    expect(selected.warnings?.[0]).toContain('legacy agents_md')
   })
 
   test('auto selection prefers agents over legacy agents_md when both exist', () => {

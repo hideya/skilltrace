@@ -1391,7 +1391,7 @@ function parseInstructionProfile(value?: string): InstructionProfileOption {
   ) {
     return value
   }
-  if (value === 'agents-md') return 'agents_md'
+  if (value === 'agents-md') return 'agents'
   if (value === 'claude-code') return 'claude_code'
 
   usage(`Unknown instruction profile: ${value ?? ''}`)

@@ -95,7 +95,7 @@ export function selectInstructionProfile(
       requested: value,
       reason: 'ambiguous_detected_profiles',
       warnings: [
-        `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to agents_md.`,
+        `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to legacy agents_md.`,
       ],
     }
   }

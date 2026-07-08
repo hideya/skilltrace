@@ -29,7 +29,7 @@ export function InstructionSurfacesPanel({
               />
               <StatTile
                 label="Requested"
-                value={profile.requested || 'auto'}
+                value={instructionProfileRequestLabel(profile.requested)}
               />
               <StatTile label="Reason" value={profile.reason || 'unknown'} />
             </div>
@@ -134,15 +134,20 @@ function instructionSurfaceSummary(
   surfaces: InstructionSurface[] = [],
 ) {
   let profileLabel = instructionProfileLabel(profile?.selected)
-  let requested = profile?.requested || 'auto'
+  let requested = instructionProfileRequestLabel(profile?.requested)
   let suffix = surfaces.length === 0 ? ' / no surfaces' : ''
 
   return `${profileLabel} / ${requested}${suffix}`
 }
 
+function instructionProfileRequestLabel(profile?: string) {
+  if (!profile || profile === 'auto') return 'auto'
+  return instructionProfileLabel(profile)
+}
+
 function instructionProfileLabel(profile?: string) {
   if (profile === 'agents') return 'Agent Skills'
-  if (profile === 'agents_md') return 'AGENTS.md'
+  if (profile === 'agents_md') return 'Legacy AGENTS.md'
   if (profile === 'claude_code') return 'Claude Code'
   return profile || 'unknown'
 }
