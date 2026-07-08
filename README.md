@@ -22,11 +22,11 @@ SkillTrace is aimed at people developing and debugging agent skills.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/dbb66690-06b1-4ef5-8913-0c4eccfb027d" target=”_blank”>
+      <a href="https://github.com/user-attachments/assets/ed189e53-6c31-4a65-bdbf-7b8b8c5d94a7" target=”_blank”>
         <img src="docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
-      <sub>Demo movie clip</sub>
+      <sub>SkillTrace demo movie clip</sub>
     </td>
     <td>
       <!-- <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"> -->
@@ -576,8 +576,8 @@ Known limitations include:
 
 ## Privacy And Data
 
-SkillTrace is designed as a local-first, unauthenticated tool. It does not
-require a hosted account, but it may capture sensitive development context.
+SkillTrace itself is locally executed and no remote connection is established,
+but it may capture sensitive development context.
 
 Depending on the trace mode and repository state, captured data may include:
 

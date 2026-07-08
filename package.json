@@ -27,13 +27,13 @@
     "skilltrace": "./bin/skilltrace.js"
   },
   "files": [
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
     "bin",
     "build",
     "dist",
     "scripts/templates",
-    "README.md",
-    "LICENSE",
-    "NOTICE.md",
     "react-router.config.ts"
   ],
   "type": "module",
