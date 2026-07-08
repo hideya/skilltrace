@@ -1,40 +1,41 @@
 # Agent Skills Location Policy
 
-This note records the intended SkillTrace direction after reviewing the
-emerging Agent Skills conventions used by Codex CLI, Gemini CLI, and Claude
-Code.
+This document explains which Agent Skills locations SkillTrace supports and
+why.
+
+Last reviewed: 2026-07-09.
 
 ## Summary
 
-SkillTrace should move to `.agents/skills/` as the preferred generic Agent
-Skills location and drop legacy `.skills/` support.
-
-Supported instruction profiles should become:
+SkillTrace supports two instruction profiles:
 
 - `agents`: `AGENTS.md` plus `.agents/skills/`
 - `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
 
-The older `agents_md` profile name and `.skills/` root were useful while the
-prototype was proving the tracing model, but they now add avoidable complexity.
-Because current users are controlled testers, this is a good time to make the
-repository convention simpler and more aligned with the wider ecosystem.
+The `agents` profile is the default. It is intended for clients that follow the
+interoperable Agent Skills layout, including Codex CLI and Gemini CLI when used
+with the shared `.agents/skills/` location.
 
-## External Alignment
+The `claude_code` profile exists because Claude Code has a mature native layout
+with different instruction files and skill roots. SkillTrace treats that as a
+real platform difference rather than hiding it behind the generic profile.
 
-Current public client documentation points in the same direction:
+## Platform Status
 
-- Codex CLI documents `.agents/skills/` as the project skill location and
-  `$HOME/.agents/skills/` as the user skill location.
-- Gemini CLI supports `.agents/skills/` as an interoperability alias alongside
-  Gemini-specific skill locations.
-- Claude Code still uses `.claude/skills/`, so SkillTrace should keep a
-  dedicated Claude Code profile instead of pretending the surfaces are
-  identical.
+The current ecosystem points toward one shared generic layout plus a few
+client-native layouts.
 
-This gives SkillTrace a clean story:
+| Client      | Project skills location                | User skills location                       | SkillTrace profile                    |
+| ----------- | -------------------------------------- | ------------------------------------------ | ------------------------------------- |
+| Codex CLI   | `.agents/skills/`                      | `~/.agents/skills/`                        | `agents`                              |
+| Gemini CLI  | `.agents/skills/` or `.gemini/skills/` | `~/.agents/skills/` or `~/.gemini/skills/` | `agents` when using `.agents/skills/` |
+| Claude Code | `.claude/skills/`                      | `~/.claude/skills/`                        | `claude_code`                         |
 
-> SkillTrace traces standard Agent Skills by default, and supports Claude Code's
-> native skill layout as an explicit profile.
+Codex documents repository skills under `.agents/skills/` and user skills under
+`$HOME/.agents/skills/`. Gemini CLI documents `.agents/skills/` as an
+interoperability alias, and notes that the alias takes precedence over
+`.gemini/skills/` within the same tier. Claude Code documents project skills
+under `.claude/skills/` and personal skills under `~/.claude/skills/`.
 
 References:
 
@@ -42,106 +43,106 @@ References:
   <https://developers.openai.com/codex/skills>
 - Gemini CLI Agent Skills:
   <https://geminicli.com/docs/cli/skills/>
+- Claude Code Skills:
+  <https://code.claude.com/docs/en/skills>
 
-## Why Drop `.skills/`
+## Supported Project Layouts
 
-Dropping `.skills/` now has several benefits:
+SkillTrace focuses on project-local skills because the current product is about
+tracing a specific run against a specific repository.
 
-- avoids presenting a prototype-era layout as a continuing recommendation
-- reduces instruction profile auto-detection ambiguity
-- avoids extra symlink and path-normalization cases
-- makes examples and docs match the convention new users are likely to see
-- keeps the user-facing model small before broader trials
-
-The cost is that existing test/demo repos need to move from `.skills/` to
-`.agents/skills/`. That is acceptable while the tester group is small.
-
-## Scope
-
-SkillTrace should initially support project-local skill locations:
+Generic Agent Skills profile:
 
 ```text
 <repo>/AGENTS.md
 <repo>/.agents/skills/
+```
 
+Claude Code profile:
+
+```text
 <repo>/CLAUDE.md
 <repo>/.claude/CLAUDE.md
 <repo>/.claude/skills/
 ```
 
-Other project-local client-specific roots, such as
-`<repo>/.gemini/skills/`, should not become automatic generic roots yet.
-SkillTrace should prefer `.agents/skills/` for clients that support the shared
-Agent Skills location. If a client-specific project root becomes important in
-real trials, add it as an explicit instruction profile or explicit profile
-option rather than silently scanning every `.<client>/skills/` directory.
+The `agents` profile should be used for Codex CLI, Gemini CLI with
+`.agents/skills/`, and other clients that intentionally adopt the shared Agent
+Skills layout.
 
-Reasons:
+The `claude_code` profile should be used for Claude Code, even when a repository
+shares files with the generic layout through symlinks.
 
-- automatic scanning can make it unclear which instruction surface the agent
-  was expected to use
-- client-specific roots may have subtly different loading rules
-- a visible profile keeps run metadata and comparisons easier to interpret
-- `.agents/skills/` gives Codex and Gemini a shared path without another
-  SkillTrace-specific branch
+## Decisions
 
-User-level skill locations should be recognized as an important future concern,
-but not treated as first-class passive-tracing targets yet:
+### Prefer One Generic Profile
 
-```text
-~/.agents/skills/
-~/.claude/skills/
-~/.gemini/skills/
-```
+SkillTrace uses `agents`, not client names such as `codex` or `gemini`, for the
+generic profile. The profile describes the instruction surface, not the agent
+client that eventually runs the task.
 
-Reasons to defer user-level passive tracing:
+This keeps run metadata clearer:
 
-- the current passive probe is scoped to the active target repository
-- user-level skills can influence many projects and would need clearer run
-  attribution
-- probing home-directory skill roots may create more privacy and noise concerns
-- the UI needs a way to distinguish project instructions from user/global
-  instructions
+- `instruction_profile`: which files SkillTrace prepared and watched
+- `agent_client`: what the agent reported about itself through run context
 
-For now, if an agent reports user-level skill files through reflection or
-semantic events, SkillTrace can display those paths as reported evidence, but it
-should not require passive confirmation for them.
+SkillTrace cannot reliably know whether the user will run `codex`, `gemini`, or
+another compatible client after `skilltrace start`.
 
-## Instruction Profile Strategy
+### Keep Claude Code Explicit
 
-### `agents`
+Claude Code deserves a separate profile because it uses `CLAUDE.md` and
+`.claude/skills/`, and because its skill loading behavior is not identical to
+the generic `.agents/skills/` profile.
 
-Use this for clients that follow the generic Agent Skills convention.
+The separate profile also makes tests and run comparisons easier to interpret.
+If a run says `claude_code`, the user can immediately tell that SkillTrace
+prepared Claude-native surfaces.
 
-Expected surface:
+### Do Not Chase Every Client-Specific Variant
+
+SkillTrace does not automatically scan every possible path such as:
 
 ```text
-AGENTS.md
-.agents/skills/
+.gemini/skills/
+.github/skills/
+.<client>/skills/
 ```
 
-This profile is intended for:
+Gemini CLI can use `.agents/skills/`, so SkillTrace asks Gemini users to use
+that shared path for now. Other client-specific locations may be added later
+only when real usage shows a strong need.
 
-- Codex CLI
-- Gemini CLI when using the shared Agent Skills layout
-- other clients that adopt `.agents/skills/`
+The default stance is deliberately boring:
 
-### `claude_code`
+> Support the interoperable path first. Add explicit profiles only for real
+> platform differences.
 
-Use this for Claude Code's native convention.
+## Goals
 
-Expected surface:
+This policy aims to:
 
-```text
-CLAUDE.md
-or .claude/CLAUDE.md
+- keep SkillTrace easy to explain to first-time users
+- make run metadata explicit and comparable across clients
+- align the default path with the emerging Agent Skills convention
+- support Claude Code without pretending its native surface is generic
+- reduce surprising auto-detection behavior
+- keep passive probe configuration scoped to the active repository
+- make symlink-heavy shared-instruction setups possible without duplicate
+  injection
 
-.claude/skills/
-```
+## Non-Goals
 
-This profile should remain explicit because Claude Code's visible instruction
-surface is different, even when users intentionally share files through
-symlinks.
+SkillTrace does not currently aim to:
+
+- manage user-level skills under home directories
+- passively probe home-directory skill roots by default
+- install, move, or synchronize skill files for each agent client
+- infer which agent client the user will run after `skilltrace start`
+- support every `<repo>/.<client>/skills/` convention automatically
+
+These are not rejected forever. They are intentionally deferred until they have
+clear product value and enough field evidence.
 
 ## Auto Detection
 
@@ -149,26 +150,29 @@ Auto detection should be conservative:
 
 - if only `agents` is present, select `agents`
 - if only `claude_code` is present, select `claude_code`
-- if both are present and resolve to the same underlying files, select the
-  generic `agents` profile and record an informational note
-- if both are present and resolve to different files, select the generic
-  `agents` profile only when the user did not request Claude Code, and record a
-  visible informational note asking for `--instruction-profile claude-code` when
-  testing Claude Code
+- if both are present and the user did not request a profile, select `agents`
+  and record an informational note
+- if the user requests `--instruction-profile claude-code`, use Claude Code
+  surfaces and record that choice in run metadata
 
-This note should remain informational, not a warning, when SkillTrace made a
-reasonable deterministic choice.
+Multiple detected profiles are not necessarily a problem. They often mean the
+repository intentionally supports more than one agent client. SkillTrace should
+display this as information, not as a warning, when it made a deterministic
+choice.
 
 ## Symlink Policy
 
-Symlinks are valid and useful. SkillTrace should support setups such as:
+Symlinks are valid and useful for teams that want one shared set of skills to
+serve multiple clients.
+
+Supported examples:
 
 ```text
 .claude/skills -> ../.agents/skills
 CLAUDE.md -> AGENTS.md
 ```
 
-The rule remains:
+The rule is:
 
 > Mutate by logical profile path, but deduplicate by resolved filesystem path.
 
@@ -177,13 +181,15 @@ That means SkillTrace should:
 - inject through `AGENTS.md` for the `agents` profile
 - inject through `CLAUDE.md` or `.claude/CLAUDE.md` for the `claude_code`
   profile
-- never insert the same SkillTrace instruction twice into one resolved file
-- record both logical and resolved paths in run metadata
+- avoid inserting the same SkillTrace instruction twice into one resolved file
+- record logical and resolved paths in run metadata
 - normalize consistency checks by resolved paths where possible
 
 ## Passive Probe Policy
 
-Project-local passive roots should come from the selected instruction profile:
+Project-local passive roots come from the selected instruction profile.
+
+For `agents`:
 
 ```json
 {
@@ -191,7 +197,7 @@ Project-local passive roots should come from the selected instruction profile:
 }
 ```
 
-or:
+For `claude_code`:
 
 ```json
 {
@@ -199,9 +205,8 @@ or:
 }
 ```
 
-If a selected logical root resolves to another repo-local path, SkillTrace may
-include both logical and resolved repo-local paths so native and symlinked client
-accesses are both captured.
+If a logical skill root resolves to another repo-local path, SkillTrace may
+include both paths so native and symlinked client accesses are captured.
 
 Example:
 
@@ -217,34 +222,19 @@ For a Claude Code run, the passive config may include:
 }
 ```
 
-## Migration Checklist
+This is still project-local tracing. User-level skill roots may appear in
+semantic events or reflection if an agent reports them, but SkillTrace should
+not require passive confirmation for user-level paths until the UI can clearly
+separate project evidence from user/global evidence.
 
-Implementation should happen in small, testable steps:
+## When To Add A New Profile
 
-1. Add the new `agents` profile for `AGENTS.md` plus `.agents/skills/`.
-2. Rename or replace user-facing `agents_md` labels with `agents`.
-3. Remove `.skills/` from profile detection, target validation, injection, and
-   default passive roots.
-4. Migrate examples from `.skills/` to `.agents/skills/`.
-5. Update instrumentation templates so examples mention `.agents/skills/`.
-6. Update Git provenance filtering to include `.agents/**` and no longer treat
-   `.skills/**` as an instruction-relevant path.
-7. Update tests to use `.agents/skills/`.
-8. Keep Claude Code support based on `.claude/skills/`.
-9. Keep symlink normalization tests, but point shared-skill examples at
-   `.agents/skills/` rather than `.skills/`.
-10. Update README and developer docs to present `.agents/skills/` as the
-    standard layout.
+Add a new instruction profile only when all of these are true:
 
-## Non-Goals For This Migration
+- a client has a distinct project-local instruction surface
+- the surface cannot reasonably use `.agents/skills/`
+- users need first-class passive probing and injection for that surface
+- run metadata would become clearer with an explicit profile name
 
-This migration should not attempt to:
-
-- manage user-level skills under home directories
-- install or modify client-specific skill registries
-- infer which agent client the user will run after `skilltrace start`
-- support every `<project>/.<client>/skills/` convention automatically
-- keep compatibility with `.skills/`
-
-The point is to simplify SkillTrace's default surface while keeping enough
-profile structure to support real client differences.
+Otherwise, prefer the `agents` profile and document the client as compatible
+with the shared Agent Skills layout.
