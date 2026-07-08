@@ -290,8 +290,10 @@ supervises the passive probe, and receives MCP semantic events.
 See `docs/architecture-decisions.md` for the decisions and complications found
 while building the first local prototype. See
 `docs/agent-profile-architecture.md` for the AGENTS.md/Claude Code profile
-model, Gemini CLI's AGENTS.md-compatible path, and symlink-safe instruction
-surface design.
+model and symlink-safe instruction surface design. See
+`docs/agent-skills-location-policy.md` for the forward-looking plan to make
+`.agents/skills/` the generic Agent Skills location and remove legacy
+`.skills/` support.
 
 The local UI has three primary views:
 

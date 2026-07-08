@@ -89,6 +89,12 @@ It is intended for people experimenting with AI agent skills, MCP workflows,
 and skill observability. Expect rough edges, platform-specific behavior, and
 occasional missing traces.
 
+SkillTrace is migrating its preferred generic skill layout from the original
+prototype `.skills/` directory to the interoperable `.agents/skills/`
+convention used by current Agent Skills clients. See
+[`docs/agent-skills-location-policy.md`](./docs/agent-skills-location-policy.md)
+for the migration policy.
+
 ## Requirements
 
 - Node.js 22+

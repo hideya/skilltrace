@@ -1,5 +1,12 @@
 # Instruction Profile Architecture
 
+> Historical note: this document describes the profile architecture that grew
+> out of the original `.skills/` prototype. The forward-looking location policy
+> is now recorded in
+> [`agent-skills-location-policy.md`](./agent-skills-location-policy.md), which
+> makes `.agents/skills/` the preferred generic Agent Skills location and plans
+> to drop legacy `.skills/` support.
+
 This note records the design and current status for extending SkillTrace beyond
 one repository instruction convention. Claude Code is the first non-AGENTS.md
 profile. Gemini CLI currently reuses the AGENTS.md-compatible profile.
