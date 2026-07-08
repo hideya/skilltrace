@@ -34,7 +34,7 @@ describe('skilltrace session helpers', () => {
         run_id: 'run_session_001',
         server: 'http://localhost:7555',
         target_root: '/tmp/repo',
-        skill_roots: ['/tmp/repo/.skills'],
+        skill_roots: ['/tmp/repo/.agents/skills'],
         started_at: '2026-06-19T00:15:30.000Z',
       },
       filePath,

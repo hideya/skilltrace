@@ -28,8 +28,7 @@ export function findTargetRoot(start: string) {
   while (true) {
     if (
       fs.existsSync(path.join(current, '.skilltrace.json')) ||
-      fs.existsSync(path.join(current, '.agents/skills')) ||
-      fs.existsSync(path.join(current, '.skills'))
+      fs.existsSync(path.join(current, '.agents/skills'))
     ) {
       return current
     }

@@ -56,22 +56,6 @@ describe('instruction injection', () => {
     expect(fs.existsSync(path.join(dir, '.skilltrace.json'))).toBe(false)
   })
 
-  test('keeps legacy agents_md passive root when requested', () => {
-    let dir = tempRoot()
-    fs.mkdirSync(path.join(dir, '.skills'), { recursive: true })
-    fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# Agent Guidelines\n')
-
-    injectInstructions(dir, 'run_legacy', {
-      instructionProfile: 'agents_md',
-    })
-
-    let config = JSON.parse(
-      fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8'),
-    )
-
-    expect(config.skill_roots).toEqual(['.skills'])
-  })
-
   test('preserves pre-existing instrumentation and warns', () => {
     let dir = tempRoot()
     let skilltraceDir = path.join(dir, '.skilltrace')
@@ -135,9 +119,9 @@ describe('instruction injection', () => {
 
   test('adds resolved repo-local skill root for symlinked Claude skills', () => {
     let dir = tempRoot()
-    fs.mkdirSync(path.join(dir, '.skills/type-fix'), { recursive: true })
+    fs.mkdirSync(path.join(dir, '.agents/skills/type-fix'), { recursive: true })
     fs.mkdirSync(path.join(dir, '.claude'), { recursive: true })
-    fs.symlinkSync('../.skills', path.join(dir, '.claude/skills'))
+    fs.symlinkSync('../.agents/skills', path.join(dir, '.claude/skills'))
     fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# Claude Guidelines\n')
 
     injectInstructions(dir, 'run_claude_symlink', {
@@ -148,7 +132,7 @@ describe('instruction injection', () => {
       fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8'),
     )
 
-    expect(config.skill_roots).toEqual(['.claude/skills', '.skills'])
+    expect(config.skill_roots).toEqual(['.claude/skills', '.agents/skills'])
   })
 
   test('preserves pre-existing passive config and warns', () => {

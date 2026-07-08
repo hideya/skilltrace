@@ -170,7 +170,8 @@ instruction file, and records a manifest at `.skilltrace/injection.json`.
 generated files if SkillTrace created them and they were not changed.
 
 `skilltrace start` expects to run from a supported target repo, such as one with
-`AGENTS.md` and `.skills/`, or one with `CLAUDE.md` and `.claude/skills/`. If no
+`AGENTS.md` and `.agents/skills/`, or one with `CLAUDE.md` and
+`.claude/skills/`. If no
 supported instruction profile is available, it refuses before creating a run so
 an accidental parent-directory command does not create misleading trace records.
 
@@ -331,7 +332,7 @@ At `skilltrace start`, after any stale SkillTrace overlay cleanup and before
 the current run's overlay is injected, SkillTrace also records a lightweight Git
 run snapshot when the target repo is inside a Git worktree. The snapshot stores
 the HEAD commit, branch, broad changed-file status, and bounded
-instruction-relevant provenance for `AGENTS.md`, `.skills/**`,
+instruction-relevant provenance for `AGENTS.md`, `.agents/**`,
 `.skilltrace.json`, and `.skilltrace/**`. By default, only
 instruction-relevant diffs and plain-text instruction file contents are
 captured; other repo changes are recorded as file status entries. The run
@@ -454,7 +455,7 @@ roots. The default injection flow creates this minimal config when it is missing
 
 ```json
 {
-  "skill_roots": [".skills"]
+  "skill_roots": [".agents/skills"]
 }
 ```
 
@@ -468,11 +469,11 @@ Task skills provide metadata the overlay can use:
 
 - `skill_name`: `type-fix`
 - `skill_version`: `0.1.0`
-- `skill_path`: `.skills/type-fix/SKILL.md`
+- `skill_path`: `.agents/skills/type-fix/SKILL.md`
 - start summary: `Using the type-fix skill to repair TypeScript errors.`
 - finish summary: `Finished repairing TypeScript errors.`
 - required references:
-  - path: `.skills/type-fix/references/checklist.md`
+  - path: `.agents/skills/type-fix/references/checklist.md`
   - role: `required checklist`
 ```
 
@@ -528,11 +529,11 @@ standalone skill lifecycle events:
   "run_id": "run_2026_001",
   "event_type": "skill_reference_read",
   "skill_name": "type-fix",
-  "skill_path": ".skills/type-fix/SKILL.md",
+  "skill_path": ".agents/skills/type-fix/SKILL.md",
   "summary": "Read the type-fix checklist reference.",
-  "related_artifacts": [".skills/type-fix/references/checklist.md"],
+  "related_artifacts": [".agents/skills/type-fix/references/checklist.md"],
   "data": {
-    "reference_path": ".skills/type-fix/references/checklist.md",
+    "reference_path": ".agents/skills/type-fix/references/checklist.md",
     "reference_role": "required checklist"
   },
   "confidence": "medium"

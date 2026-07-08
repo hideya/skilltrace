@@ -33,20 +33,6 @@ describe('instruction profiles', () => {
     expect(selected.reason).toBe('single_detected_profile')
   })
 
-  test('detects an AGENTS.md style repo', () => {
-    let root = tempRoot()
-    fs.writeFileSync(path.join(root, 'AGENTS.md'), '# Agent Guidelines\n')
-    fs.mkdirSync(path.join(root, '.skills'), { recursive: true })
-
-    let report = detectInstructionSurfaces(root)
-    let selected = selectInstructionProfile(undefined, report)
-
-    expect(report.instruction_profiles).toEqual(['agents_md'])
-    expect(instructionProfileReady('agents_md', report)).toBe(true)
-    expect(selected.selected).toBe('agents_md')
-    expect(selected.reason).toBe('single_detected_profile')
-  })
-
   test('detects a Claude Code style repo', () => {
     let root = tempRoot()
     fs.writeFileSync(path.join(root, 'CLAUDE.md'), '# Claude Guidelines\n')
@@ -62,9 +48,9 @@ describe('instruction profiles', () => {
     let root = tempRoot()
     fs.writeFileSync(path.join(root, 'AGENTS.md'), '# Shared Guidelines\n')
     fs.symlinkSync('AGENTS.md', path.join(root, 'CLAUDE.md'))
-    fs.mkdirSync(path.join(root, '.skills'), { recursive: true })
+    fs.mkdirSync(path.join(root, '.agents/skills'), { recursive: true })
     fs.mkdirSync(path.join(root, '.claude'), { recursive: true })
-    fs.symlinkSync('../.skills', path.join(root, '.claude/skills'))
+    fs.symlinkSync('../.agents/skills', path.join(root, '.claude/skills'))
 
     let report = detectInstructionSurfaces(root)
 
@@ -74,33 +60,21 @@ describe('instruction profiles', () => {
           logical_paths: expect.arrayContaining(['AGENTS.md', 'CLAUDE.md']),
         }),
         expect.objectContaining({
-          logical_paths: expect.arrayContaining(['.skills', '.claude/skills']),
+          logical_paths: expect.arrayContaining([
+            '.agents/skills',
+            '.claude/skills',
+          ]),
         }),
       ]),
     )
   })
 
-  test('auto selection keeps legacy agents_md when no generic agents profile exists', () => {
+  test('auto selection prefers agents when profiles are ambiguous', () => {
     let report: InstructionSurfaceReport = {
       detected_at: '2026-07-02T00:00:00.000Z',
       surfaces: [],
       alias_groups: [],
-      instruction_profiles: ['agents_md', 'claude_code'],
-    }
-
-    let selected = selectInstructionProfile(undefined, report)
-
-    expect(selected.selected).toBe('agents_md')
-    expect(selected.reason).toBe('ambiguous_detected_profiles')
-    expect(selected.warnings?.[0]).toContain('legacy agents_md')
-  })
-
-  test('auto selection prefers agents over legacy agents_md when both exist', () => {
-    let report: InstructionSurfaceReport = {
-      detected_at: '2026-07-02T00:00:00.000Z',
-      surfaces: [],
-      alias_groups: [],
-      instruction_profiles: ['agents_md', 'agents', 'claude_code'],
+      instruction_profiles: ['agents', 'claude_code'],
     }
 
     let selected = selectInstructionProfile(undefined, report)

@@ -27,12 +27,12 @@ describe('captureGitSnapshot', () => {
   test('captures dirty instruction file contents without capturing other files', () => {
     let dir = gitRepo()
     writeFile(dir, 'AGENTS.md', '# Agent Guidelines\n')
-    writeFile(dir, '.skills/type-fix/SKILL.md', '# Type Fix\n')
+    writeFile(dir, '.agents/skills/type-fix/SKILL.md', '# Type Fix\n')
     writeFile(dir, 'README.md', '# Demo\n')
     git(dir, ['add', '.'])
     git(dir, ['commit', '-m', 'initial'])
 
-    writeFile(dir, '.skills/type-fix/SKILL.md', '# Type Fix\n\nUpdated\n')
+    writeFile(dir, '.agents/skills/type-fix/SKILL.md', '# Type Fix\n\nUpdated\n')
     writeFile(dir, 'README.md', '# Demo\n\nUpdated\n')
 
     let snapshot = captureGitSnapshot(dir)
@@ -40,14 +40,14 @@ describe('captureGitSnapshot', () => {
     expect(snapshot.available).toBe(true)
     expect(snapshot.dirty).toBe(true)
     expect(snapshot.files?.map((file) => file.path)).toEqual(
-      expect.arrayContaining(['.skills/type-fix/SKILL.md', 'README.md']),
+      expect.arrayContaining(['.agents/skills/type-fix/SKILL.md', 'README.md']),
     )
-    expect(snapshot.instruction_files).toEqual(['.skills/type-fix/SKILL.md'])
+    expect(snapshot.instruction_files).toEqual(['.agents/skills/type-fix/SKILL.md'])
     expect(snapshot.instruction_diff).toContain('Updated')
     expect(snapshot.instruction_file_contents).toEqual([
       expect.objectContaining({
-        path: '.skills/type-fix/SKILL.md',
-        target_relative_path: '.skills/type-fix/SKILL.md',
+        path: '.agents/skills/type-fix/SKILL.md',
+        target_relative_path: '.agents/skills/type-fix/SKILL.md',
         content: '# Type Fix\n\nUpdated\n',
       }),
     ])
@@ -59,14 +59,14 @@ describe('captureGitSnapshot', () => {
     git(dir, ['add', '.'])
     git(dir, ['commit', '-m', 'initial'])
 
-    writeFile(dir, '.skills/new-skill/SKILL.md', '# New Skill\n')
+    writeFile(dir, '.agents/skills/new-skill/SKILL.md', '# New Skill\n')
 
     let snapshot = captureGitSnapshot(dir)
 
-    expect(snapshot.instruction_files).toEqual(['.skills/new-skill/SKILL.md'])
+    expect(snapshot.instruction_files).toEqual(['.agents/skills/new-skill/SKILL.md'])
     expect(snapshot.untracked_instruction_files).toEqual([
       {
-        path: '.skills/new-skill/SKILL.md',
+        path: '.agents/skills/new-skill/SKILL.md',
         content: '# New Skill\n',
         truncated: false,
       },
@@ -77,21 +77,21 @@ describe('captureGitSnapshot', () => {
     let dir = gitRepo()
     let target = path.join(dir, 'examples/type-fix-demo')
     writeFile(target, 'AGENTS.md', '# Agent Guidelines\n')
-    writeFile(target, '.skills/type-fix/SKILL.md', '# Type Fix\n')
+    writeFile(target, '.agents/skills/type-fix/SKILL.md', '# Type Fix\n')
     git(dir, ['add', '.'])
     git(dir, ['commit', '-m', 'initial'])
 
-    writeFile(target, '.skills/type-fix/SKILL.md', '# Type Fix\n\nNested\n')
+    writeFile(target, '.agents/skills/type-fix/SKILL.md', '# Type Fix\n\nNested\n')
 
     let snapshot = captureGitSnapshot(target)
 
     expect(snapshot.instruction_files).toEqual([
-      'examples/type-fix-demo/.skills/type-fix/SKILL.md',
+      'examples/type-fix-demo/.agents/skills/type-fix/SKILL.md',
     ])
     expect(snapshot.instruction_file_contents).toEqual([
       expect.objectContaining({
-        path: 'examples/type-fix-demo/.skills/type-fix/SKILL.md',
-        target_relative_path: '.skills/type-fix/SKILL.md',
+        path: 'examples/type-fix-demo/.agents/skills/type-fix/SKILL.md',
+        target_relative_path: '.agents/skills/type-fix/SKILL.md',
       }),
     ])
   })

@@ -30,7 +30,7 @@ describe('skilltrace probe helpers', () => {
     fs.mkdirSync(path.join(root, 'src'), { recursive: true })
     fs.writeFileSync(
       path.join(root, '.skilltrace.json'),
-      JSON.stringify({ skill_roots: ['.skills'] }),
+      JSON.stringify({ skill_roots: ['.agents/skills'] }),
     )
 
     expect(findTargetRoot(path.join(root, 'src'))).toBe(root)
@@ -40,13 +40,13 @@ describe('skilltrace probe helpers', () => {
     let root = tempRoot()
     fs.writeFileSync(
       path.join(root, '.skilltrace.json'),
-      JSON.stringify({ skill_roots: ['.skills', 'skills'] }),
+      JSON.stringify({ skill_roots: ['.agents/skills', 'skills'] }),
     )
 
     let config = loadProbeConfig(root)
 
     expect(config.skillRoots).toEqual([
-      path.join(root, '.skills'),
+      path.join(root, '.agents/skills'),
       path.join(root, 'skills'),
     ])
   })
@@ -54,7 +54,7 @@ describe('skilltrace probe helpers', () => {
   test('discovers target root from INIT_CWD before cwd', () => {
     let target = tempRoot()
     let other = tempRoot()
-    fs.mkdirSync(path.join(target, '.skills'), { recursive: true })
+    fs.mkdirSync(path.join(target, '.agents/skills'), { recursive: true })
 
     let config = discoverProbeConfig({
       initCwd: target,
@@ -65,19 +65,19 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses the watched path from an absolute probe line', () => {
-    let root = '/tmp/repo/.skills'
+    let root = '/tmp/repo/.agents/skills'
     let line = `501 123 Codex 3 ${root}/type-fix/SKILL.md`
 
     expect(parseOpenSnoopPath(line, [root])).toBe(
-      '/tmp/repo/.skills/type-fix/SKILL.md',
+      '/tmp/repo/.agents/skills/type-fix/SKILL.md',
     )
   })
 
   test('parses lowercase fs_usage absolute paths case-insensitively', () => {
     let targetRoot = '/tmp/SkillTraceTest/type-fix-demo'
-    let root = path.join(targetRoot, '.skills')
+    let root = path.join(targetRoot, '.agents/skills')
     let lowercasePath =
-      '/tmp/skilltracetest/type-fix-demo/.skills/type-fix/SKILL.md'
+      '/tmp/skilltracetest/type-fix-demo/.agents/skills/type-fix/SKILL.md'
     let line = [
       '06:58:28.416967 open F=19',
       lowercasePath,
@@ -89,12 +89,12 @@ describe('skilltrace probe helpers', () => {
 
   test('parses relative fs_usage paths from the target root', () => {
     let targetRoot = '/tmp/skilltrace-test/type-fix-demo'
-    let root = path.join(targetRoot, '.skills')
+    let root = path.join(targetRoot, '.agents/skills')
     let line =
-      '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 cat.48931538'
+      '06:58:31.134215 open F=3 .agents/skills/type-fix/SKILL.md 0.000055 cat.48931538'
 
     expect(parseOpenSnoopPath(line, [root], targetRoot)).toBe(
-      path.join(targetRoot, '.skills/type-fix/SKILL.md'),
+      path.join(targetRoot, '.agents/skills/type-fix/SKILL.md'),
     )
   })
 
@@ -110,14 +110,14 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('parses inotifywait absolute paths', () => {
-    let filePath = '/tmp/repo/.skills/type-fix/SKILL.md'
+    let filePath = '/tmp/repo/.agents/skills/type-fix/SKILL.md'
 
     expect(parseInotifywaitPath(filePath)).toBe(filePath)
   })
 
   test('parses inotifywait relative paths from the target root', () => {
-    expect(parseInotifywaitPath('.skills/type-fix/SKILL.md', '/tmp/repo')).toBe(
-      '/tmp/repo/.skills/type-fix/SKILL.md',
+    expect(parseInotifywaitPath('.agents/skills/type-fix/SKILL.md', '/tmp/repo')).toBe(
+      '/tmp/repo/.agents/skills/type-fix/SKILL.md',
     )
   })
 
@@ -132,7 +132,7 @@ describe('skilltrace probe helpers', () => {
 
   test('parses the process token from fs_usage lines', () => {
     let line =
-      '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 Codex.48931538'
+      '06:58:31.134215 open F=3 .agents/skills/type-fix/SKILL.md 0.000055 Codex.48931538'
 
     expect(parseFsUsageProcess(line)).toEqual({
       process: 'Codex.48931538',
@@ -143,7 +143,7 @@ describe('skilltrace probe helpers', () => {
 
   test('treats fs_usage open operations as passive read evidence', () => {
     let line =
-      '06:58:31.134215 open F=3 .skills/type-fix/SKILL.md 0.000055 Codex.48931538'
+      '06:58:31.134215 open F=3 .agents/skills/type-fix/SKILL.md 0.000055 Codex.48931538'
 
     expect(isFsUsageReadOperation(line)).toBe(true)
   })
@@ -164,7 +164,7 @@ describe('skilltrace probe helpers', () => {
 
   test('ignores fs_usage stat operations as metadata-only noise', () => {
     let line =
-      '06:58:31.134215 stat64 .skills/type-fix/SKILL.md 0.000055 node.48931538'
+      '06:58:31.134215 stat64 .agents/skills/type-fix/SKILL.md 0.000055 node.48931538'
 
     expect(isFsUsageReadOperation(line)).toBe(false)
   })
@@ -175,12 +175,12 @@ describe('skilltrace probe helpers', () => {
   })
 
   test('matches only files inside watched skill roots', () => {
-    let root = '/tmp/repo/.skills'
+    let root = '/tmp/repo/.agents/skills'
 
-    expect(isWatchedSkillPath('/tmp/repo/.skills/type-fix/SKILL.md', [root])).toBe(
+    expect(isWatchedSkillPath('/tmp/repo/.agents/skills/type-fix/SKILL.md', [root])).toBe(
       true,
     )
-    expect(isWatchedSkillPath('/tmp/repo/.skills-other/SKILL.md', [root])).toBe(
+    expect(isWatchedSkillPath('/tmp/repo/.agents/skills-other/SKILL.md', [root])).toBe(
       false,
     )
   })
@@ -188,9 +188,9 @@ describe('skilltrace probe helpers', () => {
   test('dedupes repeated events inside the ttl window', () => {
     let deduper = new ProbeDeduper(1000)
 
-    expect(deduper.has('/tmp/repo/.skills/type-fix/SKILL.md', 1000)).toBe(false)
-    expect(deduper.has('/tmp/repo/.skills/type-fix/SKILL.md', 1500)).toBe(true)
-    expect(deduper.has('/tmp/repo/.skills/type-fix/SKILL.md', 2500)).toBe(false)
+    expect(deduper.has('/tmp/repo/.agents/skills/type-fix/SKILL.md', 1000)).toBe(false)
+    expect(deduper.has('/tmp/repo/.agents/skills/type-fix/SKILL.md', 1500)).toBe(true)
+    expect(deduper.has('/tmp/repo/.agents/skills/type-fix/SKILL.md', 2500)).toBe(false)
   })
 })
 

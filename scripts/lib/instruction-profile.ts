@@ -10,11 +10,6 @@ export function instructionProfileReady(
       hasSurface(report, 'agents', 'skill_root')
   }
 
-  if (profile === 'agents_md') {
-    return hasLogicalSurface(report, 'AGENTS.md', 'instruction_file') &&
-      hasSurface(report, 'agents_md', 'skill_root')
-  }
-
   return hasSurface(report, 'claude_code', 'instruction_file') &&
     hasSurface(report, 'claude_code', 'skill_root')
 }
@@ -25,7 +20,7 @@ export function instructionProfileExpectation(profile: InstructionProfile) {
   }
   if (profile === 'agents') return 'AGENTS.md and .agents/skills/'
 
-  return 'AGENTS.md and .skills/'
+  return 'AGENTS.md and .agents/skills/'
 }
 
 export function detectInstructionSurfaces(
@@ -85,17 +80,6 @@ export function selectInstructionProfile(
       reason: 'ambiguous_detected_profiles',
       warnings: [
         `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to agents.`,
-      ],
-    }
-  }
-
-  if (profiles.includes('agents_md')) {
-    return {
-      selected: 'agents_md',
-      requested: value,
-      reason: 'ambiguous_detected_profiles',
-      warnings: [
-        `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to legacy agents_md.`,
       ],
     }
   }
@@ -184,30 +168,13 @@ function hasSurface(
   )
 }
 
-function hasLogicalSurface(
-  report: InstructionSurfaceReport,
-  logicalPath: string,
-  kind: InstructionSurfaceKind,
-) {
-  return report.surfaces.some((surface) =>
-    surface.logical_path === logicalPath && surface.kind === kind
-  )
-}
-
 function readyInstructionProfiles(surfaces: InstructionSurface[]) {
   let profiles = unique(surfaces.map((surface) => surface.instruction_profile))
 
   return profiles.filter((profile) =>
-    (
-      profile === 'agents_md'
-        ? surfaces.some((surface) =>
-          surface.logical_path === 'AGENTS.md' &&
-          surface.kind === 'instruction_file'
-        )
-        : surfaces.some((surface) =>
-          surface.instruction_profile === profile &&
-          surface.kind === 'instruction_file'
-        )
+    surfaces.some((surface) =>
+      surface.instruction_profile === profile &&
+      surface.kind === 'instruction_file'
     ) &&
     surfaces.some((surface) =>
       surface.instruction_profile === profile &&
@@ -232,11 +199,6 @@ const INSTRUCTION_SURFACE_CANDIDATES: InstructionSurfaceCandidate[] = [
     logical_path: '.agents/skills',
   },
   {
-    instruction_profile: 'agents_md',
-    kind: 'skill_root',
-    logical_path: '.skills',
-  },
-  {
     instruction_profile: 'claude_code',
     kind: 'instruction_file',
     logical_path: 'CLAUDE.md',
@@ -253,7 +215,7 @@ const INSTRUCTION_SURFACE_CANDIDATES: InstructionSurfaceCandidate[] = [
   },
 ]
 
-export type InstructionProfile = 'agents' | 'agents_md' | 'claude_code'
+export type InstructionProfile = 'agents' | 'claude_code'
 
 export type InstructionProfileOption = InstructionProfile | 'auto'
 

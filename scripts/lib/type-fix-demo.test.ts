@@ -15,12 +15,12 @@ describe('type-fix demo', () => {
     expect(source).not.toContain('console.log(formatUser(demoUser))')
   })
 
-  test('keeps Claude Code surfaces symlinked to the AGENTS.md-compatible surface', () => {
+  test('keeps Claude Code surfaces symlinked to the Agent Skills surface', () => {
     expect(fs.readlinkSync('examples/type-fix-demo/CLAUDE.md')).toBe(
       'AGENTS.md',
     )
     expect(fs.readlinkSync('examples/type-fix-demo/.claude/skills')).toBe(
-      '../.skills',
+      '../.agents/skills',
     )
   })
 })

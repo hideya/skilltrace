@@ -329,7 +329,6 @@ function profileConfig(targetRoot: string, profile: InstructionProfile) {
 
 function skillRootPathsForProfile(profile: InstructionProfile) {
   if (profile === 'claude_code') return ['.claude/skills']
-  if (profile === 'agents_md') return ['.skills']
   return ['.agents/skills']
 }
 
@@ -406,4 +405,4 @@ type InjectionManifest = {
 }
 
 type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
-type InstructionProfile = 'agents' | 'agents_md' | 'claude_code'
+type InstructionProfile = 'agents' | 'claude_code'

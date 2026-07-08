@@ -227,7 +227,7 @@ available.
 From the target repo you want to trace:
 
 SkillTrace expects the repo to have an agent instruction surface, such as
-`AGENTS.md` with `.skills/`, or `CLAUDE.md` with `.claude/skills/`.
+`AGENTS.md` with `.agents/skills/`, or `CLAUDE.md` with `.claude/skills/`.
 
 ```bash
 cd <repo>
@@ -302,10 +302,10 @@ npm install
 By default, `skilltrace start` auto-detects one of these supported instruction
 profiles:
 
-- `agents_md`: `AGENTS.md` and `.skills/`
+- `agents`: `AGENTS.md` and `.agents/skills/`
 - `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
 
-Use `--instruction-profile agents-md` or
+Use `--instruction-profile agents` or
 `--instruction-profile claude-code` when a repo has more than one instruction
 surface or when you want to be explicit.
 
@@ -496,10 +496,10 @@ If no passive events appear:
 - On Linux, install `inotify-tools` and confirm the run status says the probe is
   running.
 - Confirm the target repo has the expected instruction surface, such as
-  `AGENTS.md` with `.skills/` or `CLAUDE.md` with `.claude/skills/`.
+  `AGENTS.md` with `.agents/skills/` or `CLAUDE.md` with `.claude/skills/`.
 - For Claude Code, check the selected instruction profile in the run detail
-  page. If a repo has both `AGENTS.md`/`.skills/` and
-  `CLAUDE.md`/`.claude/skills/`, SkillTrace may default to `agents_md` while
+  page. If a repo has both `AGENTS.md`/`.agents/skills/` and
+  `CLAUDE.md`/`.claude/skills/`, SkillTrace may default to `agents` while
   Claude reads its native `.claude/skills/` files. Use
   `--instruction-profile claude-code`, or preserve symlinks when copying a test
   repo, such as with `cp -RP`.
