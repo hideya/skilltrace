@@ -582,7 +582,8 @@ Known limitations include:
 
 ## Privacy And Data
 
-SkillTrace itself is locally executed and no remote connection is established,
+SkillTrace itself is locally executed and no remote connection is established
+(except Google Fonts loading by the UI),
 but it may capture sensitive development context.
 
 Depending on the trace mode and repository state, captured data may include:
