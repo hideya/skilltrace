@@ -24,7 +24,7 @@ export function injectInstructions(
   options: InjectInstructionsOptions = {},
 ) {
   let warnings: string[] = []
-  let profile = options.instructionProfile ?? 'agents_md'
+  let profile = options.instructionProfile ?? 'agents'
   let config = profileConfig(targetRoot, profile)
   let skilltraceDir = path.join(targetRoot, '.skilltrace')
   let manifestPath = path.join(targetRoot, INJECTION_MANIFEST_PATH)
@@ -217,7 +217,7 @@ export function instructionInjectionStatus(targetRoot?: string) {
 export function assessInstrumentation(
   targetRoot: string,
   injectRequested = false,
-  instructionProfile: InstructionProfile = 'agents_md',
+  instructionProfile: InstructionProfile = 'agents',
 ) {
   let config = profileConfig(targetRoot, instructionProfile)
   let agentsPath = path.join(targetRoot, config.instructionPath)
@@ -317,9 +317,7 @@ function templatePath(traceMode?: TraceMode) {
 }
 
 function profileConfig(targetRoot: string, profile: InstructionProfile) {
-  let skillRoots = profile === 'claude_code'
-    ? skillRootsFor(targetRoot, ['.claude/skills'])
-    : skillRootsFor(targetRoot, ['.skills'])
+  let skillRoots = skillRootsFor(targetRoot, skillRootPathsForProfile(profile))
 
   return {
     instructionPath: instructionPathForProfile(targetRoot, profile),
@@ -327,6 +325,12 @@ function profileConfig(targetRoot: string, profile: InstructionProfile) {
       skill_roots: skillRoots,
     },
   }
+}
+
+function skillRootPathsForProfile(profile: InstructionProfile) {
+  if (profile === 'claude_code') return ['.claude/skills']
+  if (profile === 'agents_md') return ['.skills']
+  return ['.agents/skills']
 }
 
 function instructionPathForProfile(targetRoot: string, profile: InstructionProfile) {
@@ -402,4 +406,4 @@ type InjectionManifest = {
 }
 
 type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
-type InstructionProfile = 'agents_md' | 'claude_code'
+type InstructionProfile = 'agents' | 'agents_md' | 'claude_code'

@@ -19,6 +19,20 @@ afterEach(() => {
 })
 
 describe('instruction profiles', () => {
+  test('detects a generic Agent Skills repo', () => {
+    let root = tempRoot()
+    fs.writeFileSync(path.join(root, 'AGENTS.md'), '# Agent Guidelines\n')
+    fs.mkdirSync(path.join(root, '.agents/skills'), { recursive: true })
+
+    let report = detectInstructionSurfaces(root)
+    let selected = selectInstructionProfile(undefined, report)
+
+    expect(report.instruction_profiles).toEqual(['agents'])
+    expect(instructionProfileReady('agents', report)).toBe(true)
+    expect(selected.selected).toBe('agents')
+    expect(selected.reason).toBe('single_detected_profile')
+  })
+
   test('detects an AGENTS.md style repo', () => {
     let root = tempRoot()
     fs.writeFileSync(path.join(root, 'AGENTS.md'), '# Agent Guidelines\n')
@@ -79,6 +93,21 @@ describe('instruction profiles', () => {
     expect(selected.selected).toBe('agents_md')
     expect(selected.reason).toBe('ambiguous_detected_profiles')
     expect(selected.warnings?.[0]).toContain('Multiple instruction profiles')
+  })
+
+  test('auto selection prefers agents over legacy agents_md when both exist', () => {
+    let report: InstructionSurfaceReport = {
+      detected_at: '2026-07-02T00:00:00.000Z',
+      surfaces: [],
+      alias_groups: [],
+      instruction_profiles: ['agents_md', 'agents', 'claude_code'],
+    }
+
+    let selected = selectInstructionProfile(undefined, report)
+
+    expect(selected.selected).toBe('agents')
+    expect(selected.reason).toBe('ambiguous_detected_profiles')
+    expect(selected.warnings?.[0]).toContain('defaulting to agents')
   })
 })
 

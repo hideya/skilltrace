@@ -34,7 +34,7 @@ async function main() {
     targetRoot: options.target,
     cwd: options.target,
   })
-  if (!config) usage('Target repo must contain .skilltrace.json or .skills')
+  if (!config) usage('Target repo must contain .skilltrace.json or .agents/skills')
 
   let backend = probeBackend()
   assertProbeReady(backend)

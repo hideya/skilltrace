@@ -131,7 +131,14 @@ function consistencyRowClass(row: any) {
 function displayRunFilePath(filePath: string) {
   let normalized = filePath.replaceAll('\\', '/')
   let parts = normalized.split('/').filter(Boolean)
+  let agentSkillIndex = parts.findIndex((part, index) =>
+    part === 'skills' && parts[index - 1] === '.agents'
+  )
   let skillIndex = parts.indexOf('.skills')
+
+  if (agentSkillIndex > 0) {
+    return parts.slice(agentSkillIndex - 1).join('/')
+  }
 
   if (skillIndex >= 0) {
     return parts.slice(skillIndex).join('/')

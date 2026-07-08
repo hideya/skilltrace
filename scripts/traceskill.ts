@@ -1383,7 +1383,12 @@ function parseTraceMode(value?: string): TraceMode {
 }
 
 function parseInstructionProfile(value?: string): InstructionProfileOption {
-  if (value === 'auto' || value === 'agents_md' || value === 'claude_code') {
+  if (
+    value === 'auto' ||
+    value === 'agents' ||
+    value === 'agents_md' ||
+    value === 'claude_code'
+  ) {
     return value
   }
   if (value === 'agents-md') return 'agents_md'
@@ -1434,7 +1439,7 @@ function printDisplayUrls(urls?: string[]) {
 function usage(message: string): never {
   console.error(message)
   console.error('Usage: skilltrace <serve|start|status|diagnostics|end|stop|mcp>')
-  console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents-md|claude-code] [--note <text>]')
+  console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|agents-md|claude-code] [--note <text>]')
   console.error('       skilltrace stop [--discard] [--yes]')
   console.error('       skilltrace diagnostics [--verbose]')
   console.error('       skilltrace mcp <serve|install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')

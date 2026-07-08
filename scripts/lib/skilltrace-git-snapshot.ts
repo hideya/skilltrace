@@ -185,6 +185,7 @@ function isInstructionRelevantFile(file?: string) {
     file === 'AGENTS.md' ||
     file === 'CLAUDE.md' ||
     file === '.skilltrace.json' ||
+    !!file?.startsWith('.agents/') ||
     !!file?.startsWith('.skills/') ||
     !!file?.startsWith('.claude/') ||
     !!file?.startsWith('.skilltrace/')

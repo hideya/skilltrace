@@ -20,9 +20,10 @@ afterEach(() => {
 })
 
 describe('instruction injection', () => {
-  test('injects and ejects the instruction block and generated template', () => {
+  test('injects and ejects the Agent Skills instruction block and generated template', () => {
     let dir = tempRoot()
     let agentsPath = path.join(dir, 'AGENTS.md')
+    fs.mkdirSync(path.join(dir, '.agents/skills'), { recursive: true })
     fs.writeFileSync(agentsPath, '# Agent Guidelines\n')
 
     let injected = injectInstructions(dir, 'run_001')
@@ -39,6 +40,9 @@ describe('instruction injection', () => {
     expect(fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8')).toContain(
       '"skill_roots"',
     )
+    expect(fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8')).toContain(
+      '.agents/skills',
+    )
 
     let ejected = ejectInstructions(dir, 'run_001')
 
@@ -50,6 +54,22 @@ describe('instruction injection', () => {
     expect(fs.readFileSync(agentsPath, 'utf8')).toBe('# Agent Guidelines\n')
     expect(fs.existsSync(path.join(dir, '.skilltrace'))).toBe(false)
     expect(fs.existsSync(path.join(dir, '.skilltrace.json'))).toBe(false)
+  })
+
+  test('keeps legacy agents_md passive root when requested', () => {
+    let dir = tempRoot()
+    fs.mkdirSync(path.join(dir, '.skills'), { recursive: true })
+    fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# Agent Guidelines\n')
+
+    injectInstructions(dir, 'run_legacy', {
+      instructionProfile: 'agents_md',
+    })
+
+    let config = JSON.parse(
+      fs.readFileSync(path.join(dir, '.skilltrace.json'), 'utf8'),
+    )
+
+    expect(config.skill_roots).toEqual(['.skills'])
   })
 
   test('preserves pre-existing instrumentation and warns', () => {

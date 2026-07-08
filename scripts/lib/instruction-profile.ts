@@ -5,8 +5,13 @@ export function instructionProfileReady(
   profile: InstructionProfile,
   report: InstructionSurfaceReport,
 ) {
+  if (profile === 'agents') {
+    return hasSurface(report, 'agents', 'instruction_file') &&
+      hasSurface(report, 'agents', 'skill_root')
+  }
+
   if (profile === 'agents_md') {
-    return hasSurface(report, 'agents_md', 'instruction_file') &&
+    return hasLogicalSurface(report, 'AGENTS.md', 'instruction_file') &&
       hasSurface(report, 'agents_md', 'skill_root')
   }
 
@@ -18,6 +23,7 @@ export function instructionProfileExpectation(profile: InstructionProfile) {
   if (profile === 'claude_code') {
     return 'CLAUDE.md or .claude/CLAUDE.md, and .claude/skills/'
   }
+  if (profile === 'agents') return 'AGENTS.md and .agents/skills/'
 
   return 'AGENTS.md and .skills/'
 }
@@ -34,9 +40,7 @@ export function detectInstructionSurfaces(
     detected_at: new Date().toISOString(),
     surfaces,
     alias_groups: aliasGroups,
-    instruction_profiles: unique(
-      surfaces.map((surface) => surface.instruction_profile),
-    ),
+    instruction_profiles: readyInstructionProfiles(surfaces),
   }
 }
 
@@ -65,11 +69,22 @@ export function selectInstructionProfile(
 
   if (profiles.length === 0) {
     return {
-      selected: 'agents_md',
+      selected: 'agents',
       requested: value,
       reason: 'no_profile_detected',
       warnings: [
-        'No instruction surface was detected; defaulting to agents_md.',
+        'No instruction surface was detected; defaulting to agents.',
+      ],
+    }
+  }
+
+  if (profiles.includes('agents')) {
+    return {
+      selected: 'agents',
+      requested: value,
+      reason: 'ambiguous_detected_profiles',
+      warnings: [
+        `Multiple instruction profiles were detected (${profiles.join(', ')}); defaulting to agents.`,
       ],
     }
   }
@@ -90,7 +105,7 @@ export function selectInstructionProfile(
     requested: value,
     reason: 'first_detected_profile',
     warnings: [
-      `Multiple non-agents_md instruction profiles were detected (${profiles.join(', ')}); using ${profiles[0]}.`,
+      `Multiple non-agents instruction profiles were detected (${profiles.join(', ')}); using ${profiles[0]}.`,
     ],
   }
 }
@@ -169,15 +184,52 @@ function hasSurface(
   )
 }
 
+function hasLogicalSurface(
+  report: InstructionSurfaceReport,
+  logicalPath: string,
+  kind: InstructionSurfaceKind,
+) {
+  return report.surfaces.some((surface) =>
+    surface.logical_path === logicalPath && surface.kind === kind
+  )
+}
+
+function readyInstructionProfiles(surfaces: InstructionSurface[]) {
+  let profiles = unique(surfaces.map((surface) => surface.instruction_profile))
+
+  return profiles.filter((profile) =>
+    (
+      profile === 'agents_md'
+        ? surfaces.some((surface) =>
+          surface.logical_path === 'AGENTS.md' &&
+          surface.kind === 'instruction_file'
+        )
+        : surfaces.some((surface) =>
+          surface.instruction_profile === profile &&
+          surface.kind === 'instruction_file'
+        )
+    ) &&
+    surfaces.some((surface) =>
+      surface.instruction_profile === profile &&
+      surface.kind === 'skill_root'
+    )
+  )
+}
+
 function unique<T extends string>(values: T[]) {
   return [...new Set(values)]
 }
 
 const INSTRUCTION_SURFACE_CANDIDATES: InstructionSurfaceCandidate[] = [
   {
-    instruction_profile: 'agents_md',
+    instruction_profile: 'agents',
     kind: 'instruction_file',
     logical_path: 'AGENTS.md',
+  },
+  {
+    instruction_profile: 'agents',
+    kind: 'skill_root',
+    logical_path: '.agents/skills',
   },
   {
     instruction_profile: 'agents_md',
@@ -201,7 +253,7 @@ const INSTRUCTION_SURFACE_CANDIDATES: InstructionSurfaceCandidate[] = [
   },
 ]
 
-export type InstructionProfile = 'agents_md' | 'claude_code'
+export type InstructionProfile = 'agents' | 'agents_md' | 'claude_code'
 
 export type InstructionProfileOption = InstructionProfile | 'auto'
 

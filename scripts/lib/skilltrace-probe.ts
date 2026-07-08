@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { buildSkillReadEvent } from './skilltrace-read'
 
-export const DEFAULT_SKILL_ROOTS = ['.skills']
+export const DEFAULT_SKILL_ROOTS = ['.agents/skills']
 
 export function discoverProbeConfig(options: DiscoverProbeConfigOptions) {
   let candidates = unique(
@@ -28,6 +28,7 @@ export function findTargetRoot(start: string) {
   while (true) {
     if (
       fs.existsSync(path.join(current, '.skilltrace.json')) ||
+      fs.existsSync(path.join(current, '.agents/skills')) ||
       fs.existsSync(path.join(current, '.skills'))
     ) {
       return current
