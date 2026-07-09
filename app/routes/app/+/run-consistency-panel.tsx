@@ -48,6 +48,7 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     <ConsistencyDot
                       active={row.passive}
                       expected={row.passive_expected}
+                      subdued={row.status === 'discovered'}
                       tone="passive"
                     />
                   </td>
@@ -97,6 +98,7 @@ function ConsistencyDot({
   active,
   expected = true,
   state,
+  subdued = false,
   tone,
 }: ConsistencyDotProps) {
   if (!expected) {
@@ -111,13 +113,16 @@ function ConsistencyDot({
 
   let activeClass = tone === 'semantic' ? 'bg-indigo-400' : 'bg-teal-400'
   let isPartial = tone === 'semantic' && state === 'partial'
+  let opacityClass = active && subdued ? 'opacity-50' : ''
   let className = active
     ? activeClass
     : isPartial
       ? 'bg-indigo-400/50'
       : 'bg-base-300'
   let label = active
-    ? 'Observed'
+    ? subdued
+      ? 'Discovered passively'
+      : 'Observed'
     : isPartial
       ? 'Started, waiting for finish'
       : 'Missing'
@@ -125,7 +130,7 @@ function ConsistencyDot({
   return (
     <span
       aria-label={label}
-      className={`inline-block size-3 rounded-full ${className}`}
+      className={`inline-block size-3 rounded-full ${className} ${opacityClass}`}
       title={label}
     />
   )
@@ -168,6 +173,7 @@ type ConsistencyDotProps = {
   active: boolean
   expected?: boolean
   state?: 'complete' | 'partial' | 'missing'
+  subdued?: boolean
   tone: 'passive' | 'semantic'
 }
 
