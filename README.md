@@ -245,6 +245,8 @@ skilltrace start --note "trying to simplify AGENTS.md"
 Then run your agent task as normal using the `codex`, `claude`, or `gemini`
 command.
 
+Be sure to allow skilltrace MCP server tool invocations.
+
 When the task is finished:
 
 ```bash

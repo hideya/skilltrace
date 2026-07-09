@@ -203,7 +203,38 @@ function fileNameForEvent(event: any) {
 
   if (!filePath || typeof filePath !== 'string') return null
 
-  return filePath.split(/[\\/]/).filter(Boolean).at(-1) || null
+  return compactPathLabel(filePath)
+}
+
+export function compactPathLabel(filePath: string) {
+  let parts = filePath.split(/[\\/]/).filter(Boolean)
+  if (parts.length === 0) return null
+
+  let skillRoot = skillRootIndex(parts)
+  if (skillRoot !== null && parts.length > skillRoot + 1) {
+    return parts.slice(skillRoot + 1).join('/')
+  }
+
+  let fileName = parts.at(-1)
+  if (fileName === 'SKILL.md' && parts.length >= 2) {
+    return `${parts.at(-2)}/SKILL.md`
+  }
+
+  return fileName || null
+}
+
+function skillRootIndex(parts: string[]) {
+  for (let index = 0; index < parts.length; index += 1) {
+    if (parts[index] === '.skills') return index
+    if (
+      (parts[index] === '.agents' || parts[index] === '.claude') &&
+      parts[index + 1] === 'skills'
+    ) {
+      return index + 1
+    }
+  }
+
+  return null
 }
 
 function referencePathForEvent(event: any) {
