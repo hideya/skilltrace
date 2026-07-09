@@ -305,10 +305,27 @@ npm install
 ### Target Repo Requirements
 
 By default, `skilltrace start` auto-detects one of these supported instruction
-profiles:
+profiles (skill file directory formats):
 
 - `agents`: `AGENTS.md` and `.agents/skills/`
 - `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
+
+SkillTrace expects each skill root to use the common one-directory-per-skill
+layout:
+
+```text
+<repo>/.agents/skills/
+  <skill-name>/
+    SKILL.md
+    <reference-dir>/
+      <reference-files>
+```
+
+The same per-skill shape is commonly used in user-level roots such as
+`~/.agents/skills/`. SkillTrace's default passive probing is project-local, so
+README examples use `<repo>/.agents/skills/`. See
+[`docs/agent-skills-location-policy.md`](./docs/agent-skills-location-policy.md)
+for the supported locations by agent client.
 
 Use `--instruction-profile agents` or
 `--instruction-profile claude-code` when a repo has more than one instruction

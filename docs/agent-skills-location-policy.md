@@ -51,6 +51,30 @@ References:
 SkillTrace focuses on project-local skills because the current product is about
 tracing a specific run against a specific repository.
 
+Each supported skill root uses the same basic directory shape: one directory
+per skill, a `SKILL.md` entrypoint, and optional reference files below that
+skill directory.
+
+```text
+<skill-root>/
+  <skill-name>/
+    SKILL.md
+    <reference-dir>/
+      <reference-files>
+```
+
+For example, the generic project-local layout usually looks like:
+
+```text
+<repo>/.agents/skills/<skill-name>/SKILL.md
+<repo>/.agents/skills/<skill-name>/<reference-dir>/<reference-files>
+```
+
+User-level roots such as `~/.agents/skills/`, `~/.gemini/skills/`, and
+`~/.claude/skills/` commonly use the same per-skill shape. SkillTrace documents
+them for context, but does not passively probe home-directory skill roots by
+default.
+
 Generic Agent Skills profile:
 
 ```text
