@@ -173,7 +173,10 @@ describe('checkTraceConsistency', () => {
 
   test('warns when passive probing observed a file reflection omitted', () => {
     let results = checkTraceConsistency([
-      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      passivePath(
+        '.skills/type-fix/references/checklist.md',
+        'skill_reference_read',
+      ),
       reflection({
         skills_read: [],
       }),
@@ -184,17 +187,54 @@ describe('checkTraceConsistency', () => {
         status: 'warning',
         title: 'Read but not declared',
         message:
-          '.skills/type-fix/SKILL.md was read, but no skill_use_started event was logged.',
-        skill: '.skills/type-fix/SKILL.md',
+          '.skills/type-fix/references/checklist.md was read, but no skill_use_started event was logged.',
+        skill: '.skills/type-fix/references/checklist.md',
       },
       {
         status: 'warning',
         title: 'Observed but not reflected',
         message:
-          '.skills/type-fix/SKILL.md was observed passively, but was not listed in reflection.',
+          '.skills/type-fix/references/checklist.md was observed passively, but was not listed in reflection.',
+        skill: '.skills/type-fix/references/checklist.md',
+      },
+    ])
+  })
+
+  test('classifies passive-only skill entrypoint scans as discovered', () => {
+    let results = checkTraceConsistency([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ])
+    let rows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ])
+
+    expect(results).toEqual([
+      {
+        status: 'discovered',
+        title: 'Discovered passively',
+        message:
+          '.skills/type-fix/SKILL.md was read passively, with no later evidence of material use.',
         skill: '.skills/type-fix/SKILL.md',
       },
     ])
+    expect(rows).toEqual([
+      {
+        kind: 'Skill',
+        file: '.skills/type-fix/SKILL.md',
+        passive: true,
+        semantic: false,
+        semantic_started: false,
+        semantic_finished: false,
+        semantic_state: 'missing',
+        reflection: false,
+        passive_expected: true,
+        semantic_expected: false,
+        reflection_expected: false,
+        issue_count: 0,
+        status: 'discovered',
+      },
+    ])
+    expect(summarizeConsistencyMatrix(rows)).toBe('pass')
   })
 
   test('ignores SkillTrace instrumentation in reflection consistency', () => {
@@ -319,7 +359,7 @@ describe('checkTraceConsistency', () => {
         semantic_expected: false,
         reflection_expected: false,
         issue_count: 0,
-        status: 'pass',
+        status: 'discovered',
       },
     ])
   })
@@ -353,7 +393,10 @@ describe('checkTraceConsistency', () => {
 
   test('warns when passive plus reflection mode has observed reads but no reflection', () => {
     let results = checkTraceConsistency([
-      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+      passivePath(
+        '.skills/type-fix/references/checklist.md',
+        'skill_reference_read',
+      ),
     ], { traceMode: 'passive_reflection' })
 
     expect(results).toEqual([
@@ -411,9 +454,13 @@ describe('checkTraceConsistency', () => {
         skills_read: ['.skills/type-fix/SKILL.md'],
       }),
     ])
+    let discoveredRows = traceConsistencyMatrix([
+      passivePath('.skills/type-fix/SKILL.md', 'skill_file_read'),
+    ])
 
     expect(summarizeConsistencyMatrix([])).toBe('unknown')
     expect(summarizeConsistencyMatrix(passingRows)).toBe('pass')
+    expect(summarizeConsistencyMatrix(discoveredRows)).toBe('pass')
     expect(summarizeConsistencyMatrix(warningRows)).toBe('warning')
   })
 })

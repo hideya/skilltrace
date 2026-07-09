@@ -18,6 +18,7 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
               <tr>
                 <th className="text-center">Kind</th>
                 <th>File</th>
+                <th className="text-center">Status</th>
                 <th className="text-center">Passive</th>
                 <th className="text-center">Semantic</th>
                 <th className="text-center">Reflection</th>
@@ -39,6 +40,9 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     title={row.file}
                   >
                     {displayRunFilePath(row.file)}
+                  </td>
+                  <td className="text-center">
+                    <ConsistencyStatusBadge status={row.status} />
                   </td>
                   <td className="text-center">
                     <ConsistencyDot
@@ -74,6 +78,19 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
       )}
     </section>
   )
+}
+
+function ConsistencyStatusBadge({ status }: ConsistencyStatusBadgeProps) {
+  let className =
+    status === 'pass'
+      ? 'badge-success'
+      : status === 'discovered'
+        ? 'badge-outline text-base-content/60'
+        : status === 'error'
+          ? 'badge-error'
+          : 'badge-warning'
+
+  return <span className={`badge badge-sm ${className}`}>{status}</span>
 }
 
 function ConsistencyDot({
@@ -152,4 +169,8 @@ type ConsistencyDotProps = {
   expected?: boolean
   state?: 'complete' | 'partial' | 'missing'
   tone: 'passive' | 'semantic'
+}
+
+type ConsistencyStatusBadgeProps = {
+  status: 'pass' | 'warning' | 'error' | 'discovered'
 }

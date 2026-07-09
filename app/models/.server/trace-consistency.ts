@@ -15,6 +15,7 @@ export function checkTraceConsistency(
     let hasPassive = group.events.some(isPassiveSkillRead)
     let hasStarted = group.events.some(isSkillUseStarted)
     let hasFinished = group.events.some(isSkillUseFinished)
+    let isDiscovery = isDiscoveredSkillGroup(group, events)
     let skill = group.label
 
     if (hasPassive && hasStarted && hasFinished) {
@@ -28,6 +29,17 @@ export function checkTraceConsistency(
     }
 
     if (hasPassive && !hasStarted) {
+      if (isDiscovery) {
+        results.push({
+          status: 'discovered',
+          title: 'Discovered passively',
+          message:
+            `${skill} was read passively, with no later evidence of material use.`,
+          skill,
+        })
+        continue
+      }
+
       results.push({
         status: 'warning',
         title: 'Read but not declared',
@@ -113,7 +125,7 @@ export function traceConsistencyMatrix(
   }
 
   return rows
-    .map((row) => finalizeMatrixRow(row, expected))
+    .map((row) => finalizeMatrixRow(row, expected, rows))
     .toSorted((left, right) => {
       let kind = kindOrder(left.kind) - kindOrder(right.kind)
       return kind || left.file.localeCompare(right.file)
@@ -122,7 +134,9 @@ export function traceConsistencyMatrix(
 
 export function summarizeConsistencyMatrix(rows: ConsistencyMatrixRow[]) {
   if (rows.length === 0) return 'unknown'
-  if (rows.some((row) => row.status !== 'pass')) return 'warning'
+  if (rows.some((row) => row.status !== 'pass' && row.status !== 'discovered')) {
+    return 'warning'
+  }
   return 'pass'
 }
 
@@ -145,7 +159,7 @@ function checkPassiveReflectionConsistency(
     return reflectionResults
   }
 
-  if (passiveObservedPaths(events).length === 0) return []
+  if (materialPassiveObservedPaths(events).length === 0) return []
 
   return [{
     status: 'warning',
@@ -183,6 +197,7 @@ function checkReflectionFileConsistency(events: TraceEventLike[]) {
 
   for (let observed of passivePaths) {
     if (pathSetHas(reflectedPaths, observed)) continue
+    if (isDiscoveredSkillPath(observed, events)) continue
 
     results.push({
       status: 'warning',
@@ -219,6 +234,21 @@ function skillKey(event: TraceEventLike) {
 
 function skillLabel(event: TraceEventLike) {
   return event.skill_name || event.skill_path || event.skill_file_hash || 'Skill'
+}
+
+function isDiscoveredSkillGroup(
+  group: SkillEventGroup,
+  events: TraceEventLike[],
+) {
+  let paths = group.events
+    .filter(isPassiveSkillRead)
+    .map(passivePath)
+    .filter((path): path is string => !!path)
+
+  return (
+    paths.length > 0 &&
+    paths.every((path) => isDiscoveredSkillPath(path, events))
+  )
 }
 
 function isPassiveSkillRead(event: TraceEventLike) {
@@ -258,6 +288,12 @@ function passiveObservedPaths(events: TraceEventLike[]) {
     .filter((path) => !isInstrumentationPath(path))
 
   return unique(paths)
+}
+
+function materialPassiveObservedPaths(events: TraceEventLike[]) {
+  return passiveObservedPaths(events).filter(
+    (path) => !isDiscoveredSkillPath(path, events),
+  )
 }
 
 function passivePath(event: TraceEventLike) {
@@ -379,6 +415,90 @@ function isInstrumentationPath(value: string) {
   return normalizePath(value).endsWith('.skilltrace/instrumentation.md')
 }
 
+function isSkillEntrypointPath(value: string) {
+  return normalizePath(value).split('/').at(-1) === 'skill.md'
+}
+
+function isDiscoveredSkillPath(value: string, events: TraceEventLike[]) {
+  if (!isSkillEntrypointPath(value)) return false
+
+  let reflection = latestReflection(events)
+  let reflected = reflectedFilePaths(reflection ?? {})
+  if (pathSetHas(reflected, value)) return false
+
+  let semanticPaths = events
+    .filter((event) => isSkillUseStarted(event) || isSkillUseFinished(event))
+    .map(semanticSkillPath)
+    .filter((path): path is string => !!path)
+
+  if (pathSetHas(semanticPaths, value)) return false
+  return !hasReferenceForSkill(value, events)
+}
+
+function hasReferenceForSkill(value: string, events: TraceEventLike[]) {
+  let key = skillDirectoryKey(value)
+  if (!key) return false
+
+  let reflection = latestReflection(events)
+  let referencePaths = [
+    ...events
+      .filter((event) => event.event_type === 'skill_reference_read')
+      .map((event) =>
+        event.source === 'mcp_semantic_logger'
+          ? semanticReferencePath(event)
+          : passivePath(event)
+      ),
+    ...stringList(reflection?.references_read),
+  ].filter((path): path is string => !!path)
+
+  return referencePaths.some((path) => skillDirectoryKey(path) === key)
+}
+
+function isDiscoveredMatrixRow(
+  row: ConsistencyMatrixDraftRow,
+  rows: ConsistencyMatrixDraftRow[],
+) {
+  if (row.kind !== 'Skill') return false
+  if (!row.passive || row.semantic_started || row.semantic_finished) return false
+  if (row.reflection || !isSkillEntrypointPath(row.file)) return false
+
+  let key = skillDirectoryKey(row.file)
+  if (!key) return true
+
+  return !rows.some((item) =>
+    item.kind === 'Reference' && skillDirectoryKey(item.file) === key
+  )
+}
+
+function skillDirectoryKey(value: string) {
+  let parts = normalizePath(value).split('/').filter(Boolean)
+
+  for (let index = 0; index < parts.length; index += 1) {
+    if (parts[index] === '.skills' && parts[index + 1]) {
+      return parts.slice(index, index + 2).join('/')
+    }
+
+    if (
+      (parts[index] === '.agents' || parts[index] === '.claude') &&
+      parts[index + 1] === 'skills' &&
+      parts[index + 2]
+    ) {
+      return parts.slice(index, index + 3).join('/')
+    }
+  }
+
+  if (parts.at(-1) === 'skill.md' && parts.length >= 2) {
+    return parts.slice(0, -1).join('/')
+  }
+
+  let referenceIndex = parts.indexOf('references')
+  if (referenceIndex > 0) {
+    return parts.slice(0, referenceIndex).join('/')
+  }
+
+  return null
+}
+
 function matrixIssueCount(
   row: ConsistencyMatrixDraftRow,
   expected: ConsistencyMatrixExpectedSources,
@@ -403,20 +523,25 @@ function matrixStatus(
 function finalizeMatrixRow(
   row: ConsistencyMatrixDraftRow,
   expected: ConsistencyMatrixExpectedSources,
+  rows: ConsistencyMatrixDraftRow[],
 ): ConsistencyMatrixRow {
+  let isDiscovered = isDiscoveredMatrixRow(row, rows)
+  let rowExpected = isDiscovered
+    ? { passive: true, semantic: false, reflection: false }
+    : expected
   let next = {
     ...row,
     semantic: semanticState(row) === 'complete',
     semantic_state: semanticState(row),
-    passive_expected: expected.passive,
-    semantic_expected: expected.semantic,
-    reflection_expected: expected.reflection,
+    passive_expected: rowExpected.passive,
+    semantic_expected: rowExpected.semantic,
+    reflection_expected: rowExpected.reflection,
   }
 
   return {
     ...next,
-    issue_count: matrixIssueCount(next, expected),
-    status: matrixStatus(next, expected),
+    issue_count: isDiscovered ? 0 : matrixIssueCount(next, rowExpected),
+    status: isDiscovered ? 'discovered' : matrixStatus(next, rowExpected),
   }
 }
 
@@ -456,7 +581,7 @@ function unique(values: string[]) {
 }
 
 export type ConsistencyResult = {
-  status: 'pass' | 'warning' | 'incomplete'
+  status: 'pass' | 'warning' | 'incomplete' | 'discovered'
   title: string
   message: string
   skill: string
@@ -468,7 +593,7 @@ export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
   semantic_expected: boolean
   reflection_expected: boolean
   issue_count: number
-  status: 'pass' | 'warning' | 'error'
+  status: 'pass' | 'warning' | 'error' | 'discovered'
 }
 
 type ConsistencyMatrixDraftRow = {

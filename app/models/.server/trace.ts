@@ -304,7 +304,7 @@ function comparisonRows(runs: ModeComparisonRun[]) {
   let rows = new Map<string, ModeComparisonRow>()
 
   for (let run of runs) {
-    for (let row of run.matrix) {
+    for (let row of run.matrix.filter((item) => item.status !== 'discovered')) {
       let key = `${row.kind}:${normalizeComparePath(row.file)}`
       let comparison = rows.get(key) ?? {
         kind: row.kind,

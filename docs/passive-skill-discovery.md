@@ -1,6 +1,6 @@
 # Passive Skill Discovery
 
-Status: draft
+Status: implemented
 
 This note describes how SkillTrace should interpret passive reads of skill
 files when an agent client scans available skills before doing the main task.
@@ -92,14 +92,15 @@ while preserving warnings for meaningful trace gaps.
 The timeline should continue to show every passive read, including discovered
 `SKILL.md` files.
 
-The consistency matrix can show discovered rows with a neutral status such as:
+The consistency matrix shows discovered rows with a neutral status:
 
 ```text
 discovered
 ```
 
-or omit them from the warning calculation while keeping them visible. If shown,
-the row copy should avoid judgmental language:
+Discovered rows are omitted from run-result and mode-comparison warning
+calculations while remaining visible in run details. The row copy should avoid
+judgmental language:
 
 ```text
 Skill entrypoint was read passively. No later evidence showed material use.
@@ -171,8 +172,6 @@ probing did not observe.
 
 ## Open Questions
 
-- Should discovered rows be shown in the consistency matrix by default, or only
-  in the timeline?
 - Should `SKILL.md` reads become material evidence when they happen after the
   first task-specific event rather than during startup?
 - Should multiple `SKILL.md` reads within the first few seconds of a run be
@@ -180,14 +179,15 @@ probing did not observe.
 - Should reflection listing a `SKILL.md` upgrade that row from `discovered` to
   material evidence?
 
-## Current Implementation Direction
+## Implementation
 
-The simplest implementation is to keep passive event capture unchanged and add
+The implementation keeps passive event capture unchanged and adds
 classification in the consistency layer:
 
 - identify passive-only `SKILL.md` rows with no later matching evidence
 - mark them as neutral discovery rows
 - exclude neutral discovery rows from `summarizeConsistencyMatrix`
+- exclude neutral discovery rows from mode comparison rows
 - keep reference rows and semantic/reflection mismatches warning-capable
 
 This avoids hiding data while making the run verdict better match what users
