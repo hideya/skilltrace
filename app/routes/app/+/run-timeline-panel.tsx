@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
 
@@ -53,7 +55,7 @@ function TimelineItem({ event }: TimelineItemProps) {
                       event,
                     )}`}
                   >
-                    {name}
+                    <PathLabel label={name} />
                   </span>
                 ) : null}
                 {isSemantic ? (
@@ -111,6 +113,26 @@ function EventCard({ event }: EventCardProps) {
       <SkillMeta event={event} />
       <JsonBlock value={event.payload} />
     </article>
+  )
+}
+
+function PathLabel({ label }: PathLabelProps) {
+  let parts = label.split('/')
+
+  return (
+    <>
+      {parts.map((part, index) => (
+        <Fragment key={`${part}-${index}`}>
+          {index > 0 ? (
+            <>
+              /
+              <wbr />
+            </>
+          ) : null}
+          {part}
+        </Fragment>
+      ))}
+    </>
   )
 }
 
@@ -278,6 +300,10 @@ type TimelineProps = {
 
 type TimelineItemProps = {
   event: any
+}
+
+type PathLabelProps = {
+  label: string
 }
 
 type EventCardProps = {
