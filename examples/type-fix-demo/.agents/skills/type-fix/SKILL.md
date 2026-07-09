@@ -4,7 +4,7 @@ This is a SkillTrace demo skill fixture. It is not an installed Codex skill.
 
 ## Applicability
 
-Use this skill when the user asks to fix TypeScript, syntax, or source errors in this demo repository.
+Use this skill when the user asks to fix TypeScript, syntax, or source errors in this repository.
 
 ## SkillTrace Metadata
 
