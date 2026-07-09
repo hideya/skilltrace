@@ -12,10 +12,10 @@ import { appName } from '~/config/app-name'
 // import { requireUser, requireUserMiddleware } from '~/.server/auth/middlewares'
 // export const middleware = [requireUserMiddleware]
 
-const activeClass = 'underline underline-offset-4 decoration-2'
+const activeClass = 'underline underline-offset-4 decoration-2 text-white'
 const navItemClass =
   'btn rounded-full btn-ghost btn-sm font-normal tracking-wider h-8 min-h-8' +
-  ' hover:bg-white/20 hover:text-white' +
+  ' hover:bg-white/20 text-white' +
   ' px-2 text-xs whitespace-nowrap sm:h-9 sm:min-h-9 sm:px-3' +
   ' sm:text-sm border-none shadow-none'
 
