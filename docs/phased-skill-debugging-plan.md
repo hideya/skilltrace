@@ -178,6 +178,9 @@ Current implementation note:
   rows. SkillTrace's own `.skilltrace/instrumentation.md` is intentionally
   ignored because it is read before semantic tracing can begin and is not a
   target skill/reference file.
+- Passive-only `SKILL.md` entrypoint reads with no later semantic, reflection,
+  or same-skill reference evidence are classified as `discovered`. They remain
+  visible but do not make the run result `Warning`.
 
 - runs record lightweight trace mode metadata without a database migration
 - current default `skilltrace start` records `full`
@@ -194,12 +197,13 @@ Current implementation note:
 - the runs page offers `Compare Modes` when a run group has at least two
   successful modes; it preselects the latest successful run per mode, allows
   one selected run per mode, and compares the selected runs by normalized
-  skill/reference files
+  skill/reference files while omitting neutral `discovered` rows
 
 Possible result labels:
 
 - `aligned`
 - `partially aligned`
+- `discovered`
 - `captured`
 - `reflection mismatch`
 - `semantic mismatch`

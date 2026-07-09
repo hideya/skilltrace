@@ -76,6 +76,11 @@ Expected result:
 - the Timeline shows passive file events
 - Consistency shows `Read but not declared` with a `warning` badge
 
+This warning case includes a reference read, so SkillTrace treats it as material
+evidence that should have semantic or reflection support in full mode. A bare
+passive `SKILL.md` entrypoint read without reference, semantic, or reflection
+evidence is now shown as neutral `discovered` evidence instead.
+
 At the end, it prints run URLs:
 
 ```text

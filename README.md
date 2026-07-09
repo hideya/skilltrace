@@ -56,6 +56,13 @@ The UI lists and compares the events obtained from those streams so you can see
 when evidence aligns, when the agent skipped a declaration, or when passive
 probing saw something the reflection omitted.
 
+Passive traces are evidence of file access, not proof of skill use. Some agent
+clients scan multiple `SKILL.md` entrypoints while building a catalog of
+available skills. SkillTrace keeps those reads in the timeline, but classifies
+entrypoint-only scans as neutral `discovered` evidence unless later semantic,
+reflection, or reference-file evidence shows material use. See
+[`docs/passive-skill-discovery.md`](./docs/passive-skill-discovery.md).
+
 Reflection is a self-report, not ground truth. Its value comes from being
 compared with passive traces, semantic MCP declarations, and human judgment.
 
@@ -384,6 +391,11 @@ The run detail page checks consistency among the captured probing results.
 It shows a consistency table across passive, semantic, and reflection evidence,
 and compares whether there is consistent evidence of skill usage.
 
+Passive `SKILL.md` reads that only look like startup skill discovery appear as
+`discovered` rows. They remain visible in run details, but they do not turn the
+run result into **Warning** or make mode comparison look different by
+themselves.
+
 Passive-only runs are labeled as **Captured** rather than **Pass**, because
 there is no second evidence stream to compare.
 
@@ -424,6 +436,9 @@ Compare Modes checks whether the same skill and reference files appear across
 those runs. Since instrumentation may affect an agent's decisions, Compare
 Modes helps you gain confidence that the target skills still appear to be used
 when tracing becomes less intrusive.
+
+Neutral `discovered` rows are omitted from mode comparison so broad startup
+skill scans do not obscure differences in material skill or reference use.
 
 <table>
   <tr>
@@ -579,6 +594,8 @@ Known limitations include:
 - Instrumentation may change model behavior, especially in `full` mode.
 - Passive-only mode can show that files were accessed, but not whether they were
   actually used.
+- Passive `SKILL.md` access may be startup discovery rather than task-specific
+  use; SkillTrace treats entrypoint-only scans as neutral `discovered` rows.
 - SkillTrace currently focuses on observability, not automatic postmortem
   generation or skill improvement.
 
@@ -638,5 +655,6 @@ decisions, see:
 - [README_DEV.md](https://github.com/hideya/skill-trace/blob/main/README_DEV.md)
 - [docs/architecture-decisions.md](https://github.com/hideya/skill-trace/blob/main/docs/architecture-decisions.md)
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-profile-architecture.md)
+- [docs/passive-skill-discovery.md](https://github.com/hideya/skill-trace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skill-trace/blob/main/docs/mcp-semantic-logger.md)
 - [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skill-trace/blob/main/docs/type-fix-demo-mcp-test.md)

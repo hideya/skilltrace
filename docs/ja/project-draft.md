@@ -459,6 +459,11 @@ MVP の最重要機能は、passive trace と active semantic trace の整合性
 - skill は読まれたが使用されなかった可能性
 - activation と use の境界が曖昧な可能性
 
+現行実装メモ: semantic / reflection / 同一 skill 配下の reference read が
+ない `SKILL.md` entrypoint 単独の read は warning ではなく、中立的な
+`discovered` evidence として扱う。reference read は引き続き、より強い
+material evidence として扱う。
+
 ### Case C: Declared but not observed
 
 - `SKILL.md` read なし

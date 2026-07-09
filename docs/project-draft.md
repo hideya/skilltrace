@@ -484,6 +484,11 @@ Possible interpretations:
 - the skill was implicitly applied
 - the boundary between activation and use is unclear
 
+Current behavior note: entrypoint-only `SKILL.md` reads with no semantic,
+reflection, or same-skill reference evidence are treated as neutral
+`discovered` evidence rather than warnings. Reference reads remain stronger
+material evidence.
+
 ### Case C: Declared but not observed
 
 - no `SKILL.md` read was observed

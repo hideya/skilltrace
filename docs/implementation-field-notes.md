@@ -151,6 +151,21 @@ A passive-only run has one evidence stream. It can show that evidence was
 captured, but it cannot prove semantic agreement. SkillTrace labels successful
 passive-only runs as `Captured`, not `Pass`.
 
+## Passive Skill Entrypoint Scans Are Neutral
+
+Some agent clients read multiple top-level `SKILL.md` files at session startup
+while cataloging available skills. That is useful evidence, but it is weaker
+than a reference-file read or semantic declaration.
+
+SkillTrace keeps those passive reads in the timeline and consistency matrix,
+but classifies entrypoint-only reads as `discovered` when there is no later
+semantic, reflection, or same-skill reference evidence. Discovered rows do not
+turn the run result into `Warning` and are omitted from mode comparison.
+
+Reference-file reads remain material evidence. A passive read of
+`.agents/skills/example/references/checklist.md` can still warn when the
+selected trace mode expected semantic or reflection support and did not get it.
+
 ## Multiple Signals Can Reveal Partial Reporting Gaps
 
 In Claude Code testing on July 2, 2026, we observed a concrete case where

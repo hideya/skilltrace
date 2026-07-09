@@ -497,7 +497,9 @@ After running at least two successful modes for the same demo working copy, the 
 page should show `Compare Modes` on that run group. It preselects the latest
 successful run for each mode; change the selected runs if needed, then click
 `Compare Selected`. The comparison report should show whether the same
-skill/reference files were captured across the selected mode runs.
+skill/reference files were captured across the selected mode runs. Neutral
+`discovered` skill-entrypoint rows are omitted from comparison so startup skill
+catalog scans do not obscure material skill or reference use.
 
 If the consistency table shows a missing passive dot for a file that was
 declared semantically, the MCP semantic path worked but the passive probe did
@@ -703,6 +705,11 @@ pnpm demo:reset type-fix-demo
 ```
 
 If the consistency panel says `Declared but not observed`, the semantic MCP part worked, but the passive probe did not catch the skill file read. Add the optional passive read event if you want a pass state for the same run.
+
+If the consistency panel shows `discovered`, SkillTrace saw a passive
+`SKILL.md` entrypoint read but did not see reference, semantic, or reflection
+evidence that the skill materially influenced the task. That is expected for
+agent startup catalog scans and is not a warning by itself.
 
 When you are done, stop the active session:
 
