@@ -1,6 +1,10 @@
 import { SectionSummaryHeader } from './run-detail-ui'
 
-export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
+export function ConsistencyPanel({
+  isFinal = true,
+  rows,
+  traceMode,
+}: ConsistencyPanelProps) {
   let description = consistencyDescription(traceMode)
 
   return (
@@ -27,7 +31,7 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
             <tbody>
               {rows.map((row) => (
                 <tr
-                  className={consistencyRowClass(row)}
+                  className={consistencyRowClass(row, isFinal)}
                   key={`${row.kind}-${row.file}`}
                 >
                   <td className="text-center">
@@ -42,7 +46,10 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
                     {displayRunFilePath(row.file)}
                   </td>
                   <td className="text-center">
-                    <ConsistencyStatusBadge status={row.status} />
+                    <ConsistencyStatusBadge
+                      isFinal={isFinal}
+                      status={row.status}
+                    />
                   </td>
                   <td className="text-center">
                     <ConsistencyDot
@@ -81,7 +88,18 @@ export function ConsistencyPanel({ rows, traceMode }: ConsistencyPanelProps) {
   )
 }
 
-function ConsistencyStatusBadge({ status }: ConsistencyStatusBadgeProps) {
+function ConsistencyStatusBadge({
+  isFinal,
+  status,
+}: ConsistencyStatusBadgeProps) {
+  if (!isFinal && ['warning', 'error'].includes(status)) {
+    return (
+      <span className="badge badge-sm badge-outline text-base-content/60">
+        {status}
+      </span>
+    )
+  }
+
   let className =
     status === 'pass'
       ? 'badge-success'
@@ -144,7 +162,8 @@ function consistencyDescription(mode?: string) {
   return 'checking passive, semantic, and reflection evidence'
 }
 
-function consistencyRowClass(row: any) {
+function consistencyRowClass(row: any, isFinal: boolean) {
+  if (!isFinal) return ''
   if (row.status === 'error') return 'bg-error/20'
   if (row.status === 'warning') return 'bg-warning/20'
   return ''
@@ -165,6 +184,7 @@ function displayRunFilePath(filePath: string) {
 }
 
 type ConsistencyPanelProps = {
+  isFinal?: boolean
   rows: any[]
   traceMode?: string
 }
@@ -178,5 +198,6 @@ type ConsistencyDotProps = {
 }
 
 type ConsistencyStatusBadgeProps = {
+  isFinal: boolean
   status: 'pass' | 'warning' | 'error' | 'discovered'
 }

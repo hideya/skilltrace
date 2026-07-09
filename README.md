@@ -81,10 +81,6 @@ containers, operating systems, and SkillTrace versions.
       <img src="docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
-    <td>
-      <img src="docs/images/skilltrace-run-details-3.webp" height="250px"><br>
-      <sub>Run Timeline</sub>
-    </td>
   </tr>
 </table>
 

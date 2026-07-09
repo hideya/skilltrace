@@ -96,6 +96,7 @@ export default function Page({ loaderData }: PageProps) {
       ) : null}
 
       <ConsistencyPanel
+        isFinal={timeline.status === 'finished'}
         rows={timeline.consistency_matrix}
         traceMode={timeline.trace_mode}
       />
