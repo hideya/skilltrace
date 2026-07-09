@@ -28,8 +28,7 @@ starts:
 ```json
 {
   "event_type": "skill_use_started",
-  "skill_name": "skill name from the task skill metadata",
-  "skill_version": "skill version from the task skill metadata",
+  "skill_name": "skill name from SKILL.md frontmatter, or infer from the SKILL.md parent directory",
   "skill_path": "path to the task skill file",
   "summary": "Why this skill is being used for the current task.",
   "confidence": "medium",
@@ -41,13 +40,15 @@ starts:
 }
 ```
 
+In any `skill_log_event`, include `skill_version` only when the skill
+explicitly declares a version.
+
 When the skill-guided work is complete, emit `skill_log_event` again:
 
 ```json
 {
   "event_type": "skill_use_finished",
-  "skill_name": "skill name from the task skill metadata",
-  "skill_version": "skill version from the task skill metadata",
+  "skill_name": "skill name from SKILL.md frontmatter, or infer from the SKILL.md parent directory",
   "skill_path": "path to the task skill file",
   "summary": "What the skill-guided work completed.",
   "confidence": "medium",
@@ -68,7 +69,6 @@ emit `skill_log_event` after reading it:
 {
   "event_type": "skill_reference_read",
   "skill_name": "parent skill name",
-  "skill_version": "parent skill version",
   "skill_path": "path to the parent task skill file",
   "summary": "Read a supporting reference for the skill.",
   "confidence": "medium",

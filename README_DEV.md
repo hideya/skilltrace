@@ -462,20 +462,11 @@ roots. The default injection flow creates this minimal config when it is missing
 Existing `.skilltrace.json` files are preserved with a warning so real repos can
 keep custom skill roots.
 
-Task skills provide metadata the overlay can use:
-
-```md
-## SkillTrace Metadata
-
-- `skill_name`: `type-fix`
-- `skill_version`: `0.1.0`
-- `skill_path`: `.agents/skills/type-fix/SKILL.md`
-- start summary: `Using the type-fix skill to repair TypeScript errors.`
-- finish summary: `Finished repairing TypeScript errors.`
-- required references:
-  - path: `.agents/skills/type-fix/references/checklist.md`
-  - role: `required checklist`
-```
+Task skills should stay in their normal portable shape: frontmatter for the
+skill name and trigger description, then task procedure plus reference paths in
+the body. The overlay can infer the skill name from frontmatter or the
+`SKILL.md` parent directory, and it can omit `skill_version` when the skill does
+not declare one.
 
 This design makes instrumentation portable to real repositories without putting
 debugging protocol inside every skill file. It also helps compare passive
@@ -622,13 +613,13 @@ Normal skill execution. Only input and output are saved.
 
 The file access tracking harness is enabled, but no semantic logging is requested.
 
-### Condition C: Passive monitoring + inline debug instrumentation
+### Condition C: Passive monitoring + legacy inline debug instrumentation
 
-Debug instrumentation is added directly inside `SKILL.md`.
+Debug instrumentation is added directly inside `SKILL.md` as a contrast case.
 
 ### Condition D: Passive monitoring + external instrumentation overlay
 
-The skill file keeps only task-specific metadata, while `.skilltrace/instrumentation.md` provides the reusable tracing policy.
+The skill file keeps only normal task instructions, while `.skilltrace/instrumentation.md` provides the reusable tracing policy.
 
 ### Condition E: Strong debug protocol
 

@@ -434,8 +434,9 @@ agent to read:
 ```
 
 The instrumentation overlay asks the agent to call `skill_trace_context`,
-`skill_log_event`, and `skill_trace_reflection`. The type-fix skill supplies the
-task-specific metadata and required checklist reference.
+`skill_log_event`, and `skill_trace_reflection`. The type-fix skill remains a
+normal portable skill: its frontmatter supplies the skill name and trigger
+description, and its procedure points to the checklist reference.
 
 ## Expected Result
 
@@ -564,25 +565,13 @@ template. Keep it generic: it should describe when to call SkillTrace MCP tools,
 but it should not contain task-specific repair, review, or implementation
 instructions.
 
-For any repo-local skill you want to probe, add a small metadata section to the
-skill file:
+Keep repo-local skills in their normal portable shape. Use frontmatter for the
+skill name and trigger description, and put task procedure plus reference paths
+in the skill body. SkillTrace-specific logging instructions belong in
+`.skilltrace/instrumentation.md`, not inside each skill.
 
-```md
-## SkillTrace Metadata
-
-- `skill_name`: `example-skill`
-- `skill_version`: `0.1.0`
-- `skill_path`: `.agents/skills/example-skill/SKILL.md`
-- start summary: `Using example-skill for the current task.`
-- finish summary: `Finished example-skill guided work.`
-- required references:
-  - path: `.agents/skills/example-skill/references/checklist.md`
-  - role: `required checklist`
-```
-
-This keeps the repository's normal task instructions separate from the
-SkillTrace tracing policy, which makes it easier to compare behavior across
-different real repos.
+This keeps the repository's normal task instructions separate from the tracing
+policy, which makes it easier to compare behavior across different real repos.
 
 The injection is manifest-backed. On stop, SkillTrace removes only the exact
 inserted instruction block, and removes `.skilltrace/instrumentation.md` and

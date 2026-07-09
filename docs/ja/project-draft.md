@@ -145,7 +145,7 @@ Active semantic trace は、LLM に skill の使用意図や判断を明示的�
 
 ## 7. Debug Instrumentation
 
-Active semantic trace を得るため、各 `SKILL.md` の冒頭、または外部 instrumentation overlay として、次のような指示を追加する。
+Active semantic trace を得るため、初期案では各 `SKILL.md` の冒頭に debug instrumentation を追加する形も想定していた。現在の prototype では、skill file に SkillTrace 固有の指示を埋め込まず、外部 instrumentation overlay として次のような指示を追加する方を優先する。
 
 ```md
 ## Debug instrumentation
@@ -571,9 +571,9 @@ PASS: pr-review was read, started, and finished.
 - file access tracking harness あり
 - semantic logging なし
 
-### Condition C: Passive monitoring + inline debug instrumentation
+### Condition C: Passive monitoring + legacy inline debug instrumentation
 
-- `SKILL.md` に Debug instrumentation を追加
+- 比較条件として `SKILL.md` に Debug instrumentation を追加
 - `skill_log_event` MCP tool を使う
 
 ### Condition D: Passive monitoring + external instrumentation overlay

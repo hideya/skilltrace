@@ -151,21 +151,20 @@ The guiding principle is:
 
 ## 7. Debug Instrumentation
 
-To obtain active semantic traces, each `SKILL.md` may include a debug
-instrumentation section, or the same instructions may be provided through an
-external instrumentation overlay. The current prototype favors a pluggable
-overlay:
+To obtain active semantic traces, earlier designs allowed each `SKILL.md` to
+include a debug instrumentation section. The current prototype favors a
+pluggable external overlay instead:
 
 ```md
 Before starting any task, read and follow `.skilltrace/instrumentation.md` for SkillTrace MCP tracing.
 ```
 
 In this pattern, `.skilltrace/instrumentation.md` contains generic tracing
-policy, while each task skill keeps only task-specific metadata such as skill
-name, version, path, summaries, applicability reason, expected steps, and
-required references.
+policy, while each task skill stays in its normal portable shape: frontmatter
+for the skill name and trigger description, then task procedure plus reference
+paths in the body.
 
-Example:
+The overlay can contain instructions like:
 
 ```md
 ## Debug instrumentation
@@ -595,9 +594,9 @@ The first experiment compares the same skill, same task, and same model under di
 - file access tracking harness is enabled
 - no semantic logging
 
-### Condition C: Passive monitoring + inline debug instrumentation
+### Condition C: Passive monitoring + legacy inline debug instrumentation
 
-- debug instrumentation is added inside `SKILL.md`
+- debug instrumentation is added inside `SKILL.md` as a contrast case
 - model uses the `skill_log_event` MCP tool
 
 ### Condition D: Passive monitoring + external instrumentation overlay
