@@ -53,11 +53,11 @@ describe('trace session helpers', () => {
     ])
   })
 
-  test('defaults to .skills when no config exists', () => {
+  test('defaults to .agents/skills when no config exists', () => {
     let root = tempRoot()
     let config = loadTargetConfig(root)
 
-    expect(config.skillRoots).toEqual([path.join(root, '.skills')])
+    expect(config.skillRoots).toEqual([path.join(root, '.agents/skills')])
   })
 
   test('defaults to .claude/skills for Claude Code instruction profile', () => {

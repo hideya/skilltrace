@@ -6,7 +6,7 @@ import { Run } from './run'
 import { TraceEvent } from './trace-event'
 import { discardRunRecord } from './trace'
 
-const DEFAULT_SKILL_ROOTS = ['.skills']
+const DEFAULT_SKILL_ROOTS = ['.agents/skills']
 const SESSION_SOURCE = 'skilltrace_session'
 
 export async function startTraceSession(input: StartTraceSessionInput) {

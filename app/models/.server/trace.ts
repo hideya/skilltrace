@@ -344,10 +344,24 @@ function compareKindOrder(kind: string) {
 function displayCompareFile(file: string) {
   let normalized = file.replaceAll('\\', '/')
   let parts = normalized.split('/').filter(Boolean)
-  let skillIndex = parts.indexOf('.skills')
+  let skillIndex = skillRootIndex(parts)
 
-  if (skillIndex >= 0) return parts.slice(skillIndex).join('/')
+  if (skillIndex !== null) return parts.slice(skillIndex).join('/')
   return file
+}
+
+function skillRootIndex(parts: string[]) {
+  for (let index = 0; index < parts.length; index += 1) {
+    if (parts[index] === '.skills') return index
+    if (
+      (parts[index] === '.agents' || parts[index] === '.claude') &&
+      parts[index + 1] === 'skills'
+    ) {
+      return index
+    }
+  }
+
+  return null
 }
 
 function normalizeComparePath(file: string) {

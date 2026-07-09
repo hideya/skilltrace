@@ -69,14 +69,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body className="h-full bg-base-200">
         <div className="app-fade-in">{children}</div>
         <ScrollRestoration />
-        <script
+        {/* <script
           dangerouslySetInnerHTML={{
             __html: `window.dataLayer = window.dataLayer || []
 function gtag(){dataLayer.push(arguments)}
 gtag('js', new Date())
 gtag('config', '${GA_MEASUREMENT_ID}')`,
           }}
-        />
+        /> */}
         <Toaster
           toastOptions={{
             unstyled: true,
