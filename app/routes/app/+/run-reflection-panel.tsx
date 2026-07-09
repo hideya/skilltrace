@@ -19,8 +19,10 @@ export function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
               {reflectionModes.map((option) => (
                 <button
                   aria-pressed={mode === option}
-                  className={`btn join-item btn-xs ${
-                    mode === option ? 'btn-primary' : 'btn-outline'
+                  className={`btn join-item font-normal btn-xs ${
+                    mode === option
+                      ? 'border-indigo-500 bg-indigo-500 text-white'
+                      : 'btn-outline'
                   }`}
                   key={option}
                   onClick={() => setMode(option)}
