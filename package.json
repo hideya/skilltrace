@@ -13,15 +13,15 @@
     "skilltrace",
     "tracing"
   ],
-  "homepage": "https://github.com/hideya/skill-trace#readme",
+  "homepage": "https://github.com/hideya/skilltrace#readme",
   "bugs": {
-    "url": "https://github.com/hideya/skill-trace/issues"
+    "url": "https://github.com/hideya/skilltrace/issues"
   },
   "license": "MIT",
   "author": "hideya kawahara",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hideya/skill-trace.git"
+    "url": "git+https://github.com/hideya/skilltrace.git"
   },
   "bin": {
     "skilltrace": "./bin/skilltrace.js"
