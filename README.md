@@ -23,14 +23,13 @@ SkillTrace is aimed at people developing and debugging agent skills.
   <tr>
     <td>
       <a href="https://github.com/user-attachments/assets/a486b3cd-a0e5-4167-bbe5-885705ea4328" target=”_blank”>
-        <img src="docs/images/skilltrace-video-cover.webp" height="250px" />
+        <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
       <sub>SkillTrace demo movie clip</sub>
     </td>
     <td>
-      <!-- <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"> -->
-      <img src="docs/images/skilltrace-diagram.webp" height="250px" />
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px" />
       <br />
       <sub>System diagram</sub>
     </td>
@@ -74,11 +73,11 @@ containers, operating systems, and SkillTrace versions.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>SkillTrace Run Details Page</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
   </tr>
@@ -415,21 +414,21 @@ there is no second evidence stream to compare.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-runs.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
       <sub>SkillTrace runs page</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>Run Details Page</sub>
     </td>
   </tr>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-3.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
       <sub>Run Timeline</sub>
     </td>
   </tr>
@@ -458,7 +457,7 @@ skill scans do not obscure differences in material skill or reference use.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
       <sub>Run mode comparison page</sub>
     </td>
   </tr>
@@ -489,11 +488,11 @@ its captured provenance.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
       <sub>Git Info Section</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
       <sub>File Diff Dialog</sub>
     </td>
 </table>
