@@ -1,6 +1,6 @@
 # SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/skilltrace)
 
-**SkillTrace is an observability tool for AI agent skill usage.**
+**SkillTrace is a free observability tool for AI agent skill usage.**
 
 When an agent can choose from multiple skills, it can be hard to tell which
 ones it used, in what order, and why.
