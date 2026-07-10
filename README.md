@@ -1,4 +1,4 @@
-# SkillTrace
+# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/@h1deya/langchain-mcp-tools)
 
 **SkillTrace is an observability tool for AI agent skill usage.**
 
@@ -22,15 +22,14 @@ SkillTrace is aimed at people developing and debugging agent skills.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/f903560b-ac99-4ed8-b1be-4cf99482a291" target=”_blank”>
-        <img src="docs/images/skilltrace-video-cover.webp" height="250px" />
+      <a href="https://github.com/user-attachments/assets/a486b3cd-a0e5-4167-bbe5-885705ea4328" target=”_blank”>
+        <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
       <sub>SkillTrace demo movie clip</sub>
     </td>
     <td>
-      <!-- <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px"> -->
-      <img src="docs/images/skilltrace-diagram.webp" height="250px" />
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px" />
       <br />
       <sub>System diagram</sub>
     </td>
@@ -74,11 +73,11 @@ containers, operating systems, and SkillTrace versions.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>SkillTrace Run Details Page</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
   </tr>
@@ -415,21 +414,21 @@ there is no second evidence stream to compare.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-runs.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
       <sub>SkillTrace runs page</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>Run Details Page</sub>
     </td>
   </tr>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-run-details-3.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
       <sub>Run Timeline</sub>
     </td>
   </tr>
@@ -458,7 +457,7 @@ skill scans do not obscure differences in material skill or reference use.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
       <sub>Run mode comparison page</sub>
     </td>
   </tr>
@@ -466,7 +465,9 @@ skill scans do not obscure differences in material skill or reference use.
 
 ## Git Provenance
 
-When the target repo is inside a Git worktree, `skilltrace start` records a
+When repeatedly modifying Skill files and verifying their behavior, you may want to know the state of the Skill files actually used during a run.
+
+To facilitate this, when the target repo is inside a Git worktree, `skilltrace start` records a
 lightweight run snapshot:
 
 - HEAD commit and branch
@@ -479,7 +480,7 @@ state they used.
 
 In the run detail page, changed instruction files are highlighted in the Run
 snapshot panel; click one to inspect the exact captured plain-text contents used
-by that run. Lines touched by the captured diff are highlighted in the viewer.
+by that run. Lines with uncommitted changes are highlighted in the viewer.
 
 The snapshot is stored with the run metadata, so deleting a run also removes
 its captured provenance.
@@ -487,11 +488,11 @@ its captured provenance.
 <table>
   <tr>
     <td>
-      <img src="docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
       <sub>Git Info Section</sub>
     </td>
     <td>
-      <img src="docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
       <sub>File Diff Dialog</sub>
     </td>
 </table>
