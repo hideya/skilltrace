@@ -1,4 +1,4 @@
-# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/@h1deya/langchain-mcp-tools)
+# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/skilltrace)
 
 **SkillTrace is an observability tool for AI agent skill usage.**
 
