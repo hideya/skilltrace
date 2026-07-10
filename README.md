@@ -22,7 +22,7 @@ SkillTrace is aimed at people developing and debugging agent skills.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/f903560b-ac99-4ed8-b1be-4cf99482a291" target=”_blank”>
+      <a href="https://github.com/user-attachments/assets/a486b3cd-a0e5-4167-bbe5-885705ea4328" target=”_blank”>
         <img src="docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
@@ -466,7 +466,9 @@ skill scans do not obscure differences in material skill or reference use.
 
 ## Git Provenance
 
-When the target repo is inside a Git worktree, `skilltrace start` records a
+When repeatedly modifying Skill files and verifying their behavior, you may want to know the state of the Skill files actually used during a run.
+
+To facilitate this, when the target repo is inside a Git worktree, `skilltrace start` records a
 lightweight run snapshot:
 
 - HEAD commit and branch
@@ -479,7 +481,7 @@ state they used.
 
 In the run detail page, changed instruction files are highlighted in the Run
 snapshot panel; click one to inspect the exact captured plain-text contents used
-by that run. Lines touched by the captured diff are highlighted in the viewer.
+by that run. Lines with uncommitted changes are highlighted in the viewer.
 
 The snapshot is stored with the run metadata, so deleting a run also removes
 its captured provenance.
