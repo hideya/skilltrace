@@ -248,6 +248,9 @@ command.
 
 Be sure to allow skilltrace MCP server tool invocations.
 
+A smaller LLM sometimes skips the instructions for invoking the MCP tools.
+Try a larger model if you encounter this issue.
+
 When the task is finished:
 
 ```bash
@@ -544,13 +547,14 @@ If no semantic events or run reflection appear:
   Run `skilltrace mcp status`, or use `skilltrace mcp install` to register
   all supported agent clients found on PATH.
 - Restart the agent after changing MCP registration.
-- Confirm the run mode is `full` or `passive_reflection`; `passive_only`
-  intentionally records no semantic declarations or reflection.
+- Try a stronger model or rerun the same scenario. Semantic reporting and
+  reflection depend on the agent following the injected instructions.
+  A smaller LLM sometimes forgets the instructions to invoke the MCP tools.
 - Check the first timeline item for an instrumentation warning. A run started
   without instruction injection can still capture passive events, but the agent
   may never see the MCP reporting instructions.
-- Try a stronger model or rerun the same scenario. Semantic reporting and
-  reflection depend on the agent following the injected instructions.
+- Confirm the run mode is `full` or `passive_reflection`; `passive_only`
+  intentionally records no semantic declarations or reflection.
 
 ## How Is This Different From General Agent Observability?
 
