@@ -121,6 +121,12 @@ Code, and Gemini CLI. Codex App support is not yet available.
 npm install -g skilltrace
 ```
 
+Check the installed version:
+
+```bash
+skilltrace --version
+```
+
 Start the local daemon:
 
 ```bash

@@ -63,6 +63,11 @@ const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
+  if (command === '--version') {
+    console.log(skilltraceVersion())
+    return
+  }
+
   if (!(command === 'mcp' && args[0] === 'serve')) warnIfDevWrapperStale()
 
   if (command === 'start') {
@@ -1436,7 +1441,7 @@ function printDisplayUrls(urls?: string[]) {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: skilltrace <serve|start|status|diagnostics|end|stop|mcp>')
+  console.error('Usage: skilltrace [--version] <serve|start|status|diagnostics|end|stop|mcp>')
   console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|claude-code] [--note <text>]')
   console.error('       skilltrace stop [--discard] [--yes]')
   console.error('       skilltrace diagnostics [--verbose]')
