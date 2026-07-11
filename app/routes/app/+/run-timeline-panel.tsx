@@ -247,7 +247,6 @@ export function compactPathLabel(filePath: string) {
 
 function skillRootIndex(parts: string[]) {
   for (let index = 0; index < parts.length; index += 1) {
-    if (parts[index] === '.skills') return index
     if (
       (parts[index] === '.agents' || parts[index] === '.claude') &&
       parts[index + 1] === 'skills'

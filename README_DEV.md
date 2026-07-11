@@ -101,7 +101,9 @@ SkillTrace is currently local-first. The initial product shape is a local
 debugging utility:
 
 ```bash
-npm install -g ./skilltrace-0.0.0.tgz
+version=$(node -p "require('./package.json').version")
+pnpm pack
+npm install -g "./skilltrace-$version.tgz"
 skilltrace daemon start
 cd <repo>
 skilltrace start
@@ -113,13 +115,14 @@ For local package trials before publishing to npm, build a tarball from this
 checkout:
 
 ```bash
+version=$(node -p "require('./package.json').version")
 pnpm pack
-npm install -g ./skilltrace-0.0.0.tgz
+npm install -g "./skilltrace-$version.tgz"
 ```
 
 The `./` is important. Without `./`, npm may interpret
-`skilltrace-0.0.0.tgz` or `some-dir/skilltrace-0.0.0.tgz` as a registry or
-GitHub-style package spec instead of a local tarball path.
+`skilltrace-<version>.tgz` or `some-dir/skilltrace-<version>.tgz` as a registry
+or GitHub-style package spec instead of a local tarball path.
 
 The package build emits React Router production assets under `build/` and
 package-facing Node entrypoints under `dist/`. The installed `skilltrace`

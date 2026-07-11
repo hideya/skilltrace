@@ -19,8 +19,6 @@ describe('type-fix demo', () => {
     expect(fs.readlinkSync('examples/type-fix-demo/CLAUDE.md')).toBe(
       'AGENTS.md',
     )
-    expect(fs.readlinkSync('examples/type-fix-demo/.claude/skills')).toBe(
-      '../.agents/skills',
-    )
+    expect(fs.readlinkSync('examples/type-fix-demo/.claude')).toBe('.agents')
   })
 })

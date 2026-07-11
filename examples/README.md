@@ -18,7 +18,7 @@ npm install
 
 The reset command copies `examples/type-fix-demo` to `tmp/type-fix-demo` and
 preserves symlinks such as `CLAUDE.md -> AGENTS.md` and
-`.claude/skills -> ../.agents/skills`.
+`.claude -> .agents`.
 
 For a manual reset, use `cp -RP` so symlinks are preserved:
 

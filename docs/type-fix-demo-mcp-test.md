@@ -137,8 +137,9 @@ For package-style trials, build and install a local tarball from the main
 SkillTrace repo instead of using `skilltrace-dev`:
 
 ```bash
+version=$(node -p "require('./package.json').version")
 npm pack
-npm install -g ./skilltrace-0.0.0.tgz
+npm install -g "./skilltrace-$version.tgz"
 skilltrace daemon start
 ```
 

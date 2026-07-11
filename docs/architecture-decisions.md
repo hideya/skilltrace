@@ -53,12 +53,13 @@ Reasons:
 Before publishing, the package can be tested with:
 
 ```bash
+version=$(node -p "require('./package.json').version")
 pnpm pack
-npm install -g ./skilltrace-0.0.0.tgz
+npm install -g "./skilltrace-$version.tgz"
 ```
 
-The explicit local path marker matters. `npm install -g skilltrace-0.0.0.tgz`
-or `npm install -g skill-trace/skilltrace-0.0.0.tgz` can be parsed as a package
+The explicit local path marker matters. `npm install -g skilltrace-<version>.tgz`
+or `npm install -g skill-trace/skilltrace-<version>.tgz` can be parsed as a package
 or GitHub spec instead of a local tarball, which makes npm try a remote fetch.
 
 For npm publication, SkillTrace follows the same cautious package flow used in

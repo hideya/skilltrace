@@ -43,8 +43,9 @@ skilltrace-dev start
 For package-style trials, create and install a local tarball instead:
 
 ```bash
+version=$(node -p "require('./package.json').version")
 npm pack
-npm install -g ./skilltrace-0.0.0.tgz
+npm install -g "./skilltrace-$version.tgz"
 skilltrace daemon start
 ```
 
