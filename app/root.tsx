@@ -17,7 +17,7 @@ import { appName } from '~/config/app-name'
 import { StatusPage } from '~/ui/status-page'
 import './tailwind.css'
 
-const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'
+// const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'
 
 export async function loader({ request }) {
   let { toast, headers } = await getToast(request)
