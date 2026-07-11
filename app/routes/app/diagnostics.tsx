@@ -1,12 +1,12 @@
-import { getDiagnosticsData } from './+/diagnostics-data.server'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
+import { getDiagnosticsData } from './+/diagnostics-data.server'
 
 export async function loader() {
   return await getDiagnosticsData()
 }
 
 export default function Page({ loaderData }: PageProps) {
-  let { daemon, server, session, process, checks, mcp } = loaderData
+  let { version, daemon, server, session, process, checks, mcp } = loaderData
   let showSharedProbe = sharedProbeVisible(process.platform, daemon)
 
   return (
@@ -16,7 +16,7 @@ export default function Page({ loaderData }: PageProps) {
         <div className="space-y-1">
           <h1 className="page-title">Daemon Status</h1>
           <p className="text-base-content/70">
-            Read-only view of the local SkillTrace runtime.
+            SkillTrace {process.mode} ver {version}
           </p>
         </div>
       </header>

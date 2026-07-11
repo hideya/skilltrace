@@ -14,6 +14,7 @@ import {
 } from './diagnostics-mcp'
 
 const MCP_CHECK_TIMEOUT_MS = 8000
+const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json')
 
 export async function getDiagnosticsData() {
   let state = readDaemonState()
@@ -23,6 +24,7 @@ export async function getDiagnosticsData() {
   let mcp = await readMcpStatuses(mode)
 
   return {
+    version: skilltraceVersion(),
     daemon: state,
     server,
     session,
@@ -45,6 +47,16 @@ export async function getDiagnosticsData() {
       mcp_registration: mcp.summary.status,
     },
   } satisfies DiagnosticsData
+}
+
+function skilltraceVersion() {
+  try {
+    let content = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
+    let json = JSON.parse(content)
+    return typeof json.version === 'string' ? json.version : 'unknown'
+  } catch {
+    return 'unknown'
+  }
 }
 
 export function processStatus(pid: number) {
@@ -494,6 +506,7 @@ function mcpStatusBase(
 }
 
 export type DiagnosticsData = {
+  version: string
   daemon: DaemonState | null
   server: string
   session: TraceSession | null
