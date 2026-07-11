@@ -127,6 +127,12 @@ Check the installed version:
 skilltrace --version
 ```
 
+Show CLI help:
+
+```bash
+skilltrace --help
+```
+
 Start the local daemon:
 
 ```bash

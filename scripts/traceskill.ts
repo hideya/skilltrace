@@ -63,6 +63,10 @@ const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 
 async function main() {
   let [command, ...args] = process.argv.slice(2)
+  if (command === '--help' || command === '-h') {
+    printUsage()
+    return
+  }
   if (command === '--version') {
     console.log(skilltraceVersion())
     return
@@ -1441,13 +1445,17 @@ function printDisplayUrls(urls?: string[]) {
 
 function usage(message: string): never {
   console.error(message)
-  console.error('Usage: skilltrace [--version] <serve|start|status|diagnostics|end|stop|mcp>')
-  console.error('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|claude-code] [--note <text>]')
-  console.error('       skilltrace stop [--discard] [--yes]')
-  console.error('       skilltrace diagnostics [--verbose]')
-  console.error('       skilltrace mcp <serve|install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')
-  console.error('       skilltrace daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
+  printUsage(console.error)
   process.exit(1)
+}
+
+function printUsage(write = console.log) {
+  write('Usage: skilltrace [--help] [--version] <serve|start|status|diagnostics|end|stop|mcp>')
+  write('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|claude-code] [--note <text>]')
+  write('       skilltrace stop [--discard] [--yes]')
+  write('       skilltrace diagnostics [--verbose]')
+  write('       skilltrace mcp <serve|install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')
+  write('       skilltrace daemon <start|status|stop|logs> [--shared-probe|--no-shared-probe]')
 }
 
 await main().catch(handleFatalError)
