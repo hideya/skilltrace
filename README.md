@@ -1,6 +1,6 @@
-# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/@h1deya/langchain-mcp-tools)
+# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/skilltrace)
 
-**SkillTrace is an observability tool for AI agent skill usage.**
+**SkillTrace is a free observability tool for AI agent skill usage.**
 
 When an agent can choose from multiple skills, it can be hard to tell which
 ones it used, in what order, and why.
@@ -23,13 +23,13 @@ SkillTrace is aimed at people developing and debugging agent skills.
   <tr>
     <td>
       <a href="https://github.com/user-attachments/assets/a486b3cd-a0e5-4167-bbe5-885705ea4328" target=”_blank”>
-        <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
+        <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
       <sub>SkillTrace demo movie clip</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-diagram.webp" height="250px" />
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-diagram.webp" height="250px" />
       <br />
       <sub>System diagram</sub>
     </td>
@@ -73,11 +73,11 @@ containers, operating systems, and SkillTrace versions.
 <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>SkillTrace Run Details Page</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
   </tr>
@@ -146,8 +146,7 @@ HOST=0.0.0.0 skilltrace daemon start
 The daemon output shows the detected UI URL.
 
 Only bind to `0.0.0.0` in a trusted local network or isolated development
-environment. The UI may expose captured traces, repository metadata, diffs,
-and agent-declared summaries.
+environment.
 
 ## Register The MCP Server
 
@@ -270,8 +269,8 @@ Before tracing sensitive repositories, read
 ## Try It On A Toy Skill
 
 ```bash
-git clone https://github.com/hideya/skill-trace.git
-cd skill-trace
+git clone https://github.com/hideya/skilltrace.git
+cd skilltrace
 mkdir -p tmp
 cp -RP examples/type-fix-demo tmp/type-fix-demo
 cd tmp/type-fix-demo
@@ -414,21 +413,21 @@ there is no second evidence stream to compare.
 <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-runs.webp" height="250px"><br>
       <sub>SkillTrace runs page</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
       <sub>Run Details Page</sub>
     </td>
   </tr>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
       <sub>Consistency Check</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
       <sub>Run Timeline</sub>
     </td>
   </tr>
@@ -457,7 +456,7 @@ skill scans do not obscure differences in material skill or reference use.
 <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-mode-comparison.webp" height="250px"><br>
       <sub>Run mode comparison page</sub>
     </td>
   </tr>
@@ -488,11 +487,11 @@ its captured provenance.
 <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-snapshot-1.webp" height="250px"><br>
       <sub>Git Info Section</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skill-trace/main/docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-snapshot-2.webp" height="250px"><br>
       <sub>File Diff Dialog</sub>
     </td>
 </table>
@@ -668,9 +667,9 @@ Uninstalling the package does not remove local SkillTrace data. Remove
 For local development, packaging notes, dogfooding details, and architecture
 decisions, see:
 
-- [README_DEV.md](https://github.com/hideya/skill-trace/blob/main/README_DEV.md)
-- [docs/architecture-decisions.md](https://github.com/hideya/skill-trace/blob/main/docs/architecture-decisions.md)
-- [docs/agent-profile-architecture.md](https://github.com/hideya/skill-trace/blob/main/docs/agent-profile-architecture.md)
-- [docs/passive-skill-discovery.md](https://github.com/hideya/skill-trace/blob/main/docs/passive-skill-discovery.md)
-- [docs/mcp-semantic-logger.md](https://github.com/hideya/skill-trace/blob/main/docs/mcp-semantic-logger.md)
-- [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skill-trace/blob/main/docs/type-fix-demo-mcp-test.md)
+- [README_DEV.md](https://github.com/hideya/skilltrace/blob/main/README_DEV.md)
+- [docs/architecture-decisions.md](https://github.com/hideya/skilltrace/blob/main/docs/architecture-decisions.md)
+- [docs/agent-profile-architecture.md](https://github.com/hideya/skilltrace/blob/main/docs/agent-profile-architecture.md)
+- [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
+- [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
+- [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skilltrace/blob/main/docs/type-fix-demo-mcp-test.md)
