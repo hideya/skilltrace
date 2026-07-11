@@ -19,13 +19,16 @@ Remote service support can come later after the local workflow feels solid.
 ## Local UI Does Not Require Login
 
 The local runs UI is public in v0.
+Auth/admin code remains in the repo as a parked, buildable scaffold for possible
+future remote/team mode; see
+[`auth-admin-scaffold.md`](./auth-admin-scaffold.md) for the current status and
+maintenance policy.
 
 Reasons:
 
 - the local daemon is meant to run on the developer's own machine
 - login gets in the way of the trace-debugging loop
-- auth is still valuable for a future remote/team version, so the scaffolded auth
-  routes remain in the codebase
+- auth is still valuable for a future remote/team version
 - route-level auth references are kept as comments near the local-mode changes
   to make a future remote mode easy to restore
 - normal local tracing must not require `.env`, login, OAuth, SMTP, or remote

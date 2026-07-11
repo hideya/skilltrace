@@ -10,10 +10,11 @@ It correlates passive traces of skill activation, such as `SKILL.md` file access
 
 The goal is to understand when a natural-language skill is merely read, when it is declared as used, and when it may have actually influenced an agent run.
 
-The current execution path is deliberately local-first and unauthenticated. The
-auth scaffolding remains in the repo as future remote/team-mode infrastructure,
-but it is intentionally dormant in the local workflow; therefore, there is no
-need for `.env`, login, OAuth or SMTP setup.
+The current execution path is deliberately local-first and unauthenticated.
+Auth/admin code remains in the repo as a parked, buildable scaffold for possible
+future remote/team mode, but it is not part of the local tracing workflow; there
+is no need for `.env`, login, OAuth, or SMTP setup. See
+[`docs/auth-admin-scaffold.md`](./docs/auth-admin-scaffold.md).
 
 Long term, SkillTrace aims to help turn AI agent failures into reusable, postmortem-backed procedural knowledge.
 

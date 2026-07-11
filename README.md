@@ -679,6 +679,7 @@ decisions, see:
 
 - [README_DEV.md](https://github.com/hideya/skilltrace/blob/main/README_DEV.md)
 - [docs/architecture-decisions.md](https://github.com/hideya/skilltrace/blob/main/docs/architecture-decisions.md)
+- [docs/auth-admin-scaffold.md](https://github.com/hideya/skilltrace/blob/main/docs/auth-admin-scaffold.md)
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skilltrace/blob/main/docs/agent-profile-architecture.md)
 - [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
