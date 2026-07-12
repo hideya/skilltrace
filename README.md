@@ -55,13 +55,6 @@ The UI lists and compares the events obtained from those streams so you can see
 when evidence aligns, when the agent skipped a declaration, or when passive
 probing saw something the reflection omitted.
 
-Passive traces are evidence of file access, not proof of skill use. Some agent
-clients scan multiple `SKILL.md` entrypoints while building a catalog of
-available skills. SkillTrace keeps those reads in the timeline, but classifies
-entrypoint-only scans as neutral `discovered` evidence unless later semantic,
-reflection, or reference-file evidence shows material use. See
-[`docs/passive-skill-discovery.md`](./docs/passive-skill-discovery.md).
-
 Reflection is a self-report, not ground truth. Its value comes from being
 compared with passive traces, semantic MCP declarations, and human judgment.
 
@@ -91,12 +84,6 @@ It is intended for people experimenting with AI agent skills, MCP workflows,
 and skill observability. Expect rough edges, platform-specific behavior, and
 occasional missing traces.
 
-SkillTrace is migrating its preferred generic skill layout from the original
-prototype `.skills/` directory to the interoperable `.agents/skills/`
-convention used by current Agent Skills clients. See
-[`docs/agent-skills-location-policy.md`](./docs/agent-skills-location-policy.md)
-for the migration policy.
-
 ## Requirements
 
 - Node.js 22+
@@ -114,6 +101,11 @@ Platform notes:
 
 SkillTrace currently supports command-line workflows for Codex CLI, Claude
 Code, and Gemini CLI. Codex App support is not yet available.
+
+SkillTrace supports two instruction profiles: the interoperable convention
+of AGENTS.md plus .agents/skills/, and the convention used by Claude.
+See [`docs/agent-skills-location-policy.md`](./docs/agent-skills-location-policy.md)
+for details.
 
 ## Installation
 
@@ -387,6 +379,13 @@ skilltrace start --mode passive_only
   still have platform-specific overhead or blind spots.
 
 The default is `full`.
+
+Passive traces are evidence of file access, not proof of skill use. Some agent
+clients scan multiple `SKILL.md` entrypoints while building a catalog of
+available skills. SkillTrace keeps those reads in the timeline, but classifies
+entrypoint-only scans as neutral `discovered` evidence unless later semantic,
+reflection, or reference-file evidence shows material use. See
+[`docs/passive-skill-discovery.md`](./docs/passive-skill-discovery.md).
 
 ## UI
 
