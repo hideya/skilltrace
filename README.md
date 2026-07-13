@@ -103,7 +103,7 @@ SkillTrace currently supports command-line workflows for Codex CLI, Claude
 Code, and Gemini CLI. Codex App support is not yet available.
 
 SkillTrace supports two instruction profiles: the interoperable convention
-of AGENTS.md plus .agents/skills/, and the convention used by Claude.
+of AGENTS.md plus .agents/skills/, and the convention used by Claude Code.
 See [`docs/agent-skills-location-policy.md`](./docs/agent-skills-location-policy.md)
 for details.
 
