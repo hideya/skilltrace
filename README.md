@@ -19,6 +19,8 @@ was declared, and what the agent later believed influenced the run.
 
 SkillTrace is aimed at people developing and debugging agent skills.
 
+> here is a quick start article: [**_Tracing AI Agent Skill Usage with SkillTrace_**](https://levelup.gitconnected.com/tracing-ai-agent-skill-usage-with-skilltrace-cf5feba84d02)
+
 <table>
   <tr>
     <td>
@@ -36,9 +38,9 @@ SkillTrace is aimed at people developing and debugging agent skills.
   </tr>
 </table>
 
-At a high level, SkillTrace compares three kinds of evidence from the same run.
-
 ## What It Captures
+
+At a high level, SkillTrace compares three kinds of evidence from the same run.
 
 SkillTrace helps you understand and debug agent skills by combining three
 evidence streams:
@@ -591,8 +593,8 @@ debugging skill usage itself.
 
 The longer-term idea is this:
 
-> The unit of human knowledge accumulation is shifting from documents to
-> executable work units enriched with execution evidence and failure histories.
+[**_The unit of human knowledge accumulation is shifting from documents to
+executable work units enriched with execution evidence and failure histories._**](https://medium.com/@h1deya/934eaf5cd75d?sourc)
 
 SkillTrace is based on the idea that agent skills should not become trusted
 reusable knowledge merely by being shared. To become trustworthy executable
