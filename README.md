@@ -9,17 +9,7 @@ SkillTrace helps you inspect whether an agent read skill files, whether it
 declared skill usage through MCP, and how its post-run reflection attributed
 the work to specific skills, references, files, steps, and uncertainties.
 
-Skill usage is hard to capture because it is often buried inside the LLM's
-decision-making process. Unlike MCP tool calls, skills do not necessarily cross
-a clear execution boundary.
-
-SkillTrace combines passive file-access probing, dedicated MCP tool invocations,
-and structured post-run reflection so you can compare what was observed, what
-was declared, and what the agent later believed influenced the run.
-
-SkillTrace is aimed at people developing and debugging agent skills.
-
-> here is a quick start article: [**_Tracing AI Agent Skill Usage with SkillTrace_**](https://levelup.gitconnected.com/tracing-ai-agent-skill-usage-with-skilltrace-cf5feba84d02)
+> here is a quick start guide: [**_Tracing AI Agent Skill Usage with SkillTrace_**](https://levelup.gitconnected.com/tracing-ai-agent-skill-usage-with-skilltrace-cf5feba84d02)
 
 <table>
   <tr>
@@ -37,6 +27,16 @@ SkillTrace is aimed at people developing and debugging agent skills.
     </td>
   </tr>
 </table>
+
+Skill usage is hard to capture because it is often buried inside the LLM's
+decision-making process. Unlike MCP tool calls, skills do not necessarily cross
+a clear execution boundary.
+
+SkillTrace combines passive file-access probing, dedicated MCP tool invocations,
+and structured post-run reflection so you can compare what was observed, what
+was declared, and what the agent later believed influenced the run.
+
+SkillTrace is aimed at people developing and debugging agent skills.
 
 ## What It Captures
 
