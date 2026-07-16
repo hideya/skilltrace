@@ -239,7 +239,7 @@ workflow. Stop the dev daemon before trying the packaged daemon with
 shared probing, and vice versa. When restarting the same command surface,
 SkillTrace cleans up stale shared probe workers for that server before starting
 a new one. A shared worker also exits on its own if it cannot reach the daemon
-for about 30 seconds.
+for about 10 minutes.
 
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
@@ -296,9 +296,9 @@ See `docs/architecture-decisions.md` for the decisions and complications found
 while building the first local prototype. See
 `docs/agent-profile-architecture.md` for the AGENTS.md/Claude Code profile
 model and symlink-safe instruction surface design. See
-`docs/agent-skills-location-policy.md` for the forward-looking plan to make
-`.agents/skills/` the generic Agent Skills location and remove legacy
-`.skills/` support.
+`docs/agent-skills-location-policy.md` for the current policy: `.agents/skills/`
+is the generic Agent Skills location, `.claude/skills/` is supported for Claude
+Code, and legacy `.skills/` is no longer a built-in root.
 
 The local UI has three primary views:
 
@@ -537,71 +537,27 @@ standalone skill lifecycle events:
 
 ---
 
-## Consistency checks
+## Consistency matrix
 
-SkillTrace’s first useful feature is a simple consistency checker.
+SkillTrace presents one row per observed or declared skill and reference file.
+The matrix compares three evidence sources:
 
-Examples:
+- passive file observation
+- semantic lifecycle or reference-read declarations
+- final reflection attribution
 
-### Observed and declared
+Expected sources depend on the trace mode. `full` expects all three,
+`passive_reflection` expects passive and reflection evidence, and `passive_only`
+expects passive evidence only.
 
-- `SKILL.md` was read
-- `skill_use_started` was logged
-- `skill_use_finished` was logged
+A skill's semantic evidence is complete only when both `skill_use_started` and
+`skill_use_finished` were logged. A semantic `skill_reference_read` completes
+the semantic column for a reference row.
 
-Interpretation:
-
-> Activation and declared use are aligned.
-
-### Read but not declared
-
-- `SKILL.md` was read
-- no `skill_use_started` event was logged
-
-Possible interpretations:
-
-- the instrumentation instruction was ignored
-- the skill was read but not used
-- the skill was implicitly applied
-- activation and use are hard to distinguish
-
-### Declared but not observed
-
-- no `SKILL.md` read was observed
-- `skill_use_started` was logged
-
-Possible interpretations:
-
-- the skill was already in context
-- the passive harness missed the access
-- the model hallucinated skill use
-- an external instrumentation overlay triggered the declaration
-
-### Started but not finished
-
-- `SKILL.md` was read
-- `skill_use_started` was logged
-- no `skill_use_finished` event was logged
-
-Possible interpretations:
-
-- the task was interrupted
-- a tool failed
-- the model deviated to another skill
-- completion logging was skipped
-
-### Reflection compared with passive evidence
-
-- final reflection lists `skills_read` and `references_read`
-- passive probe observed matching skill or reference file access
-
-Interpretation:
-
-> The agent's retrospective file list aligns with passive file evidence.
-
-If reflection lists a file that passive probing missed, SkillTrace reports
-`Reflected but not observed`. If passive probing observed a file that reflection
-omitted, SkillTrace reports `Observed but not reflected`.
+Rows are reported as `pass`, `warning`, or `error` according to the number of
+missing expected sources. An entrypoint-only `SKILL.md` scan with no later
+evidence is neutral `discovered` evidence. A run passes when every row is either
+`pass` or `discovered`; otherwise its consistency result is `warning`.
 
 ---
 

@@ -12,7 +12,7 @@ import {
   loadProbeConfig,
   parseFsUsageProcess,
   parseInotifywaitPath,
-  parseOpenSnoopPath,
+  parseFsUsagePath,
 } from './skilltrace-probe'
 
 let tempDirs: string[] = []
@@ -68,7 +68,7 @@ describe('skilltrace probe helpers', () => {
     let root = '/tmp/repo/.agents/skills'
     let line = `501 123 Codex 3 ${root}/type-fix/SKILL.md`
 
-    expect(parseOpenSnoopPath(line, [root])).toBe(
+    expect(parseFsUsagePath(line, [root])).toBe(
       '/tmp/repo/.agents/skills/type-fix/SKILL.md',
     )
   })
@@ -84,7 +84,7 @@ describe('skilltrace probe helpers', () => {
       '0.000031 cat.123',
     ].join(' ')
 
-    expect(parseOpenSnoopPath(line, [root])).toBe(lowercasePath)
+    expect(parseFsUsagePath(line, [root])).toBe(lowercasePath)
   })
 
   test('parses relative fs_usage paths from the target root', () => {
@@ -93,7 +93,7 @@ describe('skilltrace probe helpers', () => {
     let line =
       '06:58:31.134215 open F=3 .agents/skills/type-fix/SKILL.md 0.000055 cat.48931538'
 
-    expect(parseOpenSnoopPath(line, [root], targetRoot)).toBe(
+    expect(parseFsUsagePath(line, [root], targetRoot)).toBe(
       path.join(targetRoot, '.agents/skills/type-fix/SKILL.md'),
     )
   })
@@ -104,7 +104,7 @@ describe('skilltrace probe helpers', () => {
     let line =
       '06:58:31.134215 open F=3 .claude/skills/type-fix/SKILL.md 0.000055 claude.48931538'
 
-    expect(parseOpenSnoopPath(line, [root], targetRoot)).toBe(
+    expect(parseFsUsagePath(line, [root], targetRoot)).toBe(
       path.join(targetRoot, '.claude/skills/type-fix/SKILL.md'),
     )
   })

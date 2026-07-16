@@ -8,7 +8,7 @@ The purpose is to verify trace behavior end to end:
 2. emit passive file access events
 3. emit active semantic skill-use events
 4. view the run timeline
-5. confirm the consistency checker reports expected pass and warning states
+5. confirm the consistency matrix reports expected pass and warning states
 
 This is a test driver for the observability loop. It is not a real agent runtime and does not prove general file-read monitoring.
 
@@ -59,12 +59,15 @@ The pass run posts:
 - `skill_reference_read`
 - `skill_use_started`
 - `skill_use_finished`
+- semantic `skill_reference_read`
+- `run_reflection_declared`
 
 Expected result:
 
-- the Timeline shows all four events
+- the Timeline shows all six events
 - the compact timeline rows expand to show event payload details
-- Consistency shows `Observed and declared` with a `pass` badge
+- Consistency shows passing Skill and Reference rows with passive, semantic,
+  and reflection evidence
 
 The warning run posts:
 
@@ -74,12 +77,17 @@ The warning run posts:
 Expected result:
 
 - the Timeline shows passive file events
-- Consistency shows `Read but not declared` with a `warning` badge
+- Consistency shows missing semantic and reflection evidence, and the run result
+  is `warning`
 
 This warning case includes a reference read, so SkillTrace treats it as material
 evidence that should have semantic or reflection support in full mode. A bare
 passive `SKILL.md` entrypoint read without reference, semantic, or reflection
 evidence is now shown as neutral `discovered` evidence instead.
+
+Runs created directly through the event-ingestion APIs are stored as finished
+imports, so fixture and lower-level harness runs do not remain active or block
+deletion.
 
 At the end, it prints run URLs:
 
@@ -174,4 +182,5 @@ It does not verify:
 - MCP protocol transport
 - instrumentation compliance by a model
 
-Those are later experiments.
+Those behaviors are covered by the MCP and agent-runtime test procedures rather
+than this fixture.

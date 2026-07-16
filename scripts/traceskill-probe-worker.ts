@@ -10,12 +10,14 @@ import {
   isWatchedSkillPath,
   parseFsUsageProcess,
   parseInotifywaitPath,
-  parseOpenSnoopPath,
+  parseFsUsagePath,
 } from './lib/skilltrace-probe'
 import { getJson, postJson } from './lib/skilltrace-http'
 
 const SHARED_POLL_INTERVAL_MS = 500
-const SHARED_POLL_FAILURE_LIMIT = 1200
+const SHARED_POLL_FAILURE_TIMEOUT_MS = 10 * 60 * 1000
+const SHARED_POLL_FAILURE_LIMIT =
+  SHARED_POLL_FAILURE_TIMEOUT_MS / SHARED_POLL_INTERVAL_MS
 const SHARED_POLL_FAILURE_LOG_INTERVAL = 20
 const SHARED_POLL_MESSAGE_LIMIT = 600
 
@@ -119,7 +121,7 @@ function startSharedProbe(backend: ProbeBackend, options: SharedProbeOptions) {
   return handleProbeOutput(probe, options, 'fs_usage', (line) => {
     let session = options.sharedState.session
     if (!session) return undefined
-    return parseOpenSnoopPath(line, session.skillRoots, session.targetRoot)
+    return parseFsUsagePath(line, session.skillRoots, session.targetRoot)
   })
 }
 
@@ -128,7 +130,7 @@ function startFsUsageProbe(options: ProbeOptions) {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   return handleProbeOutput(probe, options, 'fs_usage', (line) =>
-    parseOpenSnoopPath(line, options.skillRoots, options.targetRoot)
+    parseFsUsagePath(line, options.skillRoots, options.targetRoot)
   )
 }
 

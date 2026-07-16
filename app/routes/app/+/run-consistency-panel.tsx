@@ -1,3 +1,4 @@
+import { skillPathFromRoot } from '~/lib/skill-path'
 import { SectionSummaryHeader } from './run-detail-ui'
 
 export function ConsistencyPanel({
@@ -170,17 +171,7 @@ function consistencyRowClass(row: any, isFinal: boolean) {
 }
 
 function displayRunFilePath(filePath: string) {
-  let normalized = filePath.replaceAll('\\', '/')
-  let parts = normalized.split('/').filter(Boolean)
-  let agentSkillIndex = parts.findIndex((part, index) =>
-    part === 'skills' && parts[index - 1] === '.agents'
-  )
-
-  if (agentSkillIndex > 0) {
-    return parts.slice(agentSkillIndex - 1).join('/')
-  }
-
-  return filePath
+  return skillPathFromRoot(filePath, true) ?? filePath
 }
 
 type ConsistencyPanelProps = {

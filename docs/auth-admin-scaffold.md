@@ -13,6 +13,11 @@ or user/admin account setup.
 The scaffold is still compiled and some routes are directly routable. Treat this
 as preserved infrastructure, not accidental dead code.
 
+"Buildable" means the scaffold is kept compiling, not that it is an end-to-end
+supported runtime. The packaged local initializer does not create the parked
+notes table, and OAuth, SMTP, and remote database use require explicit external
+configuration.
+
 The local product path is:
 
 - start the local daemon

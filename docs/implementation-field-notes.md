@@ -66,7 +66,7 @@ and does not need sudo.
 If a daemon state file is missing or stale, an old shared probe can still hold
 the macOS `fs_usage` slot. Daemon start and stop now clean stale shared probe
 workers for the same server, and shared workers exit if they cannot reach the
-daemon for about 30 seconds.
+daemon for about 10 minutes.
 
 ## Passive Probe Events Need Process Attribution
 

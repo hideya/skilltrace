@@ -45,4 +45,20 @@ describe('skilltrace demo helpers', () => {
       'skill_reference_read',
     ])
   })
+
+  test('builds pass events with complete semantic and reflection evidence', () => {
+    let events = buildDemoEvents({
+      runId: 'run_fixture_pr_review_demo_pass',
+      caseName: 'pass',
+    })
+
+    expect(events.map((event) => event.event_type)).toEqual([
+      'skill_file_read',
+      'skill_reference_read',
+      'skill_use_started',
+      'skill_use_finished',
+      'skill_reference_read',
+      'run_reflection_declared',
+    ])
+  })
 })

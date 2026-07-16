@@ -4,6 +4,7 @@ import os from 'os'
 import { spawn, spawnSync } from 'child_process'
 import { createInterface } from 'readline/promises'
 import { fileURLToPath } from 'url'
+import type { TraceMode } from '../app/lib/trace-mode'
 import {
   assessInstrumentation,
   ejectExistingInstructions,
@@ -17,9 +18,20 @@ import {
   instructionProfileReady,
   selectInstructionProfile,
   type InstructionProfile,
-  type InstructionProfileOption,
   type InstructionSurfaceReport,
 } from './lib/instruction-profile'
+import {
+  assertNoArgs,
+  parseDaemonLogsArgs,
+  parseDaemonServerArgs,
+  parseDaemonStartArgs,
+  parseDiagnosticsArgs,
+  parseMcpArgs,
+  parseStartArgs,
+  parseStatusArgs,
+  parseStopArgs,
+  type CliOptions,
+} from './lib/skilltrace-cli-options'
 import {
   getJson as requestJson,
   postJson as sendJson,
@@ -49,6 +61,7 @@ import {
   manageMcpUninstall,
   printMcpStatus,
 } from './lib/skilltrace-mcp-management'
+import { skilltraceVersion } from './lib/skilltrace-package'
 
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -58,7 +71,6 @@ const TSX_LOADER_PATH = path.join(PROJECT_ROOT, 'node_modules', 'tsx', 'dist', '
 const RUNTIME_ENV_IMPORT_PATH = DIST_MODE
   ? path.join(ENTRY_DIR, 'skilltrace-runtime-env.js')
   : path.join(PROJECT_ROOT, 'scripts/lib/skilltrace-runtime-env.js')
-const PACKAGE_JSON_PATH = path.join(PROJECT_ROOT, 'package.json')
 const DEV_MODE = process.env.SKILLTRACE_DEV === '1'
 
 async function main() {
@@ -83,6 +95,7 @@ async function main() {
   } else if (command === 'diagnostics') {
     await diagnostics(args)
   } else if (command === 'serve') {
+    assertNoArgs(args, usage)
     runServe()
   } else if (command === 'daemon') {
     await daemon(args)
@@ -134,7 +147,7 @@ function isCurrentDevWrapper(content: string) {
 }
 
 async function start(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseStartArgs(args, usage)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let probe = passiveProbeSupport()
@@ -257,7 +270,7 @@ async function start(args: string[]) {
 }
 
 async function end(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseStopArgs(args, usage)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
   if (options.discard) {
@@ -293,7 +306,7 @@ async function end(args: string[]) {
 }
 
 async function status(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseStatusArgs(args, usage)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let result = await getJson(server, '/api/sessions/status')
 
@@ -305,7 +318,7 @@ async function status(args: string[]) {
 }
 
 async function diagnostics(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseDiagnosticsArgs(args, usage)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let result = await getJson(server, '/api/diagnostics')
   let diagnostics = result.diagnostics
@@ -339,6 +352,7 @@ async function mcp(args: string[]) {
   if (!command) {
     mcpUsage()
   } else if (command === 'serve') {
+    assertNoArgs(rest, usage)
     runScript('scripts/skilltrace-mcp.ts')
   } else if (command === 'install') {
     await mcpInstall(rest)
@@ -352,7 +366,7 @@ async function mcp(args: string[]) {
 }
 
 async function mcpInstall(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseMcpArgs(args, false, usage)
   assertMcpAgent(options.agent)
   manageMcpInstall({
     agent: options.agent,
@@ -361,7 +375,7 @@ async function mcpInstall(args: string[]) {
 }
 
 async function mcpUninstall(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseMcpArgs(args, false, usage)
   assertMcpAgent(options.agent)
   manageMcpUninstall({
     agent: options.agent,
@@ -370,7 +384,7 @@ async function mcpUninstall(args: string[]) {
 }
 
 async function mcpStatus(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseMcpArgs(args, true, usage)
   assertMcpAgent(options.agent)
   printMcpStatus({
     agent: options.agent,
@@ -385,7 +399,7 @@ function assertMcpAgent(agent?: string) {
 }
 
 async function daemonStart(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseDaemonStartArgs(args, usage)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let bindHost = process.env.HOST || '127.0.0.1'
   let port = process.env.PORT || new URL(server).port || '7555'
@@ -480,7 +494,7 @@ async function daemonStart(args: string[]) {
 }
 
 async function daemonStop(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseDaemonServerArgs(args, usage)
   let state = readDaemonState()
   let server = options.server || state?.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
 
@@ -527,7 +541,7 @@ async function stopStartedDaemon(state: DaemonState) {
 }
 
 async function daemonStatus(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseDaemonServerArgs(args, usage)
   let state = readDaemonState()
   let server = options.server || state?.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
   let status = await getDaemonStatus(server)
@@ -536,7 +550,7 @@ async function daemonStatus(args: string[]) {
 }
 
 function daemonLogs(args: string[]) {
-  let options = parseArgs(args)
+  let options = parseDaemonLogsArgs(args, usage)
   let lines = options.lines || 80
   let logPath = readDaemonState()?.log_path || DAEMON_LOG_PATH
 
@@ -579,50 +593,6 @@ function assertTraceTarget(
 
 function unique<T>(values: T[]) {
   return [...new Set(values)]
-}
-
-function parseArgs(args: string[]) {
-  let options: Options = {}
-
-  for (let index = 0; index < args.length; index += 1) {
-    let arg = args[index]
-
-    if (arg === '--target') {
-      options.target = args[++index]
-    } else if (arg === '--server') {
-      options.server = args[++index]
-    } else if (arg === '--debug-probe') {
-      options.debugProbe = true
-    } else if (arg === '--note' || arg === '-n') {
-      options.note = args[++index]
-    } else if (arg === '--inject-instructions') {
-      options.injectInstructions = true
-    } else if (arg === '--no-inject-instructions') {
-      options.injectInstructions = false
-    } else if (arg === '--discard') {
-      options.discard = true
-    } else if (arg === '--yes' || arg === '-y') {
-      options.yes = true
-    } else if (arg === '--mode') {
-      options.mode = parseTraceMode(args[++index])
-    } else if (arg === '--instruction-profile') {
-      options.instructionProfile = parseInstructionProfile(args[++index])
-    } else if (arg === '--shared-probe') {
-      options.sharedProbe = true
-    } else if (arg === '--no-shared-probe') {
-      options.sharedProbe = false
-    } else if (arg === '--lines') {
-      options.lines = Number(args[++index])
-    } else if (arg === '--verbose') {
-      options.verbose = true
-    } else if (arg === '--agent') {
-      options.agent = args[++index]
-    } else {
-      usage(`Unknown option: ${arg}`)
-    }
-  }
-
-  return options
 }
 
 async function confirmDiscard(session: any) {
@@ -1224,16 +1194,6 @@ function runExecutionEnvironment(
   }
 }
 
-function skilltraceVersion() {
-  try {
-    let content = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
-    let json = JSON.parse(content)
-    return typeof json.version === 'string' ? json.version : 'unknown'
-  } catch {
-    return 'unknown'
-  }
-}
-
 function passiveProbeBackend(probe: PassiveProbeSupport) {
   if (!probe.supported) return 'unavailable'
   if (probe.platform === 'darwin') return 'fs_usage'
@@ -1241,7 +1201,7 @@ function passiveProbeBackend(probe: PassiveProbeSupport) {
   return 'unknown'
 }
 
-function sharedProbeRequested(options: Options) {
+function sharedProbeRequested(options: CliOptions) {
   if (typeof options.sharedProbe === 'boolean') return options.sharedProbe
   return process.platform === 'darwin'
 }
@@ -1373,35 +1333,10 @@ function printProbeUnavailableWarning(reason?: string) {
   console.warn(`Warning: ${reason ?? 'passive probe is unavailable'}`)
 }
 
-function traceModeForStart(options: Options): TraceMode {
+function traceModeForStart(options: CliOptions): TraceMode {
   if (options.mode) return options.mode
   if (options.injectInstructions === false) return 'passive_only'
   return 'full'
-}
-
-function parseTraceMode(value?: string): TraceMode {
-  if (
-    value === 'full' ||
-    value === 'passive_reflection' ||
-    value === 'passive_only'
-  ) {
-    return value
-  }
-
-  usage(`Unknown trace mode: ${value ?? ''}`)
-}
-
-function parseInstructionProfile(value?: string): InstructionProfileOption {
-  if (
-    value === 'auto' ||
-    value === 'agents' ||
-    value === 'claude_code'
-  ) {
-    return value
-  }
-  if (value === 'claude-code') return 'claude_code'
-
-  usage(`Unknown instruction profile: ${value ?? ''}`)
 }
 
 function commandExists(command: string) {
@@ -1450,7 +1385,7 @@ function usage(message: string): never {
 }
 
 function printUsage(write = console.log) {
-  write('Usage: skilltrace [--help] [--version] <serve|start|status|diagnostics|end|stop|mcp>')
+  write('Usage: skilltrace [--help] [--version] <serve|start|status|diagnostics|end|stop|mcp|daemon>')
   write('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|claude-code] [--note <text>]')
   write('       skilltrace stop [--discard] [--yes]')
   write('       skilltrace diagnostics [--verbose]')
@@ -1472,23 +1407,6 @@ function handleFatalError(error: unknown): never {
   process.exit(1)
 }
 
-type Options = {
-  target?: string
-  server?: string
-  debugProbe?: boolean
-  discard?: boolean
-  yes?: boolean
-  injectInstructions?: boolean
-  mode?: TraceMode
-  instructionProfile?: InstructionProfileOption
-  sharedProbe?: boolean
-  lines?: number
-  note?: string
-  verbose?: boolean
-  agent?: string
-}
-
-type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 
 type ProbeWorkerOptions = {
   runId: string

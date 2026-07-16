@@ -1,76 +1,5 @@
-export function checkTraceConsistency(
-  events: TraceEventLike[],
-  options: ConsistencyOptions = {},
-) {
-  let traceMode = normalizeTraceMode(options.traceMode)
-  if (traceMode === 'passive_only') return checkPassiveOnlyConsistency(events)
-  if (traceMode === 'passive_reflection') {
-    return checkPassiveReflectionConsistency(events)
-  }
-
-  let groups = groupBySkill(events)
-  let results: ConsistencyResult[] = []
-
-  for (let group of groups.values()) {
-    let hasPassive = group.events.some(isPassiveSkillRead)
-    let hasStarted = group.events.some(isSkillUseStarted)
-    let hasFinished = group.events.some(isSkillUseFinished)
-    let isDiscovery = isDiscoveredSkillGroup(group, events)
-    let skill = group.label
-
-    if (hasPassive && hasStarted && hasFinished) {
-      results.push({
-        status: 'pass',
-        title: 'Observed and declared',
-        message: `${skill} was read, started, and finished.`,
-        skill,
-      })
-      continue
-    }
-
-    if (hasPassive && !hasStarted) {
-      if (isDiscovery) {
-        results.push({
-          status: 'discovered',
-          title: 'Discovered passively',
-          message:
-            `${skill} was read passively, with no later evidence of material use.`,
-          skill,
-        })
-        continue
-      }
-
-      results.push({
-        status: 'warning',
-        title: 'Read but not declared',
-        message: `${skill} was read, but no skill_use_started event was logged.`,
-        skill,
-      })
-    }
-
-    if (!hasPassive && hasStarted) {
-      results.push({
-        status: 'warning',
-        title: 'Declared but not observed',
-        message: `${skill} was declared, but no passive skill read was observed.`,
-        skill,
-      })
-    }
-
-    if (hasStarted && !hasFinished) {
-      results.push({
-        status: 'incomplete',
-        title: 'Started but not finished',
-        message: `${skill} logged skill_use_started, but no skill_use_finished event was logged.`,
-        skill,
-      })
-    }
-  }
-
-  results.push(...checkReflectionFileConsistency(events))
-
-  return results
-}
+import { skillDirectoryKey } from '~/lib/skill-path'
+import { normalizeTraceMode, type TraceMode } from '~/lib/trace-mode'
 
 export function traceConsistencyMatrix(
   events: TraceEventLike[],
@@ -134,166 +63,22 @@ export function traceConsistencyMatrix(
 
 export function summarizeConsistencyMatrix(rows: ConsistencyMatrixRow[]) {
   if (rows.length === 0) return 'unknown'
-  if (rows.some((row) => row.status !== 'pass' && row.status !== 'discovered')) {
+  if (
+    rows.some((row) => row.status !== 'pass' && row.status !== 'discovered')
+  ) {
     return 'warning'
   }
   return 'pass'
 }
 
-function checkPassiveOnlyConsistency(
-  events: TraceEventLike[],
-): ConsistencyResult[] {
-  return passiveObservedPaths(events).map((observed): ConsistencyResult => ({
-    status: 'pass',
-    title: 'Observed passively',
-    message: `${observed} was observed passively.`,
-    skill: observed,
-  }))
-}
-
-function checkPassiveReflectionConsistency(
-  events: TraceEventLike[],
-): ConsistencyResult[] {
-  let reflectionResults = checkReflectionFileConsistency(events)
-  if (reflectionResults.length > 0 || latestReflection(events)) {
-    return reflectionResults
-  }
-
-  if (materialPassiveObservedPaths(events).length === 0) return []
-
-  return [{
-    status: 'warning',
-    title: 'Reflection missing',
-    message: 'Passive reads were observed, but no run reflection was declared.',
-    skill: 'run reflection',
-  }]
-}
-
-function checkReflectionFileConsistency(events: TraceEventLike[]) {
-  let reflection = latestReflection(events)
-  if (!reflection) return []
-
-  let passivePaths = passiveObservedPaths(events)
-  let reflectedPaths = reflectedFilePaths(reflection)
-  let results: ConsistencyResult[] = []
-
-  for (let reflected of reflectedPaths) {
-    if (pathSetHas(passivePaths, reflected)) {
-      results.push({
-        status: 'pass',
-        title: 'Reflected and observed',
-        message: `${reflected} was listed in reflection and observed passively.`,
-        skill: reflected,
-      })
-    } else {
-      results.push({
-        status: 'warning',
-        title: 'Reflected but not observed',
-        message: `${reflected} was listed in reflection, but no passive read was observed.`,
-        skill: reflected,
-      })
-    }
-  }
-
-  for (let observed of passivePaths) {
-    if (pathSetHas(reflectedPaths, observed)) continue
-    if (isDiscoveredSkillPath(observed, events)) continue
-
-    results.push({
-      status: 'warning',
-      title: 'Observed but not reflected',
-      message: `${observed} was observed passively, but was not listed in reflection.`,
-      skill: observed,
-    })
-  }
-
-  return results
-}
-
-function groupBySkill(events: TraceEventLike[]) {
-  let groups = new Map<string, SkillEventGroup>()
-
-  for (let event of events) {
-    let key = skillKey(event)
-    if (!key) continue
-
-    let group = groups.get(key) ?? {
-      label: skillLabel(event),
-      events: [],
-    }
-    group.events.push(event)
-    groups.set(key, group)
-  }
-
-  return groups
-}
-
-function skillKey(event: TraceEventLike) {
-  return event.skill_name || event.skill_path || event.skill_file_hash || null
-}
-
-function skillLabel(event: TraceEventLike) {
-  return event.skill_name || event.skill_path || event.skill_file_hash || 'Skill'
-}
-
-function isDiscoveredSkillGroup(
-  group: SkillEventGroup,
-  events: TraceEventLike[],
-) {
-  let paths = group.events
-    .filter(isPassiveSkillRead)
-    .map(passivePath)
-    .filter((path): path is string => !!path)
-
-  return (
-    paths.length > 0 &&
-    paths.every((path) => isDiscoveredSkillPath(path, events))
-  )
-}
-
-function isPassiveSkillRead(event: TraceEventLike) {
-  return (
-    event.source === 'passive_file_harness' &&
-    ['skill_file_read', 'skill_reference_read'].includes(event.event_type)
-  )
-}
-
-function isSkillUseStarted(event: TraceEventLike) {
-  return (
-    event.source === 'mcp_semantic_logger' &&
-    event.event_type === 'skill_use_started'
-  )
-}
-
-function isSkillUseFinished(event: TraceEventLike) {
-  return (
-    event.source === 'mcp_semantic_logger' &&
-    event.event_type === 'skill_use_finished'
-  )
-}
-
 function latestReflection(events: TraceEventLike[]) {
   return events
     .filter((event) => event.event_type === 'run_reflection_declared')
-    .toSorted((a, b) =>
-      new Date(b.timestamp ?? 0).getTime() - new Date(a.timestamp ?? 0).getTime()
+    .toSorted(
+      (a, b) =>
+        new Date(b.timestamp ?? 0).getTime() -
+        new Date(a.timestamp ?? 0).getTime(),
     )[0]?.payload?.data
-}
-
-function passiveObservedPaths(events: TraceEventLike[]) {
-  let paths = events
-    .filter(isPassiveSkillRead)
-    .map(passivePath)
-    .filter(Boolean)
-    .filter((path) => !isInstrumentationPath(path))
-
-  return unique(paths)
-}
-
-function materialPassiveObservedPaths(events: TraceEventLike[]) {
-  return passiveObservedPaths(events).filter(
-    (path) => !isDiscoveredSkillPath(path, events),
-  )
 }
 
 function passivePath(event: TraceEventLike) {
@@ -328,18 +113,6 @@ function semanticReferencePath(event: TraceEventLike) {
   )
 }
 
-function reflectedFilePaths(reflection: Record<string, any>) {
-  return unique([
-    ...stringList(reflection.skills_read),
-    ...stringList(reflection.references_read),
-  ].filter((path) => !isInstrumentationPath(path)))
-}
-
-function pathSetHas(paths: string[], candidate: string) {
-  let normalized = normalizePath(candidate)
-  return paths.some((path) => pathsMatch(normalizePath(path), normalized))
-}
-
 function pathsMatch(left: string, right: string) {
   if (left === right) return true
   return left.endsWith(`/${right}`) || right.endsWith(`/${left}`)
@@ -368,9 +141,10 @@ function upsertMatrixRow(
   if (!file) return
   if (isInstrumentationPath(file)) return
 
-  let row = rows.find((item) =>
-    item.kind === kind &&
-    pathsMatch(normalizePath(item.file), normalizePath(file))
+  let row = rows.find(
+    (item) =>
+      item.kind === kind &&
+      pathsMatch(normalizePath(item.file), normalizePath(file)),
   )
 
   if (!row) {
@@ -419,84 +193,21 @@ function isSkillEntrypointPath(value: string) {
   return normalizePath(value).split('/').at(-1) === 'skill.md'
 }
 
-function isDiscoveredSkillPath(value: string, events: TraceEventLike[]) {
-  if (!isSkillEntrypointPath(value)) return false
-
-  let reflection = latestReflection(events)
-  let reflected = reflectedFilePaths(reflection ?? {})
-  if (pathSetHas(reflected, value)) return false
-
-  let semanticPaths = events
-    .filter((event) => isSkillUseStarted(event) || isSkillUseFinished(event))
-    .map(semanticSkillPath)
-    .filter((path): path is string => !!path)
-
-  if (pathSetHas(semanticPaths, value)) return false
-  return !hasReferenceForSkill(value, events)
-}
-
-function hasReferenceForSkill(value: string, events: TraceEventLike[]) {
-  let key = skillDirectoryKey(value)
-  if (!key) return false
-
-  let reflection = latestReflection(events)
-  let referencePaths = [
-    ...events
-      .filter((event) => event.event_type === 'skill_reference_read')
-      .map((event) =>
-        event.source === 'mcp_semantic_logger'
-          ? semanticReferencePath(event)
-          : passivePath(event)
-      ),
-    ...stringList(reflection?.references_read),
-  ].filter((path): path is string => !!path)
-
-  return referencePaths.some((path) => skillDirectoryKey(path) === key)
-}
-
 function isDiscoveredMatrixRow(
   row: ConsistencyMatrixDraftRow,
   rows: ConsistencyMatrixDraftRow[],
 ) {
   if (row.kind !== 'Skill') return false
-  if (!row.passive || row.semantic_started || row.semantic_finished) return false
+  if (!row.passive || row.semantic_started || row.semantic_finished)
+    return false
   if (row.reflection || !isSkillEntrypointPath(row.file)) return false
 
   let key = skillDirectoryKey(row.file)
   if (!key) return true
 
-  return !rows.some((item) =>
-    item.kind === 'Reference' && skillDirectoryKey(item.file) === key
+  return !rows.some(
+    (item) => item.kind === 'Reference' && skillDirectoryKey(item.file) === key,
   )
-}
-
-function skillDirectoryKey(value: string) {
-  let parts = normalizePath(value).split('/').filter(Boolean)
-
-  for (let index = 0; index < parts.length; index += 1) {
-    if (parts[index] === '.skills' && parts[index + 1]) {
-      return parts.slice(index, index + 2).join('/')
-    }
-
-    if (
-      (parts[index] === '.agents' || parts[index] === '.claude') &&
-      parts[index + 1] === 'skills' &&
-      parts[index + 2]
-    ) {
-      return parts.slice(index, index + 3).join('/')
-    }
-  }
-
-  if (parts.at(-1) === 'skill.md' && parts.length >= 2) {
-    return parts.slice(0, -1).join('/')
-  }
-
-  let referenceIndex = parts.indexOf('references')
-  if (referenceIndex > 0) {
-    return parts.slice(0, referenceIndex).join('/')
-  }
-
-  return null
 }
 
 function matrixIssueCount(
@@ -560,31 +271,8 @@ function expectedSources(traceMode: TraceMode) {
   } satisfies ConsistencyMatrixExpectedSources
 }
 
-function normalizeTraceMode(value?: string): TraceMode {
-  if (
-    value === 'full' ||
-    value === 'passive_reflection' ||
-    value === 'passive_only'
-  ) {
-    return value
-  }
-
-  return 'full'
-}
-
 function kindOrder(kind: ConsistencyFileKind) {
   return kind === 'Skill' ? 0 : 1
-}
-
-function unique(values: string[]) {
-  return [...new Set(values)]
-}
-
-export type ConsistencyResult = {
-  status: 'pass' | 'warning' | 'incomplete' | 'discovered'
-  title: string
-  message: string
-  skill: string
 }
 
 export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
@@ -624,19 +312,11 @@ type ConsistencyOptions = {
   traceMode?: string
 }
 
-type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
-
-type SkillEventGroup = {
-  label: string
-  events: TraceEventLike[]
-}
-
 export type TraceEventLike = {
   source: string
   event_type: string
   timestamp?: Date | string
   skill_name?: string | null
   skill_path?: string | null
-  skill_file_hash?: string | null
   payload?: Record<string, any> | null
 }

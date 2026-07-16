@@ -1,4 +1,11 @@
 import { spawnSync } from 'child_process'
+import {
+  expectedMcpServerCommand,
+  mcpAgents,
+  type McpAgent,
+} from './skilltrace-mcp-clients'
+
+export { expectedMcpServerCommand } from './skilltrace-mcp-clients'
 
 export function manageMcpInstall(options: McpManageOptions = {}) {
   let agents = selectedMcpAgents(options)
@@ -31,10 +38,6 @@ export function printMcpStatus(options: McpManageOptions = {}) {
   for (let agent of agents) {
     printMcpAgentStatus(agent, serverCommand, !!options.verbose)
   }
-}
-
-export function expectedMcpServerCommand(devMode = false) {
-  return devMode ? 'skilltrace-dev' : 'skilltrace'
 }
 
 export function mcpRegistrationMatches(
@@ -188,73 +191,6 @@ function commandExists(command: string) {
   return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
 }
 
-function mcpAgents() {
-  return [
-    {
-      key: 'codex',
-      name: 'Codex CLI',
-      command: 'codex',
-      statusArgs: ['mcp', 'get', 'skilltrace'],
-      uninstallArgs: ['mcp', 'remove', 'skilltrace'],
-      installArgs: (serverCommand: string) => [
-        'mcp',
-        'add',
-        'skilltrace',
-        '--',
-        serverCommand,
-        'mcp',
-        'serve',
-      ],
-      registrationMatches: (output: string, serverCommand: string) =>
-        new RegExp(`command:\\s*${commandPattern(serverCommand)}`).test(output) &&
-        /\bargs:\s*mcp serve\b/.test(output),
-    },
-    {
-      key: 'claude',
-      name: 'Claude Code',
-      command: 'claude',
-      statusArgs: ['mcp', 'get', 'skilltrace'],
-      uninstallArgs: ['mcp', 'remove', 'skilltrace', '-s', 'user'],
-      removeBeforeInstall: true,
-      installArgs: (serverCommand: string) => [
-        'mcp',
-        'add',
-        'skilltrace',
-        '--scope',
-        'user',
-        '--',
-        serverCommand,
-        'mcp',
-        'serve',
-      ],
-      registrationMatches: (output: string, serverCommand: string) =>
-        new RegExp(`Command:\\s*${commandPattern(serverCommand)}`).test(output) &&
-        /\bArgs:\s*mcp serve\b/.test(output),
-    },
-    {
-      key: 'gemini',
-      name: 'Gemini CLI',
-      command: 'gemini',
-      statusArgs: ['mcp', 'list'],
-      uninstallArgs: ['mcp', 'remove', 'skilltrace', '--scope', 'user'],
-      installArgs: (serverCommand: string) => [
-        'mcp',
-        'add',
-        'skilltrace',
-        serverCommand,
-        'mcp',
-        'serve',
-        '--scope',
-        'user',
-      ],
-      registrationMatches: (output: string, serverCommand: string) =>
-        /\bskilltrace\b/i.test(output) &&
-        new RegExp(commandPattern(serverCommand)).test(output) &&
-        /\bmcp serve\b/.test(output),
-    },
-  ] satisfies McpAgent[]
-}
-
 function indentLines(value: string, prefix: string) {
   return value
     .split('\n')
@@ -262,29 +198,10 @@ function indentLines(value: string, prefix: string) {
     .join('\n')
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function commandPattern(command: string) {
-  return `${escapeRegExp(command)}(?=\\s|$)`
-}
-
 export type McpManageOptions = {
   agent?: string
   devMode?: boolean
   verbose?: boolean
-}
-
-type McpAgent = {
-  key: string
-  name: string
-  command: string
-  statusArgs: string[]
-  uninstallArgs: string[]
-  installArgs: (serverCommand: string) => string[]
-  removeBeforeInstall?: boolean
-  registrationMatches: (output: string, serverCommand: string) => boolean
 }
 
 type McpManageResult = {

@@ -55,7 +55,7 @@ export function loadProbeConfig(root: string) {
   }
 }
 
-export function parseOpenSnoopPath(
+export function parseFsUsagePath(
   line: string,
   roots: string[],
   targetRoot?: string,

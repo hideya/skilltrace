@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { spawnSync } from 'child_process'
+import { normalizeTraceMode, type TraceMode } from '~/lib/trace-mode'
 import { Run } from './run'
 import { TraceEvent } from './trace-event'
 import { discardRunRecord } from './trace'
@@ -147,12 +148,9 @@ export function resolveTraceSession(input: ResolveTraceSessionInput = {}) {
   if (!session) return undefined
 
   let targetRoot = input.target_root ? path.resolve(input.target_root) : undefined
-  let targetMatch = targetRoot ? targetRoot === session.target_root : false
+  if (targetRoot && targetRoot !== session.target_root) return undefined
 
-  return {
-    ...session,
-    target_match: targetMatch,
-  }
+  return session
 }
 
 export function buildSessionId(targetRoot: string, date = new Date()) {
@@ -251,18 +249,6 @@ function safeName(value: string) {
     .replace(/^-+|-+$/g, '') || 'repo'
 }
 
-export function normalizeTraceMode(value?: unknown): TraceMode {
-  if (
-    value === 'full' ||
-    value === 'passive_reflection' ||
-    value === 'passive_only'
-  ) {
-    return value
-  }
-
-  return 'full'
-}
-
 type TraceSessionState = {
   session?: TraceSession
 }
@@ -322,7 +308,7 @@ type SkillTraceConfigFile = {
 
 type ProbeKind = 'run' | 'shared'
 type InstructionProfile = 'agents_md' | 'claude_code'
-export type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
+export { normalizeTraceMode, type TraceMode }
 
 function normalizedNote(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined

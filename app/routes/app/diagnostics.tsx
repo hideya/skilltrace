@@ -7,7 +7,7 @@ export async function loader() {
 
 export default function Page({ loaderData }: PageProps) {
   let { version, daemon, server, session, process, checks, mcp } = loaderData
-  let showSharedProbe = sharedProbeVisible(process.platform, daemon)
+  let showSharedProbe = checks.shared_probe_visible
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pt-10 pb-40">
@@ -139,7 +139,7 @@ export default function Page({ loaderData }: PageProps) {
                 [
                   'Probe',
                   session.probe_pid
-                    ? `${session.probe_pid} ${processStatus(session.probe_pid)}`
+                    ? `${session.probe_pid} ${checks.session_probe_pid}`
                     : 'not attached',
                 ],
                 ['Probe kind', session.probe_kind ?? 'run'],
@@ -167,7 +167,7 @@ function Metric({ label, value, tone = 'neutral' }: MetricProps) {
 
   return (
     <div className="flex flex-col justify-center rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
-      <div className="md: mb-3 flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+      <div className="mb-3 flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div className="text-xs tracking-[0.2em] text-base-content/50 uppercase">
           {label}
         </div>
@@ -281,36 +281,6 @@ function EmptyState({ children }: EmptyStateProps) {
     <div className="rounded-box border border-dashed border-base-300 p-5 text-center text-sm text-base-content/60">
       {children}
     </div>
-  )
-}
-
-function processStatus(pid: number) {
-  if (typeof process === 'undefined' || typeof process.kill !== 'function') {
-    return pid ? 'attached' : 'missing'
-  }
-
-  try {
-    process.kill(pid, 0)
-    return 'running'
-  } catch (error) {
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === 'EPERM'
-    ) {
-      return 'running'
-    }
-    return 'not running'
-  }
-}
-
-function sharedProbeVisible(platform: string, state: any) {
-  return (
-    platform === 'darwin' ||
-    !!state?.shared_probe_requested ||
-    !!state?.shared_probe_pid ||
-    !!state?.shared_probe_warning
   )
 }
 

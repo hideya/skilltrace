@@ -1,4 +1,4 @@
-# SkillTrace [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/skilltrace)
+# SkillTrace ─ An AI Agent Skill Debugging Utility [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/hideya/skilltrace/blob/main/NOTICE.md) [![npm version](https://img.shields.io/npm/v/skilltrace.svg)](https://www.npmjs.com/package/skilltrace)
 
 **SkillTrace is a free observability tool for AI agent skill usage.**
 
@@ -633,9 +633,11 @@ Known limitations include:
 
 ## Privacy And Data
 
-SkillTrace itself is locally executed and no remote connection is established
-(except Google Fonts loading by the UI),
-but it may capture sensitive development context.
+The normal local tracing workflow makes no remote connections except Google
+Fonts loading by the UI, but it may capture sensitive development context. The
+parked auth/admin scaffold can use configured OAuth, SMTP, or remote database
+services when deliberately enabled; see
+[`docs/auth-admin-scaffold.md`](docs/auth-admin-scaffold.md).
 
 Depending on the trace mode and repository state, captured data may include:
 

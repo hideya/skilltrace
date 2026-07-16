@@ -8,14 +8,14 @@ import {
   type DaemonState,
 } from '../../../../scripts/lib/skilltrace-daemon-state'
 import {
-  parseGeminiArgs,
-  parseGeminiCommand,
-  parseMcpValue,
-} from './diagnostics-mcp'
+  expectedMcpServerArgs,
+  expectedMcpServerCommand,
+  mcpAgents,
+  type McpAgent,
+} from '../../../../scripts/lib/skilltrace-mcp-clients'
+import { skilltraceVersion } from '../../../../scripts/lib/skilltrace-package'
 
 const MCP_CHECK_TIMEOUT_MS = 8000
-const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json')
-
 export async function getDiagnosticsData() {
   let state = readDaemonState()
   let server = process.env.SKILLTRACE_SERVER || defaultServerUrl()
@@ -39,24 +39,18 @@ export async function getDiagnosticsData() {
     },
     checks: {
       daemon_pid: state?.pid ? processStatus(state.pid) : 'missing',
+      session_probe_pid: session?.probe_pid
+        ? processStatus(session.probe_pid)
+        : 'missing',
       shared_probe_pid: state?.shared_probe_pid
         ? processStatus(state.shared_probe_pid)
         : 'missing',
       shared_probe: sharedProbeCheck(state),
+      shared_probe_visible: sharedProbeVisible(process.platform, state),
       state_matches_server: stateMatchesServer(state, server),
       mcp_registration: mcp.summary.status,
     },
   } satisfies DiagnosticsData
-}
-
-function skilltraceVersion() {
-  try {
-    let content = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
-    let json = JSON.parse(content)
-    return typeof json.version === 'string' ? json.version : 'unknown'
-  } catch {
-    return 'unknown'
-  }
 }
 
 export function processStatus(pid: number) {
@@ -164,11 +158,9 @@ function defaultServerUrl() {
 }
 
 async function readMcpStatuses(mode: string): Promise<McpStatusReport> {
-  let clients = await Promise.all([
-    readCodexMcpStatus(mode),
-    readClaudeMcpStatus(mode),
-    readGeminiMcpStatus(mode),
-  ])
+  let clients = await Promise.all(
+    mcpAgents().map((agent) => readMcpStatus(agent, mode)),
+  )
 
   return {
     clients,
@@ -213,10 +205,10 @@ function summarizeMcpStatuses(clients: McpClientStatus[]) {
   } satisfies McpSummary
 }
 
-async function readCodexMcpStatus(mode: string) {
-  let expectedCommands = expectedMcpCommands(mode)
-  let result = await runMcpCheck('codex', ['mcp', 'get', 'skilltrace'])
-  let base = mcpStatusBase('codex', 'Codex', expectedCommands, result)
+async function readMcpStatus(agent: McpAgent, mode: string) {
+  let serverCommand = expectedMcpServerCommand(mode === 'dev')
+  let result = await runMcpCheck(agent.command, agent.statusArgs)
+  let base = mcpStatusBase(agent, serverCommand, result)
 
   if (result.error) {
     if (result.timed_out) {
@@ -245,13 +237,18 @@ async function readCodexMcpStatus(mode: string) {
     } satisfies McpClientStatus
   }
 
-  let command = parseMcpValue(result.output, 'command')
-  let args = parseMcpValue(result.output, 'args')
-  let expectedArgs = expectedMcpArgs()
-  let matches = command
-    ? expectedCommands.includes(command) && args === expectedArgs
-    : false
-  let wrapperWarning = devWrapperWarning(mode, command)
+  let registration = agent.registration(result.output)
+  if (!registration.registered) {
+    return {
+      ...base,
+      status: 'warning',
+      message: 'skilltrace MCP server is not registered',
+      cli_installed: true,
+    } satisfies McpClientStatus
+  }
+
+  let matches = agent.registrationMatches(result.output, serverCommand)
+  let wrapperWarning = devWrapperWarning(mode, registration.command)
 
   return {
     ...base,
@@ -263,132 +260,8 @@ async function readCodexMcpStatus(mode: string) {
         : 'skilltrace MCP registration does not match this mode',
     cli_installed: true,
     registered: true,
-    command,
-    args,
-  } satisfies McpClientStatus
-}
-
-async function readClaudeMcpStatus(mode: string) {
-  let expectedCommands = expectedMcpCommands(mode)
-  let result = await runMcpCheck('claude', ['mcp', 'get', 'skilltrace'])
-  let base = mcpStatusBase('claude', 'Claude Code', expectedCommands, result)
-
-  if (result.error) {
-    if (result.timed_out) {
-      return {
-        ...base,
-        status: 'timeout',
-        message: 'MCP registration check timed out; run the check manually',
-        cli_installed: true,
-      } satisfies McpClientStatus
-    }
-
-    return {
-      ...base,
-      status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
-      message: result.error.message,
-      cli_installed: result.error.message.includes('ENOENT') ? false : true,
-    } satisfies McpClientStatus
-  }
-
-  if (result.status !== 0) {
-    return {
-      ...base,
-      status: 'warning',
-      message: 'skilltrace MCP server is not registered',
-      cli_installed: true,
-    } satisfies McpClientStatus
-  }
-
-  let command = parseMcpValue(result.output, 'command')
-  let args = parseMcpValue(result.output, 'args')
-  let expectedArgs = expectedMcpArgs()
-  let matches = command
-    ? expectedCommands.includes(command) && args === expectedArgs
-    : false
-  let wrapperWarning = devWrapperWarning(mode, command)
-
-  return {
-    ...base,
-    status: matches && !wrapperWarning ? 'ok' : 'warning',
-    message: wrapperWarning
-      ? wrapperWarning
-      : matches
-        ? 'skilltrace MCP registration matches this mode'
-        : 'skilltrace MCP registration does not match this mode',
-    cli_installed: true,
-    registered: true,
-    command,
-    args,
-  } satisfies McpClientStatus
-}
-
-async function readGeminiMcpStatus(mode: string) {
-  let expectedCommands = expectedMcpCommands(mode)
-  let result = await runMcpCheck('gemini', ['mcp', 'list'])
-  let base = mcpStatusBase('gemini', 'Gemini CLI', expectedCommands, result)
-
-  if (result.error) {
-    if (result.timed_out) {
-      return {
-        ...base,
-        status: 'timeout',
-        message:
-          'MCP registration check timed out; run `gemini mcp list` manually',
-        cli_installed: true,
-      } satisfies McpClientStatus
-    }
-
-    return {
-      ...base,
-      status: result.error.message.includes('ENOENT') ? 'missing' : 'warning',
-      message: result.error.message,
-      cli_installed: result.error.message.includes('ENOENT') ? false : true,
-    } satisfies McpClientStatus
-  }
-
-  if (result.status !== 0) {
-    return {
-      ...base,
-      status: 'warning',
-      message: 'could not read Gemini MCP registration',
-      cli_installed: true,
-    } satisfies McpClientStatus
-  }
-
-  let registered = /\bskilltrace\b/i.test(result.output)
-  if (!registered) {
-    return {
-      ...base,
-      status: 'warning',
-      message: 'skilltrace MCP server is not registered',
-      cli_installed: true,
-    } satisfies McpClientStatus
-  }
-
-  let command =
-    parseMcpValue(result.output, 'command') ?? parseGeminiCommand(result.output)
-  let args =
-    parseMcpValue(result.output, 'args') ?? parseGeminiArgs(result.output)
-  let expectedArgs = expectedMcpArgs()
-  let matches =
-    ((command ? expectedCommands.includes(command) : false) ||
-      expectedCommands.some((item) => result.output.includes(item))) &&
-    (args === expectedArgs || /\bmcp serve\b/.test(result.output))
-  let wrapperWarning = devWrapperWarning(mode, command)
-
-  return {
-    ...base,
-    status: matches && !wrapperWarning ? 'ok' : 'warning',
-    message: wrapperWarning
-      ? wrapperWarning
-      : matches
-        ? 'skilltrace MCP registration appears to match this mode'
-        : 'skilltrace MCP registration could not be confirmed for this mode',
-    cli_installed: true,
-    registered: true,
-    command,
-    args,
+    command: registration.command,
+    args: registration.args,
   } satisfies McpClientStatus
 }
 
@@ -449,14 +322,6 @@ function mcpCheckOutput(stderr: string, stdout: string) {
   return [stderr, stdout].filter(Boolean).join('\n').trim()
 }
 
-function expectedMcpCommands(mode: string) {
-  return mode === 'dev' ? ['skilltrace-dev'] : ['skilltrace']
-}
-
-function expectedMcpArgs() {
-  return 'mcp serve'
-}
-
 function devWrapperWarning(mode: string, command: string | null) {
   if (mode !== 'dev' || !command) return null
   if (command !== 'skilltrace-dev') return null
@@ -484,20 +349,19 @@ function isCurrentDevWrapper(content: string) {
 }
 
 function mcpStatusBase(
-  key: string,
-  name: string,
-  expectedCommands: string[],
+  agent: McpAgent,
+  expectedCommand: string,
   result: McpCheckResult,
 ) {
   return {
-    key,
-    name,
+    key: agent.key,
+    name: agent.name,
     status: 'warning',
     message: 'not checked',
     cli_installed: false,
     registered: false,
-    expected_command: expectedCommands.join(' or '),
-    expected_args: expectedMcpArgs(),
+    expected_command: expectedCommand,
+    expected_args: expectedMcpServerArgs(),
     command: null,
     args: null,
     output: result.output,
@@ -535,8 +399,10 @@ export type ProcessInfo = {
 
 export type Checks = {
   daemon_pid: string
+  session_probe_pid: string
   shared_probe_pid: string
   shared_probe: MetricCheck
+  shared_probe_visible: boolean
   state_matches_server: boolean
   mcp_registration: string
 }

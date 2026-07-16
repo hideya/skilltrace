@@ -18,4 +18,10 @@ run('git fetch origin')
 const ahead = out('git rev-list --count origin/main..dev')
 if (ahead === '0') fail('Error: there is nothing new to ship from dev to main')
 
-run('git push --force-with-lease origin dev:main')
+const mainOnly = out('git rev-list --count dev..origin/main')
+if (mainOnly !== '0')
+  fail(
+    'Error: origin/main has commits that are not in dev; reconcile the branches first',
+  )
+
+run('git push origin dev:main')

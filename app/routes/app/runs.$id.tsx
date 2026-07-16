@@ -2,6 +2,7 @@ import { ChevronLeftIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { Form, redirect, useNavigate, useRevalidator } from 'react-router'
 import { notFoundError } from '~/lib/.server/errors'
+import { traceModeLabel } from '~/lib/trace-mode'
 import { clearRunEvents, getRunTimeline } from '~/models/.server/trace'
 import { Metric } from './+/run-detail-ui'
 import { ConsistencyPanel } from './+/run-consistency-panel'
@@ -143,13 +144,6 @@ function BackButton() {
       <ChevronLeftIcon className="size-10" />
     </button>
   )
-}
-
-function traceModeLabel(mode?: string) {
-  if (mode === 'passive_reflection') return 'passive + reflection'
-  if (mode === 'passive_only') return 'passive only'
-  if (mode === 'full') return 'full'
-  return 'unknown'
 }
 
 function statusLabel(status?: string) {

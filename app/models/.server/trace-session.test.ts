@@ -7,12 +7,16 @@ import {
   loadTargetConfig,
   normalizeTraceMode,
   pathHash,
+  resolveTraceSession,
   timestampName,
 } from './trace-session'
 
 let tempDirs: string[] = []
 
 afterEach(() => {
+  let state = (globalThis as any)[Symbol.for('skilltrace.trace-session-state')]
+  if (state) state.session = undefined
+
   for (let dir of tempDirs) {
     fs.rmSync(dir, { recursive: true, force: true })
   }
@@ -42,13 +46,13 @@ describe('trace session helpers', () => {
     let root = tempRoot()
     fs.writeFileSync(
       path.join(root, '.skilltrace.json'),
-      JSON.stringify({ skill_roots: ['.skills', 'skills'] }),
+      JSON.stringify({ skill_roots: ['custom-skills', 'skills'] }),
     )
 
     let config = loadTargetConfig(root)
 
     expect(config.skillRoots).toEqual([
-      path.join(root, '.skills'),
+      path.join(root, 'custom-skills'),
       path.join(root, 'skills'),
     ])
   })
@@ -75,6 +79,24 @@ describe('trace session helpers', () => {
     expect(normalizeTraceMode('passive_only')).toBe('passive_only')
     expect(normalizeTraceMode('unknown')).toBe('full')
     expect(normalizeTraceMode(undefined)).toBe('full')
+  })
+
+  test('resolves the active session only for its target repository', () => {
+    let targetRoot = path.resolve('/tmp/skilltrace-target')
+    let state = (globalThis as any)[
+      Symbol.for('skilltrace.trace-session-state')
+    ]
+    state.session = {
+      run_id: 'run-1',
+      target_root: targetRoot,
+    }
+
+    expect(resolveTraceSession({ target_root: targetRoot })?.run_id).toBe(
+      'run-1',
+    )
+    expect(
+      resolveTraceSession({ target_root: '/tmp/another-target' }),
+    ).toBeUndefined()
   })
 })
 

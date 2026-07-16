@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
+import type { TraceMode } from '../../app/lib/trace-mode'
 
 const PACKAGE_ROOT = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)))
 const INSTRUMENTATION_TEMPLATE_PATH = path.join(
@@ -404,5 +405,4 @@ type InjectionManifest = {
   trace_mode?: TraceMode
 }
 
-type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
 type InstructionProfile = 'agents' | 'claude_code'

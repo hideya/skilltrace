@@ -1,5 +1,6 @@
 import { ChevronLeftIcon } from 'lucide-react'
 import { Link } from 'react-router'
+import { traceModeLabel } from '~/lib/trace-mode'
 import { getModeComparisonForRuns } from '~/models/.server/trace'
 
 // Remote/auth mode reference:
@@ -245,13 +246,6 @@ function resultBadgeClass(mode: string) {
 function rowClass(row: any) {
   if (row.status === 'different') return 'bg-warning/20'
   return ''
-}
-
-function traceModeLabel(mode?: string) {
-  if (mode === 'passive_reflection') return 'p + reflection'
-  if (mode === 'passive_only') return 'passive only'
-  if (mode === 'full') return 'full'
-  return 'unknown'
 }
 
 function formatTime(value?: string | Date | null) {

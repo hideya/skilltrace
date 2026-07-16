@@ -2,13 +2,15 @@ import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '~/.server/db'
 import { trace_events } from '~/.server/db/schema/trace-events'
+import { skillPathFromRoot } from '~/lib/skill-path'
+import { isTraceMode, TRACE_MODES, type TraceMode } from '~/lib/trace-mode'
 import { Run } from './run'
-import { TraceEvent } from './trace-event'
 import {
   type ConsistencyMatrixRow,
   summarizeConsistencyMatrix,
   traceConsistencyMatrix,
 } from './trace-consistency'
+import { TraceEvent } from './trace-event'
 
 export const passiveEventSchema = z.object({
   run_id: z.string().trim().min(1, 'run_id is required'),
@@ -54,7 +56,7 @@ export const semanticEventSchema = z.object({
 
 export async function appendPassiveEvent(input: PassiveEventInput) {
   let timestamp = input.timestamp ? new Date(input.timestamp) : new Date()
-  let run = await Run.findOrCreateBy({ public_id: input.run_id })
+  let run = await findOrCreateEventRun(input.run_id, timestamp)
 
   return await TraceEvent.create({
     run_id: run.id,
@@ -72,7 +74,7 @@ export async function appendPassiveEvent(input: PassiveEventInput) {
 
 export async function appendSemanticEvent(input: SemanticEventInput) {
   let timestamp = input.timestamp ? new Date(input.timestamp) : new Date()
-  let run = await Run.findOrCreateBy({ public_id: input.run_id })
+  let run = await findOrCreateEventRun(input.run_id, timestamp)
 
   return await TraceEvent.create({
     run_id: run.id,
@@ -123,8 +125,19 @@ export async function listRunSummaries() {
 
 export async function getModeComparisonForRuns(publicIds: string[]) {
   let requestedIds = unique(publicIds.map((id) => id.trim()).filter(Boolean))
-  let runs = await Run.newestBy('created_at')
-  let events = await TraceEvent.newestBy('timestamp')
+  let runs =
+    requestedIds.length > 0
+      ? await Run.newestBy('created_at', {
+          where: { public_id: { in: requestedIds } },
+        })
+      : []
+  let runIds = runs.map((run) => run.id)
+  let events =
+    runIds.length > 0
+      ? await TraceEvent.newestBy('timestamp', {
+          where: { run_id: { in: runIds } },
+        })
+      : []
   let eventsByRun = groupEventsByRun(events)
   let starts = sessionStartTimes(events)
   let selected: ModeComparisonRun[] = []
@@ -199,8 +212,12 @@ export async function getRunTimeline(publicId: string) {
   let events = await TraceEvent.oldestBy('timestamp', {
     where: { run_id: run.id },
   })
-  let allEvents = await TraceEvent.newestBy('timestamp')
-  let starts = sessionStartTimes(allEvents)
+  let startedAt = sessionStartTime(events) ?? new Date(run.started_at)
+  let newerStart = await TraceEvent.findBy({
+    event_type: 'trace_session_started',
+    timestamp: { gt: startedAt },
+  })
+  let starts = newerStart ? [new Date(newerStart.timestamp)] : []
   let traceMode = runTraceMode(run, events)
   let lifecycle = runLifecycleResult(run, events, starts)
   let consistencyMatrix = traceConsistencyMatrix(events, { traceMode })
@@ -239,12 +256,26 @@ export async function discardRunRecord(publicId: string) {
 
 export async function deleteRunRecords(publicIds: string[]) {
   let deleted: any[] = []
-  let events = await TraceEvent.newestBy('timestamp')
-  let eventsByRun = groupEventsByRun(events)
-  let starts = sessionStartTimes(events)
+  let requestedIds = unique(publicIds)
+  if (requestedIds.length === 0) return deleted
 
-  for (let publicId of unique(publicIds)) {
-    let run = await Run.findBy({ public_id: publicId })
+  let runs = await Run.findAllBy({ public_id: { in: requestedIds } })
+  let runIds = runs.map((run) => run.id)
+  let events =
+    runIds.length > 0
+      ? await TraceEvent.newestBy('timestamp', {
+          where: { run_id: { in: runIds } },
+        })
+      : []
+  let eventsByRun = groupEventsByRun(events)
+  let latestStarts = await TraceEvent.newestBy('timestamp', {
+    where: { event_type: 'trace_session_started' },
+    limit: 1,
+  })
+  let starts = sessionStartTimes(latestStarts)
+
+  for (let publicId of requestedIds) {
+    let run = runs.find((item) => item.public_id === publicId)
     if (!run) continue
 
     let runEvents = eventsByRun.get(run.id) ?? []
@@ -262,6 +293,17 @@ export type SemanticEventInput = z.infer<typeof semanticEventSchema>
 
 const PASSIVE_SOURCE = 'passive_file_harness'
 const SEMANTIC_SOURCE = 'mcp_semantic_logger'
+
+async function findOrCreateEventRun(publicId: string, timestamp: Date) {
+  return await Run.findOrCreateBy(
+    { public_id: publicId },
+    {
+      status: 'finished',
+      started_at: timestamp,
+      finished_at: timestamp,
+    },
+  )
+}
 
 function isDateString(value: string) {
   return !Number.isNaN(Date.parse(value))
@@ -342,26 +384,7 @@ function compareKindOrder(kind: string) {
 }
 
 function displayCompareFile(file: string) {
-  let normalized = file.replaceAll('\\', '/')
-  let parts = normalized.split('/').filter(Boolean)
-  let skillIndex = skillRootIndex(parts)
-
-  if (skillIndex !== null) return parts.slice(skillIndex).join('/')
-  return file
-}
-
-function skillRootIndex(parts: string[]) {
-  for (let index = 0; index < parts.length; index += 1) {
-    if (parts[index] === '.skills') return index
-    if (
-      (parts[index] === '.agents' || parts[index] === '.claude') &&
-      parts[index + 1] === 'skills'
-    ) {
-      return index
-    }
-  }
-
-  return null
+  return skillPathFromRoot(file, true) ?? file
 }
 
 function normalizeComparePath(file: string) {
@@ -370,10 +393,6 @@ function normalizeComparePath(file: string) {
     .replace(/^\.\//, '')
     .replace(/\/+/g, '/')
     .toLowerCase()
-}
-
-function isTraceMode(value: string): value is TraceMode {
-  return TRACE_MODES.includes(value as TraceMode)
 }
 
 export function runLifecycleResult(
@@ -386,7 +405,8 @@ export function runLifecycleResult(
   )
   if (hasFinish || run.status === 'finished') return null
 
-  let startedAt = sessionStartTime(events) ?? new Date(run.started_at)
+  let startedAt = sessionStartTime(events)
+  if (!startedAt) return null
   let hasNewerStart = starts.some((started) =>
     started.getTime() > startedAt.getTime()
   )
@@ -400,6 +420,13 @@ function runDisplayStatus(
   events: TraceEventLike[],
   starts: Date[],
 ) {
+  if (
+    run.status === 'active' &&
+    !events.some((event) => event.event_type === 'trace_session_started')
+  ) {
+    return 'finished'
+  }
+
   if (
     run.status === 'active' &&
     runLifecycleResult(run, events, starts) === 'incomplete'
@@ -497,8 +524,6 @@ type TraceEventLike = {
   timestamp: Date | string
 }
 
-type TraceMode = 'full' | 'passive_reflection' | 'passive_only'
-
 type ModeComparisonRun = {
   run: any
   trace_mode: TraceMode
@@ -522,9 +547,3 @@ type ModeComparisonCell = {
   semantic: boolean
   reflection: boolean
 }
-
-const TRACE_MODES: TraceMode[] = [
-  'full',
-  'passive_reflection',
-  'passive_only',
-]

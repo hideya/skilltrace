@@ -1,6 +1,6 @@
 # SkillTrace MCP Semantic Logger
 
-SkillTrace includes a small stdio MCP server prototype that exposes three
+SkillTrace includes a small stdio MCP server that exposes three
 tools:
 
 ```text
@@ -31,7 +31,7 @@ It is intentionally small:
 
 By itself, this command does not implement passive file observation, skill loading, or a full agent platform.
 
-For the current best local prototype, prefer the local server flow:
+For the normal local workflow, prefer the local server flow:
 
 ```bash
 pnpm skilltrace:install
@@ -94,7 +94,7 @@ Do not run dev and packaged macOS shared-probe daemons at the same time. The
 underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
 Restarting the same command surface cleans up stale shared workers for that
 server, and a shared worker exits automatically if it cannot reach its daemon
-for about 30 seconds.
+for about 10 minutes.
 
 Use explicit run modes when comparing intervention levels:
 
@@ -125,7 +125,8 @@ owns a shared `fs_usage` probe after `skilltrace-dev daemon start`, so later
 run sessions should not ask for the password again during that daemon lifetime.
 On Linux, each run uses `inotifywait` and does not need sudo. The MCP server
 asks the SkillTrace server for the one active session ID when the model calls
-one of the SkillTrace MCP tools.
+one of the SkillTrace MCP tools. The active session must match the target root
+captured by the MCP wrapper, so calls from another repository are rejected.
 
 ## Start Command
 
@@ -253,7 +254,8 @@ SkillTrace also shows a read-only Gemini CLI MCP registration check in
 When `skilltrace-dev start` or `skilltrace start` is active, the MCP command
 resolves the active SkillTrace session over HTTP. Without an active session, use
 `SKILLTRACE_RUN_ID`, `SKILLTRACE_RUN_STEM`, and `SKILLTRACE_SERVER` as shown
-below.
+below. Runs created through these explicit event-only fallbacks are stored as
+finished imports rather than active sessions.
 
 To remove the SkillTrace MCP server later, use the command surface you
 registered:

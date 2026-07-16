@@ -132,6 +132,24 @@ describe('semanticEventSchema', () => {
 })
 
 describe('runLifecycleResult', () => {
+  test('defers event-only runs to consistency diagnosis', () => {
+    let result = runLifecycleResult(
+      {
+        status: 'active',
+        started_at: '2026-06-24T00:00:00Z',
+      },
+      [
+        {
+          event_type: 'skill_file_read',
+          timestamp: '2026-06-24T00:00:00Z',
+        },
+      ],
+      [],
+    )
+
+    expect(result).toBeNull()
+  })
+
   test('shows active unsuperseded runs as running', () => {
     let result = runLifecycleResult(
       {

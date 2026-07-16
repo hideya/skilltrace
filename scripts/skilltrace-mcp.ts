@@ -13,25 +13,19 @@ import {
   type SkillTraceContextInput,
   type SkillTraceReflectionInput,
 } from './lib/skilltrace-mcp'
-import { readActiveSession, sessionFilePath } from './lib/skilltrace-session'
+import { skilltraceVersion } from './lib/skilltrace-package'
 
-const ACTIVE_SESSION = readActiveSession(
-  sessionFilePath({
-    sessionFile: process.env.SKILLTRACE_SESSION_FILE,
-  }),
-)
 const MCP_RUN_ID = mcpRunId({
   runId: process.env.SKILLTRACE_RUN_ID,
-  sessionRunId: ACTIVE_SESSION?.run_id,
   runStem: process.env.SKILLTRACE_RUN_STEM,
 })
 const SERVER_URL = skillTraceServerUrl({
-  server: process.env.SKILLTRACE_SERVER ?? ACTIVE_SESSION?.server,
+  server: process.env.SKILLTRACE_SERVER,
 })
 
 const server = new McpServer({
   name: 'skilltrace-mcp',
-  version: '0.1.0',
+  version: skilltraceVersion(),
 })
 
 server.registerTool(

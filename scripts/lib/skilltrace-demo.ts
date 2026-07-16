@@ -58,6 +58,27 @@ export function buildDemoEvents(options: DemoEventOptions) {
         steps_applied: 'read fixture skill and checklist',
       },
     }),
+    buildSkillLogEvent({
+      runId: options.runId,
+      eventType: 'skill_reference_read',
+      skillName: FIXTURE_SKILL,
+      skillPath: path.relative(process.cwd(), skillPath),
+      summary: 'Applied the PR review fixture checklist.',
+      confidence: 'medium',
+      data: {
+        reference_path: path.relative(process.cwd(), referencePath),
+      },
+    }),
+    buildSkillLogEvent({
+      runId: options.runId,
+      eventType: 'run_reflection_declared',
+      summary: 'The fixture skill and checklist both influenced the demo run.',
+      confidence: 'high',
+      data: {
+        skills_read: [path.relative(process.cwd(), skillPath)],
+        references_read: [path.relative(process.cwd(), referencePath)],
+      },
+    }),
   ]
 }
 

@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 
+import { skillPathFromRoot } from '~/lib/skill-path'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
 
@@ -232,10 +233,8 @@ export function compactPathLabel(filePath: string) {
   let parts = filePath.split(/[\\/]/).filter(Boolean)
   if (parts.length === 0) return null
 
-  let skillRoot = skillRootIndex(parts)
-  if (skillRoot !== null && parts.length > skillRoot + 1) {
-    return parts.slice(skillRoot + 1).join('/')
-  }
+  let skillPath = skillPathFromRoot(filePath)
+  if (skillPath) return skillPath
 
   let fileName = parts.at(-1)
   if (fileName === 'SKILL.md' && parts.length >= 2) {
@@ -243,19 +242,6 @@ export function compactPathLabel(filePath: string) {
   }
 
   return fileName || null
-}
-
-function skillRootIndex(parts: string[]) {
-  for (let index = 0; index < parts.length; index += 1) {
-    if (
-      (parts[index] === '.agents' || parts[index] === '.claude') &&
-      parts[index + 1] === 'skills'
-    ) {
-      return index + 1
-    }
-  }
-
-  return null
 }
 
 function referencePathForEvent(event: any) {

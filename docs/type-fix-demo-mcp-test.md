@@ -94,8 +94,8 @@ Do not run dev and packaged macOS shared-probe daemons at the same time. The
 underlying `fs_usage`/ktrace probe is effectively single-owner in this workflow.
 Stop one daemon before switching to the other command surface. Restarting the
 same command surface cleans up stale shared workers for that server, and a
-shared worker exits automatically if it cannot reach its daemon for about 30
-seconds.
+shared worker exits automatically if it cannot reach its daemon for about 10
+minutes.
 
 Daemon mode writes state to `~/.skilltrace/daemon.json` and server logs to
 `~/.skilltrace/logs/daemon.log`. The foreground `skilltrace-dev serve` command

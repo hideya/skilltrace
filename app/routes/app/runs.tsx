@@ -2,6 +2,7 @@ import { type KeyboardEvent, useEffect, useState } from 'react'
 import { Form, redirect, useRevalidator } from 'react-router'
 import { appName } from '~/config/app-name'
 import { payloadFromRequest } from '~/lib/data/payload'
+import { TRACE_MODES, traceModeLabel } from '~/lib/trace-mode'
 import { deleteRunRecords, listRunSummaries } from '~/models/.server/trace'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 
@@ -571,13 +572,6 @@ function statusLabel(status: string) {
   return status
 }
 
-function traceModeLabel(mode?: string) {
-  if (mode === 'passive_reflection') return 'p + reflection'
-  if (mode === 'passive_only') return 'passive only'
-  if (mode === 'full') return 'full'
-  return 'unknown'
-}
-
 function ModelCell({ context }: ModelCellProps) {
   let model = context?.model
   if (!model || typeof model !== 'string') {
@@ -681,4 +675,3 @@ type ClientCellProps = {
 
 const EXPANDED_RUN_GROUPS_KEY = 'skilltrace.expandedRunGroups'
 const RUN_REFRESH_MS = 3000
-const TRACE_MODES = ['full', 'passive_reflection', 'passive_only']

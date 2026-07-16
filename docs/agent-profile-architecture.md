@@ -4,8 +4,8 @@
 > out of the original `.skills/` prototype and the first Claude Code support
 > pass. The current location policy is recorded in
 > [`agent-skills-location-policy.md`](./agent-skills-location-policy.md), which
-> makes `.agents/skills/` the preferred generic Agent Skills location and plans
-> to drop legacy `.skills/` support.
+> makes `.agents/skills/` the preferred generic Agent Skills location and no
+> longer treats legacy `.skills/` as a built-in root.
 
 This note records the design and current status for extending SkillTrace beyond
 one repository instruction convention. Claude Code is the first non-AGENTS.md
