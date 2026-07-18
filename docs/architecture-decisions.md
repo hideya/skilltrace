@@ -62,7 +62,7 @@ npm install -g "./skilltrace-$version.tgz"
 ```
 
 The explicit local path marker matters. `npm install -g skilltrace-<version>.tgz`
-or `npm install -g skill-trace/skilltrace-<version>.tgz` can be parsed as a package
+or `npm install -g skilltrace/skilltrace-<version>.tgz` can be parsed as a package
 or GitHub spec instead of a local tarball, which makes npm try a remote fetch.
 
 For npm publication, SkillTrace follows the same cautious package flow used in
