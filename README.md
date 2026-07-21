@@ -32,23 +32,27 @@ Skill usage is hard to capture because it is often buried inside the LLM's
 decision-making process. Unlike MCP tool calls, skills do not necessarily cross
 a clear execution boundary.
 
-SkillTrace combines passive file-access probing, dedicated MCP tool invocations,
-and structured post-run reflection so you can compare what was observed, what
-was declared, and what the agent later believed influenced the run.
+SkillTrace combines passive file-access probing, client-recorded operation
+history, dedicated MCP tool invocations, and structured post-run reflection so
+you can compare what was observed, what the client recorded, what was declared,
+and what the agent later believed influenced the run.
 
 SkillTrace is aimed at people developing and debugging agent skills.
 
 ## What It Captures
 
-At a high level, SkillTrace compares three kinds of evidence from the same run.
+At a high level, SkillTrace records four kinds of evidence from the same run.
 
-SkillTrace helps you understand and debug agent skills by combining three
+SkillTrace helps you understand and debug agent skills by combining four
 evidence streams:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
 - **Semantic traces**: instructed MCP invocations such as skill start,
   reference read, and skill finish.
+- **Provider history**: privacy-filtered skill reads and verification outcomes
+  mechanically recorded by Codex CLI. This source is observational and does not
+  affect consistency verdicts yet.
 - **Reflection**: structured post-run attribution by the agent, including which
   skills, references, files, steps, uncertainties, and recommended skill changes
   it believes were relevant to the run.
@@ -58,7 +62,8 @@ when evidence aligns, when the agent skipped a declaration, or when passive
 probing saw something the reflection omitted.
 
 Reflection is a self-report, not ground truth. Its value comes from being
-compared with passive traces, semantic MCP declarations, and human judgment.
+compared with passive traces, provider history, semantic MCP declarations, and
+human judgment.
 
 Each run also records basic SkillTrace execution metadata, such as the
 SkillTrace version, dev/package mode, OS platform, Node.js version, and passive
@@ -581,11 +586,15 @@ SkillTrace focuses on a narrower question:
 > How do we know whether a natural-language skill was activated, declared, and
 > reflected as influential in a specific agent run?
 
-It does this by comparing three evidence streams:
+It does this by recording four evidence streams:
 
 - passive file-access traces
+- privacy-filtered Codex CLI provider history
 - MCP semantic declarations
 - structured post-run reflection
+
+Provider history is shown separately as recorded execution context and does not
+participate in the consistency verdict in the first implementation.
 
 SkillTrace is not a replacement for LangSmith, Langfuse, Phoenix, Braintrust,
 Weave, or OpenTelemetry-based tracing. It is a complementary local probe for
@@ -628,6 +637,10 @@ Known limitations include:
 - Instrumentation may change model behavior, especially in `full` mode.
 - Passive-only mode can show that files were accessed, but not whether they were
   actually used.
+- Provider-history collection currently supports Codex CLI rollout files only.
+  Claude Code and Gemini CLI adapters remain planned.
+- Provider history is a local, provider-owned, version-unstable format. Missing,
+  ambiguous, or changing history is nonfatal and may yield no events.
 - Passive `SKILL.md` access may be startup discovery rather than task-specific
   use; SkillTrace treats entrypoint-only scans as neutral `discovered` rows.
 - SkillTrace currently focuses on observability, not automatic postmortem
@@ -651,8 +664,16 @@ Depending on the trace mode and repository state, captured data may include:
 - bounded plain-text contents for changed instruction-relevant files
 - agent-declared summaries, uncertainties, and file attribution
 - MCP semantic logging events
+- normalized Codex provider-history facts such as skill paths, verification
+  categories and outcomes, provider session/client/model identifiers, and
+  collection status
 - SkillTrace version and local runtime metadata such as OS platform, CPU
   architecture, Node.js version, and probe backend
+
+During a normal `skilltrace stop`, SkillTrace inspects the matching local Codex
+rollout file transiently. It does not store or send prompts, responses,
+reasoning, raw tool output, full shell commands, file contents, or patch bodies.
+`skilltrace stop --discard` skips provider-history collection.
 
 Do not run SkillTrace on sensitive repositories unless you understand what is
 being recorded. Review captured runs before sharing logs, screenshots, or run
@@ -694,6 +715,6 @@ decisions, see:
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skilltrace/blob/main/docs/agent-profile-architecture.md)
 - [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
-- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (planned)
+- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (Codex first cut and roadmap)
 - [docs/provider-history-formats.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-formats.md) (observed format field guide)
 - [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skilltrace/blob/main/docs/type-fix-demo-mcp-test.md)

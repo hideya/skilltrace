@@ -170,27 +170,35 @@ function isSemanticEvent(event: any) {
   return event.source === 'mcp_semantic_logger'
 }
 
+function isProviderEvent(event: any) {
+  return event.source === 'provider_history'
+}
+
 function eventDotClass(event: any) {
   if (isSemanticEvent(event)) return 'bg-indigo-400'
   if (isPassiveEvent(event)) return 'bg-teal-400'
+  if (isProviderEvent(event)) return 'bg-amber-400'
   return 'bg-base-content'
 }
 
 function eventDotSizeClass(event: any) {
   if (isSemanticEvent(event)) return 'top-4.5 left-1.25 size-3.5'
   if (isPassiveEvent(event)) return 'top-4.75 left-1.5 size-3'
+  if (isProviderEvent(event)) return 'top-4.75 left-1.5 size-3'
   return 'top-5.5 left-2 size-2'
 }
 
 function eventTitleClass(event: any) {
   if (isSemanticEvent(event)) return 'font-semibold text-sm'
   if (isPassiveReadEvent(event)) return 'font-semibold text-sm'
+  if (isProviderEvent(event)) return 'font-semibold text-sm'
   return 'font-normal'
 }
 
 function eventFileNameClass(event: any) {
   if (isSemanticEvent(event)) return 'text-indigo-500'
   if (isPassiveEvent(event)) return 'text-teal-500'
+  if (isProviderEvent(event)) return 'text-amber-600'
   return 'text-base-content/60'
 }
 
@@ -255,6 +263,10 @@ function referencePathForEvent(event: any) {
 }
 
 function observedProcessForEvent(event: any) {
+  if (isProviderEvent(event)) {
+    let provider = event.payload?.provider
+    return typeof provider === 'string' && provider ? provider : null
+  }
   if (!isPassiveReadEvent(event)) return null
 
   let process = event.payload?.observed_process

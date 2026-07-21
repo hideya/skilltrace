@@ -1,11 +1,11 @@
 # Provider History Event Source
 
-Status: planned, not implemented
+Status: Codex first cut implemented; broader provider support planned
 
-This document proposes a fourth SkillTrace evidence source derived from the
-local history persisted by agent clients. It defines the intended behavior,
-trust boundaries, collection lifecycle, normalized events, failure policy, and
-implementation phases.
+This document defines a fourth SkillTrace evidence source derived from the local
+history persisted by agent clients. It records the implemented Codex first cut,
+the intended trust boundaries and collection lifecycle, and the roadmap for
+broader provider and operation support.
 
 Detailed observations of the Codex, Claude Code, and Gemini CLI file formats
 live in [Provider History Formats](./provider-history-formats.md). Those
@@ -25,10 +25,32 @@ The proposed source is:
 provider_history
 ```
 
-The first implementation should collect it during `skilltrace stop`, before
-the run is marked finished. Collection is best effort. Missing, ambiguous,
-changing, or unsupported provider history must never prevent the run from
-stopping.
+The Codex first cut collects it during `skilltrace stop`, before the run is
+marked finished. Collection is best effort. Missing, ambiguous, changing, or
+unsupported provider history never prevents the run from stopping.
+
+## Current Implementation
+
+The first cut implements:
+
+- direct discovery of recent Codex CLI rollout JSONL files under
+  `~/.codex/sessions/YYYY/MM/DD`
+- exact target-directory and run-window matching, using the SkillTrace run ID
+  when available and failing closed when multiple candidates remain
+- bounded stability checks before parsing
+- successful `cat`, printing `sed`, `head`, and `tail` reads under configured
+  skill roots
+- recognized test, typecheck, lint, and build operations with correlated exit
+  status and duration
+- filtering of SkillTrace MCP calls as circular evidence
+- normalized `provider_history` events plus a session-owned collection summary
+- stop-time batch submission with per-run fingerprint deduplication
+- timeline display and a separate Recorded execution context panel
+- synthetic fixture, matching, ambiguity, schema, and privacy regression tests
+
+The first cut does not yet implement Claude Code or Gemini CLI adapters, shell
+search and edit operations, provider columns in the consistency matrix, or any
+change to run verdicts. Provider history remains observational.
 
 Provider history is useful because it can reveal structured operations that
 the passive operating-system probe cannot understand. For example:
@@ -835,13 +857,10 @@ submission should remain outside the parser.
 
 ## Documentation Boundary
 
-This document describes planned behavior. Until implementation lands:
+This document now covers both implemented Codex behavior and the remaining
+roadmap. Current behavior is limited to the items in Current Implementation.
+Later-phase language describes intended behavior, not a supported feature.
 
-- the README correctly describes three evidence streams
-- `provider_history` is not a supported trace source
-- `skilltrace stop` does not read provider history
-- the consistency matrix does not include provider history
-
-When each phase is implemented, current-state documentation should be updated
-in the same change rather than treating this planning document as proof that the
-feature already exists.
+In particular, the consistency matrix does not yet include provider history,
+and existing verdicts do not change when provider history is missing,
+ambiguous, incomplete, or unsupported.

@@ -533,6 +533,35 @@ context for quick inspection.
 If the target is not in Git, SkillTrace records that Git provenance was
 unavailable and continues the run normally.
 
+## Codex Provider History Is Observational
+
+A normal `skilltrace stop` now inspects the matching Codex CLI rollout file and
+projects a strict, privacy-filtered subset into `provider_history` events. The
+first cut retains successful skill and reference reads plus recognized test,
+typecheck, lint, and build outcomes. It never persists prompts, responses,
+reasoning, raw output, full commands, file contents, or patch bodies.
+
+Provider history is stored and displayed independently from the passive probe,
+semantic MCP declarations, and agent reflection. It does not participate in the
+consistency verdict yet, and missing, ambiguous, unsupported, or changing
+history never blocks the run from stopping.
+
+Reasons:
+
+- provider-owned history adds operation and outcome detail unavailable to the
+  operating-system probe
+- keeping the source observational avoids turning a version-unstable local
+  format into an implicit requirement for successful runs
+- a strict server-side payload allowlist provides a second privacy boundary
+  after the local adapter
+- per-run source fingerprints make repeated batch submission idempotent without
+  a schema migration
+
+The format observations, lifecycle, privacy policy, and remaining roadmap are
+documented in
+[provider-history-event-source.md](provider-history-event-source.md) and
+[provider-history-formats.md](provider-history-formats.md).
+
 ## Demo Working Copy
 
 `tmp/type-fix-demo` is generated from `examples/type-fix-demo`.

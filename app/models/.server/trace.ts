@@ -54,6 +54,67 @@ export const semanticEventSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 })
 
+export const providerHistoryEventSchema = z
+  .object({
+    event_type: z.enum([
+      'skill_file_read',
+      'skill_reference_read',
+      'execution_operation_observed',
+    ]),
+    timestamp: z
+      .string()
+      .trim()
+      .refine(isDateString, 'timestamp must be a valid date')
+      .optional(),
+    skill: z
+      .object({
+        name: z.string().trim().min(1).max(256).optional(),
+        path: z.string().trim().min(1).max(4096).optional(),
+      })
+      .strict()
+      .optional(),
+    payload: z
+      .object({
+        provider: z.literal('codex'),
+        provider_session_id: z
+          .string()
+          .trim()
+          .min(1, 'provider_session_id is required')
+          .max(256),
+        tool_name: z.string().trim().min(1).max(256),
+        tool_call_id: z.string().trim().min(1).max(256),
+        outcome: z.enum(['success', 'failed', 'unknown']),
+        evidence_kind: z.literal('shell_content_read').optional(),
+        operation_kind: z
+          .enum(['test', 'typecheck', 'lint', 'build'])
+          .optional(),
+        command_classifier: z.string().trim().min(1).max(256),
+        confidence: z.enum(['high', 'medium', 'low']).optional(),
+        classification_confidence: z.enum(['high', 'medium', 'low']).optional(),
+        match_confidence: z.enum(['high', 'medium', 'unknown']),
+        format: z.literal('codex_rollout_jsonl_v1'),
+        exit_code: z.number().int().optional(),
+        duration_ms: z.number().int().nonnegative().optional(),
+        source_record_index: z.number().int().nonnegative(),
+        source_fingerprint: z
+          .string()
+          .trim()
+          .regex(
+            /^sha256:[a-f0-9]{64}$/,
+            'source_fingerprint must be a SHA-256',
+          ),
+      })
+      .strict(),
+  })
+  .strict()
+
+export const providerHistoryBatchSchema = z
+  .object({
+    run_id: z.string().trim().min(1, 'run_id is required'),
+    events: z.array(providerHistoryEventSchema).min(1).max(1000),
+  })
+  .strict()
+
 export async function appendPassiveEvent(input: PassiveEventInput) {
   let timestamp = input.timestamp ? new Date(input.timestamp) : new Date()
   let run = await findOrCreateEventRun(input.run_id, timestamp)
@@ -92,6 +153,42 @@ export async function appendSemanticEvent(input: SemanticEventInput) {
       data: input.data ?? {},
     },
   })
+}
+
+export async function appendProviderHistoryEvents(
+  input: ProviderHistoryBatchInput,
+) {
+  let run = await Run.findByPublicID(input.run_id)
+  let existing = await TraceEvent.findAllBy({
+    run_id: run.id,
+    source: PROVIDER_SOURCE,
+  })
+  let fingerprints = new Set(
+    existing
+      .map((event) => event.payload?.source_fingerprint)
+      .filter((value): value is string => typeof value === 'string'),
+  )
+  let events = input.events.filter((event) => {
+    let fingerprint = event.payload.source_fingerprint
+    if (fingerprints.has(fingerprint)) return false
+    fingerprints.add(fingerprint)
+    return true
+  })
+
+  if (events.length === 0) return []
+
+  return await TraceEvent.createMany(
+    events.map((event) => ({
+      run_id: run.id,
+      timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+      source: PROVIDER_SOURCE,
+      event_type: event.event_type,
+      skill_name: event.skill?.name,
+      skill_path: event.skill?.path,
+      artifact_refs: [],
+      payload: event.payload,
+    })),
+  )
 }
 
 export async function listRunSummaries() {
@@ -236,6 +333,11 @@ export async function getRunTimeline(publicId: string) {
     reflection: latestEventData(events, 'run_reflection_declared'),
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
+    provider_events: events.filter((event) => event.source === PROVIDER_SOURCE),
+    provider_history: latestEventPayload(
+      events.filter((event) => event.source === SESSION_SOURCE),
+      'provider_history_collection_finished',
+    ),
     consistency_matrix: consistencyMatrix,
   }
 }
@@ -290,9 +392,14 @@ export async function deleteRunRecords(publicIds: string[]) {
 
 export type PassiveEventInput = z.infer<typeof passiveEventSchema>
 export type SemanticEventInput = z.infer<typeof semanticEventSchema>
+export type ProviderHistoryBatchInput = z.infer<
+  typeof providerHistoryBatchSchema
+>
 
 const PASSIVE_SOURCE = 'passive_file_harness'
 const SEMANTIC_SOURCE = 'mcp_semantic_logger'
+const PROVIDER_SOURCE = 'provider_history'
+const SESSION_SOURCE = 'skilltrace_session'
 
 async function findOrCreateEventRun(publicId: string, timestamp: Date) {
   return await Run.findOrCreateBy(
@@ -499,6 +606,17 @@ function latestEventData(events: any[], eventType: string) {
   )[0]
 
   return latest.payload?.data ?? {}
+}
+
+function latestEventPayload(events: any[], eventType: string) {
+  let matches = events.filter((event) => event.event_type === eventType)
+  if (matches.length === 0) return null
+
+  let latest = matches.toSorted(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  )[0]
+
+  return latest.payload ?? {}
 }
 
 function sessionStartTimes(events: any[]) {

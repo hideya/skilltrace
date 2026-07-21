@@ -1,0 +1,15 @@
+{"timestamp":"2026-07-20T10:00:05.000Z","type":"session_meta","payload":{"id":"codex-session-1","cwd":"/workspace/demo","cli_version":"0.143.0","source":"cli","base_instructions":"SESSION_META_PRIVATE_CANARY"}}
+{"timestamp":"2026-07-20T10:00:06.000Z","type":"turn_context","payload":{"cwd":"/workspace/demo","model":"gpt-5-codex","summary":"TURN_CONTEXT_PRIVATE_CANARY"}}
+{"timestamp":"2026-07-20T10:00:07.000Z","type":"response_item","payload":{"type":"message","role":"user","content":"USER_MESSAGE_PRIVATE_CANARY"}}
+{"timestamp":"2026-07-20T10:01:00.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call-read","arguments":"{\"cmd\":\"cat .agents/skills/type-fix/SKILL.md && sed -n '1,220p' .agents/skills/type-fix/references/checklist.md\",\"workdir\":\"/workspace/demo\"}"}}
+{"timestamp":"2026-07-20T10:01:01.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-read","output":"Process exited with code 0\nPRIVATE_TOOL_OUTPUT_CANARY"}}
+{"timestamp":"2026-07-20T10:02:00.000Z","type":"response_item","payload":{"type":"function_call","name":"mcp__skilltrace__skill_trace_context","call_id":"call-skilltrace","arguments":"{\"run_id\":\"demo-run\"}"}}
+{"timestamp":"2026-07-20T10:02:01.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-skilltrace","output":"PRIVATE_SKILLTRACE_OUTPUT_CANARY"}}
+{"timestamp":"2026-07-20T10:03:00.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call-check","arguments":"{\"cmd\":\"pnpm tsc\",\"workdir\":\"/workspace/demo\"}"}}
+{"timestamp":"2026-07-20T10:03:02.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-check","output":"Process exited with code 1\nPRIVATE_TYPECHECK_OUTPUT_CANARY"}}
+{"timestamp":"2026-07-20T10:03:10.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call-redirect","arguments":"{\"cmd\":\"cat README.md > .agents/skills/type-fix/SKILL.md\",\"workdir\":\"/workspace/demo\"}"}}
+{"timestamp":"2026-07-20T10:03:11.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-redirect","output":"Process exited with code 0\nPRIVATE_REDIRECTION_OUTPUT_CANARY"}}
+{"timestamp":"2026-07-20T10:03:20.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call-in-place","arguments":"{\"cmd\":\"sed -i 's/old/new/' .agents/skills/type-fix/SKILL.md\",\"workdir\":\"/workspace/demo\"}"}}
+{"timestamp":"2026-07-20T10:03:21.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-in-place","output":"Process exited with code 0\nPRIVATE_IN_PLACE_OUTPUT_CANARY"}}
+{"timestamp":"2026-07-20T10:04:00.000Z","type":"event_msg","payload":{"type":"turn_aborted","reason":"PRIVATE_ABORT_REASON_CANARY"}}
+{"timestamp":"2026-07-20T10:04:01.000Z","type":"response_item","payload":{"type":"reasoning","summary":["PRIVATE_REASONING_CANARY"],"encrypted_content":"PRIVATE_ENCRYPTED_CANARY"}}

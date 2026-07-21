@@ -20,6 +20,7 @@ import {
   type InstructionProfile,
   type InstructionSurfaceReport,
 } from './lib/instruction-profile'
+import { collectCodexProviderHistory } from './lib/provider-history/codex'
 import {
   assertNoArgs,
   parseDaemonLogsArgs,
@@ -272,9 +273,9 @@ async function start(args: string[]) {
 async function end(args: string[]) {
   let options = parseStopArgs(args, usage)
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+  let active = await getJson(server, '/api/sessions/status')
 
   if (options.discard) {
-    let active = await getJson(server, '/api/sessions/status')
     if (!active.session) {
       console.log('No active SkillTrace session to discard.')
       return
@@ -286,7 +287,11 @@ async function end(args: string[]) {
     }
   }
 
-  await cleanupActiveInjection(server)
+  if (active.session && !options.discard) {
+    await collectActiveProviderHistory(server, active.session)
+  }
+
+  if (active.session) await cleanupActiveInjection(server, active.session)
 
   let result = await postJson(server, '/api/sessions/end', {
     discard: options.discard === true,
@@ -643,6 +648,85 @@ async function postSessionEvent(
   }
 }
 
+async function collectActiveProviderHistory(server: string, session: any) {
+  let stoppedAt = new Date().toISOString()
+  let collection
+
+  try {
+    collection = await collectCodexProviderHistory({
+      runId: session.run_id,
+      targetRoot: session.target_root,
+      skillRoots: session.skill_roots ?? [],
+      startedAt: session.started_at,
+      stoppedAt,
+    })
+  } catch {
+    await recordProviderCollectionFailure(server, session.run_id, [
+      'collector_failed',
+    ])
+    console.warn('Warning: Codex provider history collection failed; stopping normally.')
+    return
+  }
+
+  if (collection.events.length > 0) {
+    try {
+      await postJson(server, '/api/provider-events', {
+        run_id: session.run_id,
+        events: collection.events,
+      })
+    } catch {
+      await recordProviderCollectionFailure(server, session.run_id, [
+        ...summaryWarnings(collection.summary),
+        'provider_event_submission_failed',
+      ])
+      console.warn('Warning: Codex provider events could not be stored; stopping normally.')
+      return
+    }
+  }
+
+  await postSessionEvent(
+    server,
+    session.run_id,
+    'provider_history_collection_finished',
+    collection.summary,
+  )
+  printProviderCollectionWarning(collection.status)
+}
+
+async function recordProviderCollectionFailure(
+  server: string,
+  runId: string,
+  warnings: string[],
+) {
+  await postSessionEvent(server, runId, 'provider_history_collection_finished', {
+    status: 'failed',
+    provider: 'codex',
+    evidence_event_count: 0,
+    execution_operation_count: 0,
+    ignored_circular_call_count: 0,
+    ignored_unsupported_call_count: 0,
+    warnings,
+  })
+}
+
+function summaryWarnings(summary: Record<string, unknown>) {
+  return Array.isArray(summary.warnings)
+    ? summary.warnings.filter((value): value is string => typeof value === 'string')
+    : []
+}
+
+function printProviderCollectionWarning(status: string) {
+  if (status === 'ambiguous') {
+    console.warn('Warning: Codex provider history was ambiguous; no events were imported.')
+  } else if (status === 'unsupported_format') {
+    console.warn('Warning: Codex provider history format is unsupported; no events were imported.')
+  } else if (status === 'possibly_incomplete') {
+    console.warn('Warning: Codex provider history may be incomplete.')
+  } else if (status === 'failed') {
+    console.warn('Warning: Codex provider history collection failed; stopping normally.')
+  }
+}
+
 function commandName() {
   return DEV_MODE ? 'skilltrace-dev' : 'skilltrace'
 }
@@ -678,23 +762,25 @@ async function endServerSession(server: string) {
   } catch {}
 }
 
-async function cleanupActiveInjection(server: string) {
-  let active
-  try {
-    active = await getJson(server, '/api/sessions/status')
-  } catch {
-    return
+async function cleanupActiveInjection(server: string, session?: any) {
+  if (!session) {
+    try {
+      let active = await getJson(server, '/api/sessions/status')
+      session = active.session
+    } catch {
+      return
+    }
   }
 
-  if (!active.session) return
+  if (!session) return
 
-  let injection = ejectInstructions(active.session.target_root, active.session.run_id)
+  let injection = ejectInstructions(session.target_root, session.run_id)
   if (!injection) return
 
   printInjectionResult('Instruction injection cleanup', injection)
-  await postSessionEvent(server, active.session.run_id, 'instruction_injection_finished', {
+  await postSessionEvent(server, session.run_id, 'instruction_injection_finished', {
     ...injection,
-    target_root: active.session.target_root,
+    target_root: session.target_root,
   })
 }
 

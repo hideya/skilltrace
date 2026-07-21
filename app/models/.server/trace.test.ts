@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   passiveEventSchema,
+  providerHistoryBatchSchema,
   runLifecycleResult,
   semanticEventSchema,
 } from './trace'
@@ -128,6 +129,119 @@ describe('semanticEventSchema', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+})
+
+describe('providerHistoryBatchSchema', () => {
+  test('accepts normalized provider events', () => {
+    let result = providerHistoryBatchSchema.safeParse({
+      run_id: 'run_manual_001',
+      events: [
+        {
+          event_type: 'skill_file_read',
+          timestamp: '2026-07-20T10:01:00Z',
+          skill: {
+            name: 'type-fix',
+            path: '.agents/skills/type-fix/SKILL.md',
+          },
+          payload: {
+            provider: 'codex',
+            provider_session_id: 'codex-session-1',
+            tool_name: 'exec_command',
+            tool_call_id: 'call-read',
+            outcome: 'success',
+            evidence_kind: 'shell_content_read',
+            command_classifier: 'cat',
+            confidence: 'medium',
+            match_confidence: 'high',
+            format: 'codex_rollout_jsonl_v1',
+            source_record_index: 3,
+            source_fingerprint: `sha256:${'a'.repeat(64)}`,
+          },
+        },
+      ],
+    })
+
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.events[0].payload.outcome).toBe('success')
+  })
+
+  test('rejects arbitrary provider event types', () => {
+    let result = providerHistoryBatchSchema.safeParse({
+      run_id: 'run_manual_001',
+      events: [
+        {
+          event_type: 'raw_transcript',
+          payload: {
+            provider: 'codex',
+            provider_session_id: 'codex-session-1',
+            tool_name: 'exec_command',
+            tool_call_id: 'call-read',
+            outcome: 'success',
+            command_classifier: 'cat',
+            match_confidence: 'high',
+            format: 'codex_rollout_jsonl_v1',
+            source_record_index: 3,
+            source_fingerprint: `sha256:${'a'.repeat(64)}`,
+          },
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+  })
+
+  test('requires non-content provenance for every event', () => {
+    let result = providerHistoryBatchSchema.safeParse({
+      run_id: 'run_manual_001',
+      events: [
+        {
+          event_type: 'execution_operation_observed',
+          payload: {
+            provider: 'codex',
+            provider_session_id: 'codex-session-1',
+            tool_name: 'exec_command',
+            tool_call_id: 'call-check',
+            outcome: 'success',
+            operation_kind: 'test',
+            command_classifier: 'pnpm_test',
+            match_confidence: 'high',
+            format: 'codex_rollout_jsonl_v1',
+            source_record_index: 3,
+          },
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+  })
+
+  test('rejects non-allowlisted private payload fields', () => {
+    let result = providerHistoryBatchSchema.safeParse({
+      run_id: 'run_manual_001',
+      events: [
+        {
+          event_type: 'execution_operation_observed',
+          payload: {
+            provider: 'codex',
+            provider_session_id: 'codex-session-1',
+            tool_name: 'exec_command',
+            tool_call_id: 'call-check',
+            outcome: 'success',
+            operation_kind: 'test',
+            command_classifier: 'pnpm_test',
+            match_confidence: 'high',
+            format: 'codex_rollout_jsonl_v1',
+            source_record_index: 3,
+            source_fingerprint: `sha256:${'a'.repeat(64)}`,
+            raw_command: 'PRIVATE_COMMAND_CANARY',
+          },
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
   })
 })
 

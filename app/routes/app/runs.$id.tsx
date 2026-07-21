@@ -8,6 +8,7 @@ import { Metric } from './+/run-detail-ui'
 import { ConsistencyPanel } from './+/run-consistency-panel'
 import { InstructionSurfacesPanel } from './+/run-instruction-surfaces-panel'
 import { RunContextPanel } from './+/run-context-panel'
+import { ProviderHistoryPanel } from './+/run-provider-history-panel'
 import { RunReflectionPanel } from './+/run-reflection-panel'
 import { RunSnapshotPanel } from './+/run-snapshot-panel'
 import { Timeline } from './+/run-timeline-panel'
@@ -72,7 +73,7 @@ export default function Page({ loaderData }: PageProps) {
         </Form> */}
       </header>
 
-      <section className="grid grid-cols-3 gap-4 md:grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr]">
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr]">
         <Metric label="Mode" value={traceModeLabel(timeline.trace_mode)} />
         <Metric label="Status" value={statusLabel(timeline.status)} />
         <Metric
@@ -82,6 +83,7 @@ export default function Page({ loaderData }: PageProps) {
         <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
+        <Metric label="Provider" value={timeline.provider_events.length} />
       </section>
 
       <RunContextPanel
@@ -105,7 +107,13 @@ export default function Page({ loaderData }: PageProps) {
       <section className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Timeline events={timeline.events} />
 
-        <aside className="flex min-h-0 flex-col lg:self-stretch">
+        <aside className="flex min-h-0 flex-col gap-4 lg:self-stretch">
+          {timeline.provider_history ? (
+            <ProviderHistoryPanel
+              events={timeline.provider_events}
+              summary={timeline.provider_history}
+            />
+          ) : null}
           <RunReflectionPanel reflection={timeline.reflection} />
         </aside>
       </section>
