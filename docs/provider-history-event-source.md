@@ -17,7 +17,7 @@ change independently of this design.
 Agent clients already persist session metadata, messages, tool calls, tool
 results, and file-related operations in local history files. SkillTrace can
 inspect the history for the session that overlaps an active run and extract a
-small, privacy-preserving set of skill evidence.
+small, privacy-preserving set of skill evidence and execution-context facts.
 
 The proposed source is:
 
@@ -41,6 +41,13 @@ the passive operating-system probe cannot understand. For example:
 This evidence is not a replacement for passive observation. It is another
 view of the same agent work, with different strengths and failure modes.
 
+Provider history also contains a useful mechanical middle between skill
+consultation and final reflection: searches, reads, edits, verification
+commands, tool outcomes, affected paths, and terminal state. SkillTrace should
+preserve a compact normalized form of those facts even when they do not
+participate in consistency checking yet. Future versions can then reinterpret
+past runs without retaining transcripts or raw tool data.
+
 ## Origin Of The Idea
 
 The [`ctxrs/ctx`](https://github.com/ctxrs/ctx) project demonstrated a useful
@@ -49,8 +56,8 @@ through a dedicated adapter, and normalize the result for retrieval.
 
 SkillTrace does not need to integrate with `ctx`, import its database, or copy
 its full-session model. The narrower opportunity is to learn from its source
-discovery and adapter approach while extracting only evidence relevant to a
-single SkillTrace run.
+discovery and adapter approach while extracting only evidence and normalized
+execution context relevant to a single SkillTrace run.
 
 ## Evidence Status
 
@@ -98,10 +105,14 @@ runs show that `unavailable` is a normal outcome, not an exceptional failure.
 
 - Add provider history as a fourth, independently displayed evidence source.
 - Corroborate skill and reference reads with provider-native tool records.
+- Preserve normalized operation, verification, and outcome facts for future
+  SkillTrace analysis.
+- Let future versions reinterpret stored facts without retaining provider
+  transcripts.
 - Work for passive-only runs without requiring agent cooperation.
 - Collect at the natural `skilltrace stop` boundary.
 - Keep provider-specific parsing outside the common trace model.
-- Retain only normalized evidence and minimal provenance.
+- Retain only normalized evidence, execution facts, and minimal provenance.
 - Make missing or ambiguous history visible without blocking normal use.
 - Preserve the distinction between observation, declaration, and reflection.
 
@@ -113,7 +124,8 @@ runs show that `unavailable` is a normal outcome, not an exceptional failure.
 - Depend on `ctx` or its SQLite database at runtime.
 - Treat provider history as an official or stable provider API.
 - Infer model intent from prose.
-- Capture every file touched by an agent in the first release.
+- Build a complete forensic record of every process and file operation.
+- Claim that operations following a skill read were caused by that skill.
 - Replace the passive probe, semantic MCP logger, or final reflection.
 - Make provider history mandatory for a passing run initially.
 - Parse browser profiles, telemetry, credentials, or unrelated application
@@ -141,6 +153,13 @@ truth. A provider can omit events, buffer writes, redact data, or change its
 serialization. Local files can also be edited after the fact.
 
 ## Proposed Event Model
+
+Provider history produces two related projections:
+
+1. consistency-oriented skill and reference evidence
+2. normalized execution-context facts that do not initially affect verdicts
+
+Both keep provider provenance. Neither stores conversational content.
 
 Evidence events use the existing trace envelope with a new `source`:
 
@@ -182,8 +201,59 @@ the event type also lets the consistency layer align records by normalized
 path without pretending the evidence was captured by the passive harness.
 
 Provider operations that only list, glob, or discover a path should not become
-read events. A future design may add a neutral discovery event if those records
-prove useful.
+read events. They may still become neutral execution-context operations.
+
+### Execution-Context Event Type
+
+Provider operations that help explain how the run proceeded should use:
+
+```text
+execution_operation_observed
+```
+
+A proposed event is:
+
+```json
+{
+  "source": "provider_history",
+  "event_type": "execution_operation_observed",
+  "timestamp": "2026-07-09T02:44:18.500Z",
+  "artifact_refs": ["src/example.ts"],
+  "payload": {
+    "provider": "claude_code",
+    "provider_session_id": "<provider-session-id>",
+    "tool_call_id": "<provider-tool-call-id>",
+    "operation_kind": "test",
+    "outcome": "success",
+    "exit_code": 0,
+    "duration_ms": 1840,
+    "classification_confidence": "high",
+    "format": "claude_code_jsonl_v1",
+    "source_record_index": 57
+  }
+}
+```
+
+Initial operation kinds should remain deliberately small:
+
+- `file_read`
+- `file_search`
+- `file_edit`
+- `test`
+- `typecheck`
+- `lint`
+- `build`
+- `artifact`
+- `other`
+
+An operation that reads a skill file can create a `skill_file_read` or
+`skill_reference_read` event instead of a duplicate generic read operation. The
+provider session and tool-call IDs still place that evidence in the operation
+sequence. Other normalized operations provide the surrounding execution
+context.
+
+`other` should be used sparingly. An unclassified arbitrary command is not
+useful merely because it can be stored.
 
 ### Collection Status Event
 
@@ -200,9 +270,17 @@ Its payload should contain only operational metadata:
   "status": "collected",
   "provider": "codex",
   "provider_session_id": "<provider-session-id>",
+  "provider_client_version": "0.143.0",
+  "provider_model": "<model-id>",
   "match_confidence": "high",
   "completeness": "explicit_complete",
   "evidence_event_count": 2,
+  "execution_operation_count": 8,
+  "operation_counts": {
+    "file_edit": 2,
+    "test": 1,
+    "other": 5
+  },
   "ignored_circular_call_count": 5,
   "ignored_unsupported_call_count": 3,
   "warnings": []
@@ -226,20 +304,22 @@ because it describes the collector rather than provider evidence.
 The collector should use an allowlist. It should never convert an arbitrary
 path mention into a file-read event.
 
-| Raw operation | Required checks | Normalized result | Confidence |
+| Raw operation | Required checks | Consistency evidence | Execution context |
 | --- | --- | --- | --- |
-| Structured file-read tool | Exact path, successful result | Skill or reference read | High |
-| Shell content-read command | Recognized reader, exact path, successful exit | Skill or reference read | Medium |
-| Shell content search | Exact file target, command semantics prove content access, successful exit | Skill or reference read | Medium |
-| Glob, list, or find | Exact path may be returned but content is not read | No read event | None |
-| Edit, write, replace, or patch | File was changed, but read influence is not proven | No v1 event | None |
-| Prompt or assistant prose mentioning a path | No mechanical operation | No event | None |
-| SkillTrace MCP call | Circular instrumentation record | No provider evidence | None |
-| Failed or cancelled tool call | Operation did not complete successfully | No positive read event | None |
+| Structured file-read tool | Exact path, correlated result | Successful skill or reference read | Normalized read and outcome |
+| Shell content-read command | Recognized reader, exact path, correlated exit | Successful skill or reference read | Normalized read and outcome |
+| Shell content search | Exact file target and proven content-search form | Successful skill or reference read when applicable | Search operation and outcome |
+| Glob, list, or find | Recognized discovery operation | No read evidence | Search operation, safe paths only |
+| Edit, write, replace, or patch | Structured target path or safely parsed operation | No read evidence | Edit operation, outcome, and safe paths |
+| Test, typecheck, lint, or build command | Recognized command family and correlated exit | No direct consistency evidence | Verification operation and outcome |
+| Artifact-producing operation | Recognized output path and successful result | No direct consistency evidence | Artifact operation and safe references |
+| Prompt or assistant prose mentioning a path | No mechanical operation | No evidence | No operation |
+| SkillTrace MCP call | Circular instrumentation record | No provider evidence | Excluded from agent-operation context |
+| Failed or cancelled tool call | Correlated failure or cancellation | No positive read evidence | Failed or aborted operation when safely classified |
 
 For shell commands, the normalized payload should retain a classifier such as
-`shell_content_read`, not the full command. Full command text may contain
-secrets, user data, or unrelated paths.
+`shell_content_read`, `test`, or `build`, not the full command. Full command
+text may contain secrets, user data, or unrelated paths.
 
 ## Circularity Rules
 
@@ -289,8 +369,8 @@ not produce that activity.
 
 | Outcome | Meaning | Collector behavior |
 | --- | --- | --- |
-| High-confidence match | Native ID, or exact run ID plus compatible directory and time | Import eligible evidence |
-| Medium-confidence match | One exact-directory candidate with strong interval overlap | Import evidence and retain confidence |
+| High-confidence match | Native ID, or exact run ID plus compatible directory and time | Import eligible evidence and execution context |
+| Medium-confidence match | One exact-directory candidate with strong interval overlap | Import eligible facts and retain confidence |
 | Ambiguous | Multiple candidates remain plausible | Import nothing and report ambiguity |
 | Unavailable | No supported candidate exists | Import nothing and report unavailable |
 | Conflict | Strong signals disagree | Import nothing and report ambiguity with a conflict code |
@@ -326,9 +406,11 @@ For a normal `skilltrace stop`:
 6. Parse a bounded snapshot through the provider adapter.
 7. Consider only records inside the run interval, with a small documented
    timestamp tolerance for session startup.
-8. Filter circular, failed, unsupported, and non-evidence operations.
-9. Normalize paths and build provider-history events.
-10. Post all normalized evidence and the collection summary as one logical
+8. Filter circular and unsupported records, then classify recognized
+   operations and outcomes.
+9. Normalize paths and build consistency evidence plus execution-context
+   events.
+10. Post all normalized events and the collection summary as one logical
     batch.
 11. Clean up injected instructions.
 12. Call `/api/sessions/end` and finish the run.
@@ -382,18 +464,22 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - provider name and format identifier
 - provider-native session and tool-call IDs
 - provider client version when available
+- provider model ID when available and safe
 - normalized event timestamp
 - normalized skill or reference path
+- normalized operation kind and repository-relative affected paths
 - tool name or shell-operation classifier
 - success, failure, abort, or completeness state
+- exit code and duration when structurally available
 - match and evidence confidence
 - non-content source fingerprint and record position
 - aggregate ignored-record counts and safe warning codes
 
 ### Inspected Transiently But Not Retained
 
-- tool arguments needed to extract an exact path
-- shell command text needed to classify a content read
+- tool arguments needed to extract exact paths and operation kind
+- shell command text needed to classify a read, edit, test, typecheck, lint,
+  build, or artifact operation
 - tool-result metadata needed to determine success
 - working directory needed for association and path normalization
 - provider timestamps and file metadata needed for matching and stability
@@ -406,7 +492,7 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - raw tool output
 - complete shell commands
 - file contents
-- patches, edits, or snapshots
+- patch bodies, edited content, or file snapshots
 - attachments or images
 - token counts and billing data
 - credentials, authentication state, cookies, or account data
@@ -434,7 +520,7 @@ The provider adapter should not invent a second path policy.
 
 ## Deduplication And Provenance
 
-Provider-history evidence must not be deduplicated against passive evidence.
+Provider-history events must not be deduplicated against passive evidence.
 The fact that two independent sources observed the same path is the point.
 
 Deduplication should occur only within `provider_history`. A proposed identity
@@ -458,12 +544,99 @@ provider, session ID, source filename basename, bounded byte length, and record
 position. It should not hash or persist prompt or response text merely to prove
 provenance.
 
-## Consistency And UI Policy
+## Recorded Execution Context
+
+The execution-context projection exists to preserve concrete facts now while
+allowing SkillTrace's interpretation to evolve later.
+
+Useful facts include:
+
+- provider, model, client, session, and completion metadata
+- operation categories and ordering
+- normalized repository-relative input and output paths
+- successful, failed, and aborted tool outcomes
+- exit codes and durations when structurally available
+- verification attempts such as tests, type checks, lints, and builds
+- files edited and artifacts produced, without retaining their contents
+- the interval between skill consultation and later operations
+
+The stored facts should remain granular enough to derive a new summary in a
+future version. SkillTrace should not store only a generated paragraph whose
+interpretation cannot later be revised.
+
+### Skill Influence Windows
+
+A future analysis can derive a tentative skill influence window:
+
+```text
+skill or reference read
+    -> subsequent normalized operations
+    -> verification attempts
+    -> affected files or artifacts
+    -> terminal state and reflection
+```
+
+This is temporal association, not proof of causation. Confidence can increase
+when passive observation, semantic declaration, provider operations, and
+reflection agree. The UI and exports must not say that a skill caused an
+operation or outcome merely because the operation followed a skill read.
+
+### Outcome Levels
+
+Provider history can contribute to several outcome levels:
+
+| Level | Example | Provider-history contribution |
+| --- | --- | --- |
+| Operation | A tool succeeded, failed, or was interrupted | Strong when result status is structured |
+| Verification | Test, typecheck, lint, or build exited successfully | Strong when command family and exit are validated |
+| Repository | Files were edited or artifacts produced | Moderate; paths are known but quality is not |
+| Task | Session completed, aborted, or remained incomplete | Provider-dependent |
+| Evaluated | Result was correct, useful, or accepted | Not established by history alone |
+
+Agent reflection and human judgment remain necessary for evaluated outcomes.
+
+## Run Interpretation And Consistency UI
+
+The existing Run reflection area is informative, but provider records should
+not be blended into the reflection as though the agent reported them. A future
+run-details view should group related interpretation while preserving source:
+
+```text
+Run interpretation
+
+Agent reflection
+  What the agent says influenced the work and how it evaluates the result
+
+Recorded execution context
+  What provider history mechanically recorded about operations and outcomes
+
+Evidence comparison
+  Where passive, semantic, reflection, and provider records align or disagree
+```
+
+This may be implemented by expanding or renaming the current Run reflection
+section. The exact visual hierarchy can follow the UI at implementation time;
+the architectural requirement is that agent interpretation and recorded
+activity remain visibly distinct.
+
+Provider-history summaries should be derived from normalized events. Useful
+initial summary rows include:
+
+- provider, model, client version, and completeness
+- skill and reference reads
+- counts and ordering of searches, reads, edits, and verification operations
+- verification outcomes and exit codes
+- repository-relative files affected and artifacts produced
+- failed or aborted operations
+- match, classification, and completeness confidence
+
+### Consistency Policy
 
 Provider history should initially be observational:
 
 - show it in the run timeline
 - add a provider-history column or detail to the consistency view
+- show a recorded execution-context summary beside agent reflection
 - show collection status and confidence
 - align provider paths with passive, semantic, and reflection paths
 - do not require provider history for `pass`
@@ -492,8 +665,8 @@ Provider collection is an enrichment step, not part of run durability.
 
 - `skilltrace stop` succeeds even when collection fails.
 - Parsing one provider must not scan unrelated provider data as a fallback.
-- Unknown formats fail closed: no evidence is emitted.
-- Ambiguous matching emits no evidence.
+- Unknown formats fail closed: no evidence or execution context is emitted.
+- Ambiguous matching emits no provider events.
 - Partial parsing emits only records that were fully validated and marks the
   collection `possibly_incomplete`.
 - Errors shown to the user use safe codes and paths with the home directory
@@ -515,9 +688,10 @@ but the responsibilities should remain separate:
 | Provider adapter | Parse provider records into a private intermediate form |
 | Circularity filter | Remove SkillTrace instrumentation records |
 | Evidence classifier | Recognize successful skill-file operations |
+| Operation classifier | Project safe execution and outcome facts |
 | Path normalizer | Align provider paths with SkillTrace paths |
 | Privacy projector | Produce the minimal normalized event payload |
-| Batch sender | Post evidence and collection summary before run finish |
+| Batch sender | Post evidence, execution context, and collection summary before run finish |
 
 Provider adapters should be pure where practical: bytes or parsed records in,
 normalized private records out. Discovery, filesystem access, matching, and HTTP
@@ -528,7 +702,8 @@ submission should remain outside the parser.
 ### Phase 0: Fixtures And Contracts
 
 - Create synthetic, sanitized fixtures for the observed provider shapes.
-- Define private adapter output and public normalized event schemas.
+- Define private adapter output, operation taxonomy, and public normalized event
+  schemas.
 - Add tests that fail if prompt, response, reasoning, command, or output fields
   escape the privacy projector.
 - Record observed provider client versions with the fixtures.
@@ -538,12 +713,14 @@ submission should remain outside the parser.
 - Implement discovery and adapters for Codex, Claude Code, and Gemini CLI.
 - Run against fixtures and explicitly selected local files.
 - Produce a local diagnostic report without changing SkillTrace runs.
-- Measure candidate ambiguity and extraction precision.
+- Measure candidate ambiguity, evidence precision, and operation-classification
+  coverage.
 
 ### Phase 2: Stop Integration
 
 - Invoke collection from `skilltrace stop` before `/api/sessions/end`.
 - Add a batch endpoint for normalized provider events.
+- Store normalized execution-context operations alongside skill evidence.
 - Store collection status for unavailable and unsupported cases.
 - Keep current run verdicts unchanged.
 
@@ -552,11 +729,16 @@ submission should remain outside the parser.
 - Display provider-history events and collection status.
 - Add the source to timeline filters and run-source summaries.
 - Add an observational provider column to the consistency matrix.
+- Add Recorded execution context beside Agent reflection under a broader Run
+  interpretation view.
+- Derive summaries from normalized facts instead of stored prose.
 - Explain evidence confidence and circular filtering in compact UI copy.
 
 ### Phase 4: Reliability Review
 
 - Compare provider evidence with passive events over real runs.
+- Review whether normalized operations illuminate skill influence and outcome
+  without implying causation.
 - Review missed, extra, ambiguous, and incomplete records.
 - Decide whether any provider evidence should affect verdicts.
 - Consider an explicit reconciliation command only if stop-time incompleteness is
@@ -569,6 +751,8 @@ submission should remain outside the parser.
 - parses supported session metadata
 - extracts direct file-read calls
 - classifies allowed shell content reads
+- classifies structured edits and recognized verification commands
+- projects safe paths, outcomes, exit codes, and durations
 - rejects listings and path mentions as reads
 - correlates tool call and result status
 - filters every known SkillTrace MCP naming form
@@ -592,6 +776,8 @@ submission should remain outside the parser.
 - normalized events contain no reasoning or thinking content
 - normalized events contain no raw tool output
 - normalized events contain no complete shell command
+- execution-context events contain no patch or edited content
+- repository paths are normalized and home-directory paths are redacted
 - warnings redact the home directory
 - logs do not serialize raw provider records
 
@@ -602,7 +788,7 @@ submission should remain outside the parser.
 - adapter error still finishes the run
 - server error during provider submission still finishes the run with a warning
 - discard skips provider discovery and parsing
-- repeated stop does not duplicate provider evidence
+- repeated stop does not duplicate provider evidence or execution context
 
 ## Acceptance Criteria For The First Integrated Release
 
@@ -610,6 +796,10 @@ submission should remain outside the parser.
   calls.
 - Direct successful skill and reference reads become normalized
   `provider_history` events.
+- Recognized operations become normalized execution-context facts with safe
+  categories, outcomes, and paths.
+- Run details can derive Recorded execution context separately from Agent
+  reflection.
 - Circular SkillTrace calls never become provider evidence.
 - No prompt, response, reasoning, raw output, full command, or file content is
   stored in SkillTrace.
@@ -627,7 +817,13 @@ submission should remain outside the parser.
 - Should collection status be represented only as a trace event, or also in the
   run bag for faster diagnostics?
 - Should structured file-edit tools produce a separate future touched-file
-  event?
+  event or remain execution operations?
+- Which operation taxonomy is small enough to stay stable but expressive enough
+  for future analysis?
+- How much operation detail should be retained before event volume becomes
+  distracting?
+- Should repeated low-level operations be stored individually or summarized
+  after preserving verification and failure transitions?
 - How should provider evidence for global skills outside the target root be
   displayed without exposing the user's home path?
 - Should low-confidence shell evidence be stored as diagnostic evidence or

@@ -68,20 +68,21 @@ snapshots, and test failures must follow the same retention boundary.
 | Event timestamp | record or tool timestamp | Retain | Timeline placement and run slicing |
 | Working directory | absolute `cwd`, project-root mapping | Inspect only | Session association and path normalization |
 | Provider and client version | provider name, CLI version | Retain | Adapter diagnostics and format drift analysis |
-| Model ID | provider model name | Ignore initially | Already available through other run context; not skill evidence |
-| Tool name | `Read`, `read_file`, `exec_command` | Retain | Evidence classification |
-| Tool arguments | path or command object | Inspect only | Extract exact skill paths and classify operations |
-| Tool status | success, error, interrupted, exit status | Retain as normalized outcome | Reject failed positive evidence |
-| Tool output | command stdout, file contents, result text | Inspect status envelope only | Never retain content |
+| Model ID | provider model name | Retain when structurally available | Recorded execution context and provider comparison |
+| Tool name | `Read`, `read_file`, `exec_command` | Retain | Evidence and operation classification |
+| Tool arguments | path or command object | Inspect only | Extract safe paths and classify operations |
+| Tool status | success, error, interrupted, exit status | Retain as normalized outcome | Evidence validation and execution outcome |
+| Tool output | command stdout, file contents, result text | Inspect structured or wrapper status and exit metadata only | Never retain content |
 | Prompt text | user messages, last prompt | Ignore | Not required for evidence |
 | Assistant response | model messages and summaries | Ignore | Not required for evidence |
 | Reasoning | thinking, encrypted reasoning, summaries | Ignore | Private and unnecessary |
 | Token usage | input, output, cached, reasoning tokens | Ignore | Unrelated to skill evidence |
-| Git metadata | branch, commit, origin | Ignore initially | SkillTrace already records its own run snapshot |
-| File snapshot or patch | backups, structured patches, apply-patch payload | Ignore initially | Indicates touched files, not necessarily guidance read |
+| Git metadata | branch, commit, origin | Inspect only | Cross-check the SkillTrace run snapshot; do not duplicate provider values initially |
+| Structured edit target | `file_path`, replace target, patch target | Retain normalized path and outcome | Recorded execution context, not proof of prior influence |
+| Patch or snapshot content | backups, structured patches, old and new strings | Ignore | Private content is unnecessary once safe target paths are projected |
 | Attachments | images, pasted text, attachment metadata | Ignore | Private and unrelated |
 | Conversation title | thread name, generated title, preview | Ignore | Often derived from prompt text |
-| Permissions and sandbox state | approval policy, permission mode | Ignore | Operational provider context, not skill evidence |
+| Permissions and sandbox state | approval policy, permission mode | Ignore initially | Potential future execution context, but not yet normalized consistently |
 | Telemetry and application logs | diagnostics, failed telemetry events | Never read | Not provider-session evidence |
 | Authentication and account state | tokens, cookies, account files | Never read | Sensitive and unnecessary |
 
@@ -144,8 +145,8 @@ must correlate them through the provider call ID where available.
 
 Positive evidence requires a successful result. Failed, cancelled,
 interrupted, or missing results should not produce a successful file-read
-event. A future diagnostic event may describe failed attempts, but it is not
-part of the first release.
+event. A safely classified operation may still become execution context with a
+failed or aborted outcome.
 
 ### Circular SkillTrace Calls
 
@@ -163,6 +164,58 @@ Their arguments can contain:
 
 These values are copies of SkillTrace instrumentation. They may help associate
 a provider session with a run, but they do not independently prove a read.
+
+## Common Execution-Context Projection
+
+The adapter should project recognized provider operations into a small shared
+taxonomy in addition to extracting consistency evidence.
+
+| Operation kind | Typical raw operations | Safe retained facts |
+| --- | --- | --- |
+| `file_read` | `Read`, `read_file`, content-reading shell command | Timestamp, normalized path, outcome, provider IDs |
+| `file_search` | content search, glob, directory search | Timestamp, safe search scope or returned paths, outcome |
+| `file_edit` | edit, write, replace, apply-patch target | Timestamp, normalized target paths, outcome |
+| `test` | recognized test runner command | Timestamp, outcome, exit code, duration |
+| `typecheck` | recognized compiler or typecheck command | Timestamp, outcome, exit code, duration |
+| `lint` | recognized lint command | Timestamp, outcome, exit code, duration |
+| `build` | recognized build command | Timestamp, outcome, exit code, duration |
+| `artifact` | structured output or generated artifact | Timestamp, normalized artifact references, outcome |
+| `other` | useful structured operation outside the taxonomy | Timestamp, safe classifier, outcome |
+
+The classification must come from tool structure or an allowlisted command
+family, not prompt or response prose. The full command, arguments, output,
+patch, and file contents remain private.
+
+Repository-relative paths can be retained for execution context even when they
+are not skill files. Absolute paths outside approved roots should be redacted or
+omitted.
+
+### Verification Outcomes
+
+Test, typecheck, lint, and build records are especially useful because they
+connect an operation to a mechanical result. A normalized verification fact
+may retain:
+
+- operation kind
+- start and finish timestamps or duration
+- success, failure, or aborted outcome
+- numeric exit code when structurally available
+- safe repository-relative paths or artifact references
+- provider session and tool-call provenance
+- classification confidence
+
+It must not retain the command line, test names derived only from output,
+stdout, stderr, stack traces, or generated summaries.
+
+### Influence And Outcome Limits
+
+An edit after a skill read is part of the execution sequence, but history alone
+does not prove the skill caused that edit. A successful test proves only that
+the recorded verification command succeeded, not that the user's task was
+correctly solved.
+
+These facts support later analysis when combined with passive observation,
+semantic declarations, reflection, Git state, and human judgment.
 
 ## Provider Summary
 
@@ -273,7 +326,7 @@ timestamp
 | `timestamp` | Retain | Session timing |
 | `cwd` | Inspect only | Match target root and normalize paths |
 | `cli_version` | Retain | Adapter diagnostics |
-| `source`, `originator`, `thread_source`, `model_provider` | Retain selectively | Safe provider-runtime diagnostics |
+| `source`, `originator`, `thread_source`, `model_provider` | Retain selectively | Provider-runtime execution context |
 | `git` | Ignore | SkillTrace already captures run Git state |
 | `base_instructions` | Ignore | Large, private, and irrelevant to file evidence |
 | `context_window`, `history_mode` | Ignore | Provider operation metadata, not evidence |
@@ -288,7 +341,8 @@ personality, collaboration mode, and summary data.
 | --- | --- | --- |
 | `turn_id` | Inspect only or retain when needed | Correlate multi-turn records |
 | `cwd` | Inspect only | Confirm directory for resumed turns |
-| model and effort fields | Ignore initially | Not skill evidence |
+| model | Retain when structurally available | Recorded execution context |
+| effort and runtime-tuning fields | Ignore initially | Provider-specific and not yet normalized |
 | summary, personality, permissions, workspace roots | Ignore | Private or unnecessary context |
 
 The adapter must not treat a resumed turn as a new session automatically. It
@@ -318,11 +372,15 @@ Observed payload keys included `name`, `namespace`, `call_id`, `arguments`,
 | `function_call_output.output` | Ignore | May contain complete files, command output, and secrets |
 | `message.content` | Ignore | Prompt or response content |
 | `reasoning`, `summary`, `encrypted_content` | Ignore | Private model reasoning and summaries |
-| patch and custom-tool payloads | Ignore initially | File-change evidence is outside v1 |
+| patch and custom-tool target paths | Inspect and project selectively | Normalize file-edit context without patch content |
 
 In the inspected SkillTrace runs, Codex skill reads appeared in successful
 `exec_command` calls using `cat` and `sed`. Directory listings and `rg --files`
 also mentioned skill paths, but they should not become read evidence.
+
+Recognized shell commands can also provide test, typecheck, lint, build, search,
+and artifact operations. Their classification and outcome may be retained as
+execution context, but not their full command or output.
 
 ### `event_msg`
 
@@ -344,7 +402,8 @@ Observed event payload types included:
 | `turn_aborted` | Retain as normalized completeness | `explicit_aborted` |
 | `mcp_tool_call_end` | Inspect only | Result correlation if needed |
 | message events | Ignore | Duplicate conversational content |
-| token and patch events | Ignore initially | Not skill-read evidence |
+| token events | Ignore | Not required for execution-context goals |
+| patch events | Inspect only | Correlate a structured edit outcome without retaining patch data |
 
 A single rollout can contain multiple turns and more than one terminal-looking
 event. Completion applies to the imported run slice, not permanently to the
@@ -458,7 +517,8 @@ Content blocks included:
 | `tool_result.is_error` | Retain as normalized outcome | Reject failed reads |
 | `tool_result.content` | Ignore | May contain full file or command output |
 | `text`, `thinking` | Ignore | Conversation and reasoning content |
-| model, usage, diagnostics | Ignore initially | Not skill-read evidence |
+| model | Retain when structurally available | Recorded execution context |
+| usage and diagnostics | Ignore | Not required for skill or outcome analysis |
 
 ### Tool Uses
 
@@ -478,7 +538,7 @@ Relevant observed operations included:
 | --- | --- |
 | `Read` | Direct file-read evidence after successful result |
 | `Bash` | Parse through the shell command classifier |
-| `Edit`, `Write` | Touched-file candidates, ignored for v1 read evidence |
+| `Edit`, `Write` | File-edit execution context; target path and outcome only |
 | `ToolSearch` | Tool discovery, not file evidence |
 | SkillTrace MCP tools | Circular; association hint only |
 
@@ -491,9 +551,10 @@ Some records included `toolUseResult` with fields such as stdout, stderr,
 matches, file paths, structured patches, interruption state, and user-modified
 state.
 
-The adapter should use only the minimum result status needed to validate the
-operation. It must not retain stdout, stderr, patches, old or new strings, file
-contents, or search matches.
+The adapter should use only the minimum result status, exit code, timing, and
+safe target paths needed to validate and classify the operation. It must not
+retain stdout, stderr, patches, old or new strings, file contents, or search
+matches.
 
 ### Non-Message Records
 
@@ -566,7 +627,7 @@ applications such as Antigravity. They are outside the Gemini CLI chat source.
 | `tmp/<project-key>/.project_root` | Inspect only | Maps a project key to the run target root |
 | `tmp/<project-key>/chats/session-*.jsonl` | Primary source | Contains session header, message records, and structured tool calls |
 | `tmp/<project-key>/logs.json` | Never read | Diagnostic log, not canonical chat evidence |
-| `history/<project-key>/` | Ignore initially | Checkpoint or shadow Git data is touched-file material, not required for read evidence |
+| `history/<project-key>/` | Ignore initially | Checkpoint or shadow Git data duplicates richer Git and structured-operation evidence |
 | account and configuration files | Never read | Sensitive and unnecessary |
 | Antigravity stores and browser profiles | Never read | Different product and substantial privacy exposure |
 
@@ -647,7 +708,7 @@ should identify its own adapter-format version separately.
 | `content` | Ignore | Prompt, response, or informational text |
 | `thoughts` | Ignore | Reasoning content |
 | `tokens` | Ignore | Usage information |
-| `model` | Ignore initially | Not skill evidence |
+| `model` | Retain when structurally available | Recorded execution context |
 
 ### Tool Calls
 
@@ -682,8 +743,8 @@ Relevant observed operations included:
 | --- | --- |
 | `read_file` | Direct high-confidence read after successful status |
 | `run_shell_command` | Parse through the shell command classifier |
-| `glob` | Discovery only, not a content read |
-| `replace` | Touched-file candidate, ignored for v1 read evidence |
+| `glob` | File-search execution context, not content-read evidence |
+| `replace` | File-edit execution context; target path and outcome only |
 | `update_topic` | Conversation metadata, not evidence |
 | `mcp_skilltrace_*` | Circular; association hint only |
 
@@ -727,16 +788,22 @@ successful final tool call is not itself proof that the session has ended.
 
 ## Normalization Mapping
 
-| Provider raw record | Required validation | SkillTrace event | Evidence confidence |
+| Provider raw record | Required validation | Consistency event | Execution-context event |
 | --- | --- | --- | --- |
-| Codex `exec_command` with `cat` or printing `sed`, exact path, successful result | Parse command operation and correlate output status | `skill_file_read` or `skill_reference_read` | Medium |
-| Codex `rg` or `grep` with an exact file operand | Prove content-search form, reject `--files` and listing forms | Matching read event | Medium |
-| Claude `Read` with `file_path` and non-error result | Correlate `tool_use.id` and `tool_result.tool_use_id` | Matching read event | High |
-| Claude `Bash` content-read command | Apply shared shell classifier and result check | Matching read event | Medium |
-| Gemini `read_file` with `file_path` and `status: success` | Deduplicate by tool ID | Matching read event | High |
-| Gemini `run_shell_command` content-read command | Apply shared shell classifier and status check | Matching read event | Medium |
-| Any provider listing, glob, path mention, edit, or write | No read proof | No v1 event | None |
-| Any SkillTrace MCP tool | Circular instrumentation | No provider evidence | None |
+| Codex `exec_command` with `cat` or printing `sed`, exact path, successful result | Parse command operation and correlate output status | `skill_file_read` or `skill_reference_read` when path qualifies | Read sequence represented by the evidence event |
+| Codex `rg` or `grep` with an exact file operand | Prove content-search form, reject `--files` and listing forms | Matching read event when a skill file qualifies | `file_search` for other safe scopes |
+| Codex recognized test, typecheck, lint, or build command | Validate command family and correlated exit | None | `execution_operation_observed` with operation kind and outcome |
+| Codex apply-patch or structured edit target | Extract target path without retaining patch | None | `file_edit` operation |
+| Claude `Read` with `file_path` and non-error result | Correlate `tool_use.id` and `tool_result.tool_use_id` | Matching read event when path qualifies | Read sequence represented by the evidence event |
+| Claude `Bash` classified command | Apply shared shell classifier and result check | Matching read event when applicable | Classified search, verification, build, or artifact operation |
+| Claude `Edit` or `Write` | Extract structured target path and result | None | `file_edit` operation |
+| Gemini `read_file` with `file_path` and `status: success` | Deduplicate by tool ID | Matching read event when path qualifies | Read sequence represented by the evidence event |
+| Gemini `run_shell_command` classified command | Apply shared shell classifier and status check | Matching read event when applicable | Classified search, verification, build, or artifact operation |
+| Gemini `replace` | Extract structured target path and status | None | `file_edit` operation |
+| Provider listing, glob, or find | Recognize operation and safe scope | No read event | `file_search` when useful and safely bounded |
+| Failed classified operation | Correlate failure, abort, or interruption | No positive read event | Same operation kind with failed or aborted outcome |
+| Arbitrary path mention | No mechanical operation | No event | No event |
+| Any SkillTrace MCP tool | Circular instrumentation | No provider evidence | No execution operation |
 
 ## Data Explicitly Not Used In Version 1
 
@@ -754,17 +821,19 @@ outside the first implementation:
 SkillTrace already has explicit semantic and reflection channels. Mining prose
 would add privacy risk and weak, provider-dependent inference.
 
-### General Touched Files
+### Raw Change Detail
 
-- edited source files
-- patches and replacements
 - file-history snapshots
 - checkpoint repositories
-- apply-patch records
+- patch bodies
+- replacement old and new strings
+- full edited file contents
+- backup files
 
-These may eventually complement SkillTrace's Git snapshots, but they are a
-separate feature from skill-guidance evidence. A write does not prove that the
-file influenced the agent before it was changed.
+Structured edit target paths and outcomes may be retained as normalized
+execution context. The underlying change content remains excluded. A write does
+not prove that a file influenced the agent before it was changed, and provider
+snapshots should not duplicate SkillTrace's Git evidence.
 
 ### Tool Output And File Contents
 
@@ -774,9 +843,10 @@ file influenced the agent before it was changed.
 - directory listings
 - patch bodies
 
-The file path and successful operation are enough for the proposed evidence.
-Retaining content would make SkillTrace a transcript and source-code archive,
-which is explicitly not the goal.
+The safe path, operation category, and normalized outcome are enough for the
+proposed evidence and execution context. Retaining content would make
+SkillTrace a transcript and source-code archive, which is explicitly not the
+goal.
 
 ### Usage And Runtime Diagnostics
 
@@ -784,11 +854,13 @@ which is explicitly not the goal.
 - cache usage
 - context windows
 - model stop sequences
-- performance duration beyond a safe final activity timestamp
+- per-message generation latency and provider-internal timing
 - telemetry, internal logs, and crash data
 
-These do not improve skill-read attribution and can be added later only through
-a separately justified feature.
+These values are not yet normalized consistently across providers. They can be
+added later through a separately justified efficiency or cost-analysis feature.
+Operation duration and final activity time remain eligible execution-context
+facts when they are structurally reliable.
 
 ### Security And Account Data
 
@@ -819,7 +891,20 @@ type ProviderOperation = {
   toolCallId?: string
   toolName?: string
   input?: unknown
+  operationKind?:
+    | 'file_read'
+    | 'file_search'
+    | 'file_edit'
+    | 'test'
+    | 'typecheck'
+    | 'lint'
+    | 'build'
+    | 'artifact'
+    | 'other'
+  paths?: string[]
   outcome?: 'success' | 'failed' | 'aborted' | 'unknown'
+  exitCode?: number
+  durationMs?: number
   terminal?: 'complete' | 'aborted'
   sidechain?: boolean
 }
@@ -868,6 +953,8 @@ Fixtures should contain only the minimum records needed to test:
 - one reference-file read
 - one failed read
 - one listing or glob that must not become a read
+- one structured edit whose target becomes context without patch content
+- one successful and one failed verification command
 - one circular SkillTrace MCP call
 - one terminal or final-update signal
 - one duplicate snapshot copy where the provider format can produce it
