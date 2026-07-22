@@ -1,19 +1,22 @@
 # Provider History Formats
 
-Status: observed field guide for a planned feature, not a provider contract
+Status: observed field guide for the implemented Codex first cut and planned
+provider expansion; not a provider contract
 
 This document records the local provider-history formats inspected while
-planning SkillTrace's proposed `provider_history` event source. It describes
-what can be retrieved, how SkillTrace may use it, what the parser may inspect
-transiently, and what SkillTrace should intentionally ignore.
+designing and implementing SkillTrace's `provider_history` event source. It
+describes what can be retrieved, how SkillTrace may use it, what the parser may
+inspect transiently, and what SkillTrace should intentionally ignore.
 
 The architectural proposal is in
 [Provider History Event Source](./provider-history-event-source.md).
 
 ## Scope And Date
 
-These observations were made on one macOS machine on 2026-07-21. The matching
-SkillTrace runs occurred between 2026-06-28 and 2026-07-09.
+The initial observations were made on one macOS machine on 2026-07-21. The
+matching SkillTrace runs occurred between 2026-06-28 and 2026-07-09. A follow-up
+inspection on 2026-07-23 examined a newer Codex run and the current `ctx` Codex
+adapter without broadening the machine or platform sample.
 
 Observed provider versions included:
 
@@ -381,6 +384,50 @@ also mentioned skill paths, but they should not become read evidence.
 Recognized shell commands can also provide test, typecheck, lint, build, search,
 and artifact operations. Their classification and outcome may be retained as
 execution context, but not their full command or output.
+
+### Observed Tool-Envelope Drift
+
+A follow-up inspection on 2026-07-23 compared two Codex CLI `0.143.0` rollout
+files created through the same client and originator. A run using GPT-5.5
+recorded agent operations as direct `function_call` items such as
+`exec_command`. A later run using GPT-5.6 recorded most operations inside a
+`custom_tool_call` named `exec`; its `input` was a JavaScript program that called
+nested `tools.*` functions. A direct `function_call` for `wait` was also present.
+
+This is evidence of envelope variation associated with the model change, not
+proof that the model alone caused it. A simultaneous provider-side tool-protocol
+change remains possible.
+
+The current Codex first cut matched the later session successfully but emitted
+no normalized provider events for its nested operations. It reported eight
+unsupported calls. Static inspection of the program-like inputs recovered the
+following operations without reading prompt, response, reasoning, or tool-output
+content:
+
+- two skill or reference content-read commands
+- two typecheck executions, first failing and then succeeding
+- one patch application
+- five nested SkillTrace MCP calls that should remain circular evidence
+
+This result separates two health questions that must remain visible:
+
+- **Collection health:** the correct provider session and records were found.
+- **Extraction health:** the adapter understood enough of those records to emit
+  normalized facts.
+
+Collection succeeded in this case; extraction coverage did not. The other
+SkillTrace streams continued to describe the run, so the missing provider
+projection did not invalidate the trace. It did, however, remove provider-unique
+operation and outcome detail.
+
+The adapter should therefore dispatch by observed envelope shape rather than by
+model name. At minimum it should distinguish direct calls, program-like custom
+calls, and unknown response items. A custom program should first produce safe
+outer-call provenance, then optionally produce nested derived operations through
+bounded static analysis. Each derived operation should retain the outer line and
+call ID, an extraction method such as `static_js`, and confidence. Failure to
+decode the nested program must remain a partial-extraction diagnostic, not an
+empty successful import.
 
 ### `event_msg`
 

@@ -81,6 +81,47 @@ its full-session model. The narrower opportunity is to learn from its source
 discovery and adapter approach while extracting only evidence and normalized
 execution context relevant to a single SkillTrace run.
 
+### Follow-Up Comparison With `ctx`
+
+A follow-up source review on 2026-07-23 examined how `ctx` handles Codex format
+variation. Its Codex adapter does not select behavior from model names. It reads
+provider JSON as loose values, recognizes a bounded family of response-item
+shapes, correlates calls and results by `call_id`, and accepts several equivalent
+fields such as `arguments`, `input`, `action`, and `execution`.
+
+The adapter explicitly treats `function_call` and `custom_tool_call` as tool-call
+envelopes. Unknown parsed response-item subtypes fall back to a notice, while a
+fast line filter and the default import policy omit records outside the useful
+search projection. Successful tool output is normally skipped, failed output is
+retained only as a bounded diagnostic preview, and the original provider file is
+referenced rather than copied into the normalized store.
+
+This provides useful tolerance for the newer Codex shape observed below: a
+`custom_tool_call` named `exec` can still become one coarse tool-call event. The
+current `ctx` adapter does not appear to parse the JavaScript program inside that
+call into its nested `tools.*` operations, however. That tradeoff fits a session
+search system better than it fits SkillTrace's evidence reconstruction goals.
+
+The comparison refines the intended SkillTrace adapter design:
+
+- select adapters by provider source format, never by model name
+- parse harmless additive fields and known field aliases without rejecting the
+  record
+- recognize an ordered family of envelope shapes rather than one exact schema
+- always preserve safe outer-call provenance before attempting deeper extraction
+- treat nested-program extraction as a best-effort derived projection with its
+  own method and confidence
+- distinguish collected, recognized, partially extracted, unsupported, and
+  intentionally ignored records in collection diagnostics
+- retain a loss-visible unknown fallback instead of silently equating an
+  extraction gap with an empty provider session
+
+The relevant `ctx` implementation is in its
+[`events.rs`](https://github.com/ctxrs/ctx/blob/main/crates/ctx-history-capture/src/provider/codex/events.rs),
+[`session.rs`](https://github.com/ctxrs/ctx/blob/main/crates/ctx-history-capture/src/provider/codex/session.rs),
+and
+[`provider-import-policy.md`](https://github.com/ctxrs/ctx/blob/main/docs/provider-import-policy.md).
+
 ## Evidence Status
 
 The design is based on a read-only inspection of this Mac and the active
@@ -89,19 +130,19 @@ were not used in the analysis.
 
 ### Observed Results
 
-| Observation | Result |
-| --- | --- |
-| Finished runs in the development database | 21 |
-| Trace modes | 19 full, 1 passive plus reflection, 1 passive only |
-| Runs associated with local provider sessions | 17 |
-| Associated Codex sessions | 9 |
-| Associated Claude Code sessions | 4 |
-| Associated Gemini CLI sessions | 4 |
-| Associations containing a SkillTrace run ID | 15 |
-| Associations recovered from time and working directory without a run ID | 2 |
-| Runs without a matching record in the inspected provider stores | 4 |
-| Per-run passive skill-path observations in associated sessions | 32 |
-| Passive path observations also found in non-SkillTrace provider tool input | 32 |
+| Observation                                                                | Result                                             |
+| -------------------------------------------------------------------------- | -------------------------------------------------- |
+| Finished runs in the development database                                  | 21                                                 |
+| Trace modes                                                                | 19 full, 1 passive plus reflection, 1 passive only |
+| Runs associated with local provider sessions                               | 17                                                 |
+| Associated Codex sessions                                                  | 9                                                  |
+| Associated Claude Code sessions                                            | 4                                                  |
+| Associated Gemini CLI sessions                                             | 4                                                  |
+| Associations containing a SkillTrace run ID                                | 15                                                 |
+| Associations recovered from time and working directory without a run ID    | 2                                                  |
+| Runs without a matching record in the inspected provider stores            | 4                                                  |
+| Per-run passive skill-path observations in associated sessions             | 32                                                 |
+| Passive path observations also found in non-SkillTrace provider tool input | 32                                                 |
 
 For all 17 associated runs, the provider's last persisted timestamp preceded
 the SkillTrace finish timestamp. The median margin was about 14 seconds. Sixteen
@@ -157,12 +198,12 @@ runs show that `unavailable` is a normal outcome, not an exceptional failure.
 
 SkillTrace currently compares evidence with different origins:
 
-| Evidence | Origin | Primary strength | Primary weakness |
-| --- | --- | --- | --- |
-| Passive file access | Operating-system probe | Independent mechanical observation | Weak intent and operation semantics |
-| Semantic MCP events | Agent declaration during work | Explicit skill lifecycle and intent | Cooperative self-report |
-| Final reflection | Agent declaration after work | Attribution, omissions, and uncertainty | Retrospective self-report |
-| Provider history | Agent client's persisted operation record | Structured tool and outcome details | Provider-owned, local, and format-unstable |
+| Evidence            | Origin                                    | Primary strength                        | Primary weakness                           |
+| ------------------- | ----------------------------------------- | --------------------------------------- | ------------------------------------------ |
+| Passive file access | Operating-system probe                    | Independent mechanical observation      | Weak intent and operation semantics        |
+| Semantic MCP events | Agent declaration during work             | Explicit skill lifecycle and intent     | Cooperative self-report                    |
+| Final reflection    | Agent declaration after work              | Attribution, omissions, and uncertainty | Retrospective self-report                  |
+| Provider history    | Agent client's persisted operation record | Structured tool and outcome details     | Provider-owned, local, and format-unstable |
 
 Provider history is independent of SkillTrace instrumentation when it records
 an ordinary provider tool such as `Read`, `read_file`, or `exec_command`.
@@ -326,18 +367,18 @@ because it describes the collector rather than provider evidence.
 The collector should use an allowlist. It should never convert an arbitrary
 path mention into a file-read event.
 
-| Raw operation | Required checks | Consistency evidence | Execution context |
-| --- | --- | --- | --- |
-| Structured file-read tool | Exact path, correlated result | Successful skill or reference read | Normalized read and outcome |
-| Shell content-read command | Recognized reader, exact path, correlated exit | Successful skill or reference read | Normalized read and outcome |
-| Shell content search | Exact file target and proven content-search form | Successful skill or reference read when applicable | Search operation and outcome |
-| Glob, list, or find | Recognized discovery operation | No read evidence | Search operation, safe paths only |
-| Edit, write, replace, or patch | Structured target path or safely parsed operation | No read evidence | Edit operation, outcome, and safe paths |
-| Test, typecheck, lint, or build command | Recognized command family and correlated exit | No direct consistency evidence | Verification operation and outcome |
-| Artifact-producing operation | Recognized output path and successful result | No direct consistency evidence | Artifact operation and safe references |
-| Prompt or assistant prose mentioning a path | No mechanical operation | No evidence | No operation |
-| SkillTrace MCP call | Circular instrumentation record | No provider evidence | Excluded from agent-operation context |
-| Failed or cancelled tool call | Correlated failure or cancellation | No positive read evidence | Failed or aborted operation when safely classified |
+| Raw operation                               | Required checks                                   | Consistency evidence                               | Execution context                                  |
+| ------------------------------------------- | ------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| Structured file-read tool                   | Exact path, correlated result                     | Successful skill or reference read                 | Normalized read and outcome                        |
+| Shell content-read command                  | Recognized reader, exact path, correlated exit    | Successful skill or reference read                 | Normalized read and outcome                        |
+| Shell content search                        | Exact file target and proven content-search form  | Successful skill or reference read when applicable | Search operation and outcome                       |
+| Glob, list, or find                         | Recognized discovery operation                    | No read evidence                                   | Search operation, safe paths only                  |
+| Edit, write, replace, or patch              | Structured target path or safely parsed operation | No read evidence                                   | Edit operation, outcome, and safe paths            |
+| Test, typecheck, lint, or build command     | Recognized command family and correlated exit     | No direct consistency evidence                     | Verification operation and outcome                 |
+| Artifact-producing operation                | Recognized output path and successful result      | No direct consistency evidence                     | Artifact operation and safe references             |
+| Prompt or assistant prose mentioning a path | No mechanical operation                           | No evidence                                        | No operation                                       |
+| SkillTrace MCP call                         | Circular instrumentation record                   | No provider evidence                               | Excluded from agent-operation context              |
+| Failed or cancelled tool call               | Correlated failure or cancellation                | No positive read evidence                          | Failed or aborted operation when safely classified |
 
 For shell commands, the normalized payload should retain a classifier such as
 `shell_content_read`, `test`, or `build`, not the full command. Full command
@@ -389,13 +430,13 @@ not produce that activity.
 
 ### Matching Outcomes
 
-| Outcome | Meaning | Collector behavior |
-| --- | --- | --- |
-| High-confidence match | Native ID, or exact run ID plus compatible directory and time | Import eligible evidence and execution context |
-| Medium-confidence match | One exact-directory candidate with strong interval overlap | Import eligible facts and retain confidence |
-| Ambiguous | Multiple candidates remain plausible | Import nothing and report ambiguity |
-| Unavailable | No supported candidate exists | Import nothing and report unavailable |
-| Conflict | Strong signals disagree | Import nothing and report ambiguity with a conflict code |
+| Outcome                 | Meaning                                                       | Collector behavior                                       |
+| ----------------------- | ------------------------------------------------------------- | -------------------------------------------------------- |
+| High-confidence match   | Native ID, or exact run ID plus compatible directory and time | Import eligible evidence and execution context           |
+| Medium-confidence match | One exact-directory candidate with strong interval overlap    | Import eligible facts and retain confidence              |
+| Ambiguous               | Multiple candidates remain plausible                          | Import nothing and report ambiguity                      |
+| Unavailable             | No supported candidate exists                                 | Import nothing and report unavailable                    |
+| Conflict                | Strong signals disagree                                       | Import nothing and report ambiguity with a conflict code |
 
 The two observed associations without a run ID were unambiguous because one
 Codex session had the exact working directory and began inside each run window.
@@ -460,13 +501,13 @@ The collector should:
 
 Expected completeness values are:
 
-| Value | Meaning |
-| --- | --- |
-| `explicit_complete` | Provider recorded a positive terminal event |
-| `explicit_aborted` | Provider recorded an abort or cancellation event |
-| `stable_at_stop` | No terminal event exists, but the source became stable |
-| `possibly_incomplete` | Source remained active or changed through the timeout |
-| `unknown` | Adapter cannot assess completion |
+| Value                 | Meaning                                                |
+| --------------------- | ------------------------------------------------------ |
+| `explicit_complete`   | Provider recorded a positive terminal event            |
+| `explicit_aborted`    | Provider recorded an abort or cancellation event       |
+| `stable_at_stop`      | No terminal event exists, but the source became stable |
+| `possibly_incomplete` | Source remained active or changed through the timeout  |
+| `unknown`             | Adapter cannot assess completion                       |
 
 Codex can expose explicit `task_complete` and `turn_aborted` records. The
 observed Claude Code and Gemini CLI files did not expose a general terminal
@@ -607,13 +648,13 @@ operation or outcome merely because the operation followed a skill read.
 
 Provider history can contribute to several outcome levels:
 
-| Level | Example | Provider-history contribution |
-| --- | --- | --- |
-| Operation | A tool succeeded, failed, or was interrupted | Strong when result status is structured |
+| Level        | Example                                             | Provider-history contribution                     |
+| ------------ | --------------------------------------------------- | ------------------------------------------------- |
+| Operation    | A tool succeeded, failed, or was interrupted        | Strong when result status is structured           |
 | Verification | Test, typecheck, lint, or build exited successfully | Strong when command family and exit are validated |
-| Repository | Files were edited or artifacts produced | Moderate; paths are known but quality is not |
-| Task | Session completed, aborted, or remained incomplete | Provider-dependent |
-| Evaluated | Result was correct, useful, or accepted | Not established by history alone |
+| Repository   | Files were edited or artifacts produced             | Moderate; paths are known but quality is not      |
+| Task         | Session completed, aborted, or remained incomplete  | Provider-dependent                                |
+| Evaluated    | Result was correct, useful, or accepted             | Not established by history alone                  |
 
 Agent reflection and human judgment remain necessary for evaluated outcomes.
 
@@ -702,18 +743,18 @@ Provider collection is an enrichment step, not part of run durability.
 The exact filenames can follow repository conventions during implementation,
 but the responsibilities should remain separate:
 
-| Component | Responsibility |
-| --- | --- |
-| Source discovery | Find supported provider stores and candidate sessions |
-| Session matcher | Resolve one provider session for one SkillTrace run |
-| Stability reader | Select a bounded, stable source snapshot |
-| Provider adapter | Parse provider records into a private intermediate form |
-| Circularity filter | Remove SkillTrace instrumentation records |
-| Evidence classifier | Recognize successful skill-file operations |
-| Operation classifier | Project safe execution and outcome facts |
-| Path normalizer | Align provider paths with SkillTrace paths |
-| Privacy projector | Produce the minimal normalized event payload |
-| Batch sender | Post evidence, execution context, and collection summary before run finish |
+| Component            | Responsibility                                                             |
+| -------------------- | -------------------------------------------------------------------------- |
+| Source discovery     | Find supported provider stores and candidate sessions                      |
+| Session matcher      | Resolve one provider session for one SkillTrace run                        |
+| Stability reader     | Select a bounded, stable source snapshot                                   |
+| Provider adapter     | Parse provider records into a private intermediate form                    |
+| Circularity filter   | Remove SkillTrace instrumentation records                                  |
+| Evidence classifier  | Recognize successful skill-file operations                                 |
+| Operation classifier | Project safe execution and outcome facts                                   |
+| Path normalizer      | Align provider paths with SkillTrace paths                                 |
+| Privacy projector    | Produce the minimal normalized event payload                               |
+| Batch sender         | Post evidence, execution context, and collection summary before run finish |
 
 Provider adapters should be pure where practical: bytes or parsed records in,
 normalized private records out. Discovery, filesystem access, matching, and HTTP
