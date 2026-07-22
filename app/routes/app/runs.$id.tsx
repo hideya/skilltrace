@@ -89,6 +89,7 @@ export default function Page({ loaderData }: PageProps) {
       <RunContextPanel
         context={timeline.context}
         environment={timeline.execution_environment}
+        providerHistory={timeline.provider_history}
       />
       <RunSnapshotPanel snapshot={timeline.git_snapshot} />
       {timeline.instruction_surfaces ? (

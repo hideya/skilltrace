@@ -82,6 +82,8 @@ The retained run record should preserve, when structurally available:
 - failed attempt, correction, retry, and recovery transitions
 - exit codes and durations
 - provider, model, client version, source format, and adapter version
+- normalized provider execution constraints and operating mode, including
+  sandbox, network, approval, reasoning effort, and changed setting names
 - source record position and non-content deduplication fingerprint
 - extraction method, confidence, completeness, and partial status
 - aggregate recognized, unsupported, circular, and intentionally ignored counts
@@ -100,6 +102,8 @@ record, but it must not retain or send:
 - complete shell commands
 - JavaScript or other provider program wrappers
 - raw arguments or arbitrary provider payloads
+- complete provider policy objects, workspace-root lists, base instructions, or
+  embedded developer instructions
 - patches, diffs, edited content, or unrelated file contents
 - arbitrary absolute paths outside the existing path policy
 - credentials, account data, telemetry, attachments, or billing data

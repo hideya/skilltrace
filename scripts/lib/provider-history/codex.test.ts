@@ -165,6 +165,51 @@ describe('Codex provider history adapter', () => {
     expect(projected).not.toContain('tools.exec_command')
   })
 
+  test('projects provider execution configuration and tracks setting changes', () => {
+    let result = parseCodexProviderHistory(providerEnvironmentFixture(), {
+      ...runOptions(),
+      matchConfidence: 'high',
+    })
+
+    expect(result.model).toBe('gpt-5.7')
+    expect(result.providerEnvironment).toEqual({
+      provider: 'codex',
+      client: 'codex-tui',
+      client_version: '0.143.0',
+      source: 'cli',
+      model_provider: 'openai',
+      model: 'gpt-5.6',
+      working_directory: '/workspace/demo',
+      approval_policy: 'on-request',
+      sandbox: 'workspace-write',
+      permission_profile: 'managed',
+      file_system_policy: 'restricted',
+      network_policy: 'restricted',
+      network_access: false,
+      reasoning_effort: 'low',
+      personality: 'pragmatic',
+      collaboration_mode: 'default',
+      multi_agent_mode: 'explicitRequestOnly',
+      multi_agent_version: 'v2',
+      effective_date: '2026-07-20',
+      timezone: 'Asia/Tokyo',
+      workspace_scope: 'target_root',
+      changed_fields: [
+        'model',
+        'network_access',
+        'reasoning_effort',
+        'workspace_scope',
+      ],
+    })
+
+    let projected = JSON.stringify(result)
+    expect(projected).not.toContain('PRIVATE_BASE_INSTRUCTIONS_CANARY')
+    expect(projected).not.toContain('PRIVATE_SUMMARY_CANARY')
+    expect(projected).not.toContain('PRIVATE_DEVELOPER_INSTRUCTIONS_CANARY')
+    expect(projected).not.toContain('PRIVATE_WORKSPACE_ROOT_CANARY')
+    expect(projected).not.toContain('PRIVATE_WORLD_STATE_CANARY')
+  })
+
   test('does not treat write destinations or in-place edits as reads', () => {
     let result = parseFixture()
     let reads = result.events.filter((event) =>
@@ -208,6 +253,13 @@ describe('Codex provider history adapter', () => {
       match_confidence: 'medium',
       candidate_count: 1,
       source_stable: true,
+      provider_environment: {
+        provider: 'codex',
+        client_version: '0.143.0',
+        source: 'cli',
+        model: 'gpt-5-codex',
+        working_directory: '/workspace/demo',
+      },
     })
     expect(result.events).toHaveLength(3)
   })
@@ -381,6 +433,84 @@ function customExecFixture() {
         name: 'unknown_tool',
         call_id: 'call-unknown',
         input: 'CUSTOM_JS_PRIVATE_CANARY',
+      },
+    },
+  ]
+
+  return rows.map((row) => JSON.stringify(row)).join('\n')
+}
+
+function providerEnvironmentFixture() {
+  let firstContext = {
+    cwd: '/workspace/demo',
+    model: 'gpt-5.6',
+    approval_policy: 'on-request',
+    sandbox_policy: {
+      type: 'workspace-write',
+      network_access: false,
+    },
+    permission_profile: {
+      type: 'managed',
+      file_system: {
+        type: 'restricted',
+        roots: ['PRIVATE_WORKSPACE_ROOT_CANARY'],
+      },
+      network: 'restricted',
+    },
+    effort: 'low',
+    personality: 'pragmatic',
+    collaboration_mode: {
+      mode: 'default',
+      settings: {
+        developer_instructions: 'PRIVATE_DEVELOPER_INSTRUCTIONS_CANARY',
+      },
+    },
+    multi_agent_mode: 'explicitRequestOnly',
+    multi_agent_version: 'v2',
+    current_date: '2026-07-20',
+    timezone: 'Asia/Tokyo',
+    workspace_roots: ['/workspace/demo'],
+    summary: 'PRIVATE_SUMMARY_CANARY',
+  }
+  let rows = [
+    {
+      timestamp: '2026-07-20T10:00:05.000Z',
+      type: 'session_meta',
+      payload: {
+        id: 'codex-environment-session-1',
+        cwd: '/workspace/demo',
+        cli_version: '0.143.0',
+        source: 'cli',
+        originator: 'codex-tui',
+        model_provider: 'openai',
+        base_instructions: 'PRIVATE_BASE_INSTRUCTIONS_CANARY',
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:00:06.000Z',
+      type: 'world_state',
+      payload: { state: 'PRIVATE_WORLD_STATE_CANARY' },
+    },
+    {
+      timestamp: '2026-07-20T10:00:07.000Z',
+      type: 'turn_context',
+      payload: firstContext,
+    },
+    {
+      timestamp: '2026-07-20T10:00:08.000Z',
+      type: 'turn_context',
+      payload: {
+        ...firstContext,
+        model: 'gpt-5.7',
+        effort: 'high',
+        sandbox_policy: {
+          type: 'workspace-write',
+          network_access: true,
+        },
+        workspace_roots: [
+          '/workspace/demo',
+          '/private/PRIVATE_WORKSPACE_ROOT_CANARY',
+        ],
       },
     },
   ]

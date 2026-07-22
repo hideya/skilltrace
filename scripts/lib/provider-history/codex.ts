@@ -11,6 +11,24 @@ const MAX_CUSTOM_CALL_NODES = 20_000
 const MAX_NESTED_CALLS = 100
 const START_TOLERANCE_MS = 2_000
 const STOP_TOLERANCE_MS = 1_000
+const PROVIDER_ENVIRONMENT_CHANGE_FIELDS = [
+  'model',
+  'working_directory',
+  'approval_policy',
+  'sandbox',
+  'permission_profile',
+  'file_system_policy',
+  'network_policy',
+  'network_access',
+  'reasoning_effort',
+  'personality',
+  'collaboration_mode',
+  'multi_agent_mode',
+  'multi_agent_version',
+  'effective_date',
+  'timezone',
+  'workspace_scope',
+] as const
 
 export async function collectCodexProviderHistory(
   options: CollectCodexProviderHistoryOptions,
@@ -89,6 +107,7 @@ export async function collectCodexProviderHistory(
       provider_session_id: parsed.sessionId,
       provider_client_version: parsed.clientVersion,
       provider_model: parsed.model,
+      provider_environment: parsed.providerEnvironment,
       match_confidence: match.confidence,
       completeness: parsed.completeness,
       evidence_event_count: parsed.evidenceCount,
@@ -124,6 +143,7 @@ export function parseCodexProviderHistory(
     return {
       supported: false,
       sessionId: 'unknown',
+      providerEnvironment: {},
       completeness: 'stable_at_stop',
       events: [],
       evidenceCount: 0,
@@ -141,6 +161,7 @@ export function parseCodexProviderHistory(
   }
   let currentCwd = stringValue(session.cwd) ?? options.targetRoot
   let model: string | undefined
+  let turnContexts: Record<string, unknown>[] = []
   let outputs = functionOutputs(rows, start, stop)
   let events: ProviderHistoryEvent[] = []
   let fingerprints = new Set<string>()
@@ -161,6 +182,7 @@ export function parseCodexProviderHistory(
     if (value.type === 'turn_context') {
       currentCwd = stringValue(value.payload?.cwd) ?? currentCwd
       if (within(time, start, stop)) {
+        turnContexts.push(jsonObject(value.payload) ?? {})
         model = stringValue(value.payload?.model) ?? model
       }
       continue
@@ -239,6 +261,11 @@ export function parseCodexProviderHistory(
     sessionId,
     clientVersion: stringValue(session.cli_version),
     model,
+    providerEnvironment: codexProviderEnvironment(
+      session,
+      turnContexts,
+      options.targetRoot,
+    ),
     completeness:
       terminal?.type === 'task_complete'
         ? 'explicit_complete'
@@ -258,6 +285,115 @@ export function parseCodexProviderHistory(
     unsupportedCallCount,
     warnings: parsed.errorCount > 0 ? ['malformed_records_ignored'] : [],
   }
+}
+
+function codexProviderEnvironment(
+  session: Record<string, unknown>,
+  contexts: Record<string, unknown>[],
+  targetRoot: string,
+) {
+  let first = contexts[0] ?? {}
+  let environment: Record<string, unknown> = {
+    provider: 'codex',
+    client: safeProviderValue(session.originator),
+    client_version: safeProviderValue(session.cli_version),
+    source: safeProviderValue(session.source),
+    model_provider: safeProviderValue(session.model_provider),
+    ...providerTurnEnvironment(first, targetRoot),
+  }
+  let changedFields = providerEnvironmentChanges(contexts, targetRoot)
+  if (changedFields.length > 0) environment.changed_fields = changedFields
+  return definedRecord(environment)
+}
+
+function providerTurnEnvironment(
+  context: Record<string, unknown>,
+  targetRoot: string,
+) {
+  let permission = jsonObject(context.permission_profile)
+  let fileSystem = jsonObject(permission?.file_system)
+  let sandbox =
+    jsonObject(context.sandbox_policy) ??
+    jsonObject(context.file_system_sandbox_policy)
+  let collaboration = jsonObject(context.collaboration_mode)
+  let cwd = stringValue(context.cwd)
+
+  return definedRecord({
+    model: safeProviderValue(context.model),
+    working_directory:
+      cwd && pathsEqual(cwd, targetRoot) ? targetRoot : undefined,
+    approval_policy: safeProviderValue(context.approval_policy),
+    sandbox: safeProviderValue(sandbox?.type),
+    permission_profile: safeProviderValue(permission?.type),
+    file_system_policy: safeProviderValue(fileSystem?.type),
+    network_policy: safeProviderValue(permission?.network),
+    network_access:
+      typeof sandbox?.network_access === 'boolean'
+        ? sandbox.network_access
+        : undefined,
+    reasoning_effort: safeProviderValue(
+      context.effort ?? context.reasoning_effort,
+    ),
+    personality: safeProviderValue(context.personality),
+    collaboration_mode: safeProviderValue(collaboration?.mode),
+    multi_agent_mode: safeProviderValue(context.multi_agent_mode),
+    multi_agent_version: safeProviderValue(context.multi_agent_version),
+    effective_date: safeProviderDate(context.current_date),
+    timezone: safeProviderValue(context.timezone),
+    workspace_scope: providerWorkspaceScope(
+      context.workspace_roots,
+      targetRoot,
+    ),
+  })
+}
+
+function providerEnvironmentChanges(
+  contexts: Record<string, unknown>[],
+  targetRoot: string,
+) {
+  if (contexts.length < 2) return []
+  let previous = providerTurnEnvironment(contexts[0], targetRoot)
+  let changed = new Set<string>()
+
+  for (let context of contexts.slice(1)) {
+    let current = providerTurnEnvironment(context, targetRoot)
+    for (let field of PROVIDER_ENVIRONMENT_CHANGE_FIELDS) {
+      let before = previous[field]
+      let after = current[field]
+      if (before !== undefined && after !== undefined && before !== after) {
+        changed.add(field)
+      }
+    }
+    previous = { ...previous, ...current }
+  }
+
+  return [...changed]
+}
+
+function providerWorkspaceScope(value: unknown, targetRoot: string) {
+  if (!Array.isArray(value)) return undefined
+  let roots = value.filter((item): item is string => typeof item === 'string')
+  if (roots.length === 0) return undefined
+  let includesTarget = roots.some((root) => pathsEqual(root, targetRoot))
+  if (!includesTarget) return 'outside_target'
+  return roots.length === 1 ? 'target_root' : 'includes_target'
+}
+
+function safeProviderValue(value: unknown) {
+  let text = stringValue(value)?.trim()
+  if (!text || text.length > 128 || /[\0\r\n]/.test(text)) return undefined
+  return text
+}
+
+function safeProviderDate(value: unknown) {
+  let text = safeProviderValue(value)
+  return text && /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : undefined
+}
+
+function definedRecord(record: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== undefined),
+  )
 }
 
 function correlatedOutput(
@@ -1332,6 +1468,7 @@ type ParsedCodexProviderHistory = {
   sessionId: string
   clientVersion?: string
   model?: string
+  providerEnvironment: Record<string, unknown>
   completeness: Completeness
   events: ProviderHistoryEvent[]
   evidenceCount: number

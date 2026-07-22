@@ -8,6 +8,7 @@ import {
 export function RunContextPanel({
   context,
   environment,
+  providerHistory,
 }: RunContextPanelProps) {
   let rows: ContextRow[] = [
     ['Agent', context?.agent],
@@ -19,22 +20,41 @@ export function RunContextPanel({
   ].filter((row): row is ContextRow => !!row[1])
   let extra = extraContext(context)
   let environmentRows = executionEnvironmentRows(environment)
+  let providerRows = providerEnvironmentRows(providerHistory)
   let hasContext = rows.length > 0 || Object.keys(extra).length > 0
   let hasEnvironment = environmentRows.length > 0
+  let hasProvider = providerRows.length > 0
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <SectionSummaryHeader
         className="mb-4"
-        summary="Agent-declared and SkillTrace-collected metadata"
+        summary="Agent-declared, provider-recorded, and SkillTrace-collected metadata"
         title="Run context"
       />
 
-      {hasContext || hasEnvironment ? (
+      {hasContext || hasProvider || hasEnvironment ? (
         <div className="space-y-4">
           {rows.length > 0 ? <ContextRows rows={rows} /> : null}
 
           {Object.keys(extra).length > 0 ? <JsonBlock value={extra} /> : null}
+
+          {hasProvider ? (
+            <AnimatedDisclosure
+              childrenClassName="pt-3"
+              className="border-t border-base-300 pt-4"
+              header={
+                <CompactDisclosureHeader
+                  subsection
+                  summary={providerEnvironmentSummary(providerHistory)}
+                  title="Provider execution configuration"
+                />
+              }
+              headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
+            >
+              <ContextRows rows={providerRows} />
+            </AnimatedDisclosure>
+          ) : null}
 
           {hasEnvironment ? (
             <AnimatedDisclosure
@@ -114,9 +134,102 @@ function executionEnvironmentSummary(environment?: Record<string, any> | null) {
   return `${version} / ${mode} / ${platform} / ${backend}`
 }
 
+function providerEnvironmentRows(
+  history?: Record<string, any> | null,
+): ContextRow[] {
+  if (!history?.provider_session_id && !history?.provider_environment) return []
+  let environment = providerEnvironment(history)
+  let changedFields = Array.isArray(environment.changed_fields)
+    ? environment.changed_fields
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.replaceAll('_', ' '))
+        .join(', ')
+    : undefined
+  let multiAgent = [
+    environment.multi_agent_mode,
+    environment.multi_agent_version,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+
+  return [
+    ['Provider', environment.provider || history.provider],
+    ['Model', environment.model || history.provider_model],
+    ['Client', environment.client],
+    [
+      'Client version',
+      environment.client_version || history.provider_client_version,
+    ],
+    ['Model provider', environment.model_provider],
+    ['Source', environment.source],
+    ['Working directory', environment.working_directory],
+    ['Approval policy', environment.approval_policy],
+    ['Sandbox', environment.sandbox],
+    ['Permission profile', environment.permission_profile],
+    ['Filesystem policy', environment.file_system_policy],
+    ['Network', providerNetwork(environment)],
+    ['Reasoning effort', environment.reasoning_effort],
+    ['Personality', environment.personality],
+    ['Collaboration mode', environment.collaboration_mode],
+    ['Multi-agent mode', multiAgent],
+    ['Effective date', environment.effective_date],
+    ['Timezone', environment.timezone],
+    ['Workspace', workspaceScopeLabel(environment.workspace_scope)],
+    ['Changed settings', changedFields],
+  ].filter((row): row is ContextRow => presentValue(row[1]))
+}
+
+function providerEnvironmentSummary(history?: Record<string, any> | null) {
+  let environment = providerEnvironment(history)
+  let provider = environment.provider || history?.provider
+  let version = environment.client_version || history?.provider_client_version
+  let model = environment.model || history?.provider_model
+  let client = [capitalize(provider), version].filter(Boolean).join(' ')
+  let network = providerNetwork(environment)
+
+  return [
+    client,
+    model,
+    environment.sandbox,
+    network ? `network ${network}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+}
+
+function providerEnvironment(history?: Record<string, any> | null) {
+  let value = history?.provider_environment
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {}
+}
+
+function providerNetwork(environment: Record<string, any>) {
+  if (environment.network_access === true) return 'enabled'
+  if (environment.network_access === false) return 'disabled'
+  return environment.network_policy
+}
+
+function workspaceScopeLabel(value: unknown) {
+  if (value === 'target_root') return 'target root'
+  if (value === 'includes_target') return 'includes target root'
+  if (value === 'outside_target') return 'outside target root'
+  return undefined
+}
+
+function presentValue(value: unknown) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+function capitalize(value: unknown) {
+  if (typeof value !== 'string' || !value) return value
+  return `${value[0].toUpperCase()}${value.slice(1)}`
+}
+
 type RunContextPanelProps = {
   context?: Record<string, any> | null
   environment?: Record<string, any> | null
+  providerHistory?: Record<string, any> | null
 }
 
 type ContextRowsProps = {

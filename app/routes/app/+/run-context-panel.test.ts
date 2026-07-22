@@ -1,0 +1,52 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, test } from 'vitest'
+import { RunContextPanel } from './run-context-panel'
+
+describe('RunContextPanel', () => {
+  test('shows provider identity from an existing collection summary', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        providerHistory: {
+          provider: 'codex',
+          provider_session_id: 'session-1',
+          provider_client_version: '0.143.0',
+          provider_model: 'gpt-5.6-sol',
+        },
+      }),
+    )
+
+    expect(markup).toContain('Provider execution configuration')
+    expect(markup).toContain('Codex 0.143.0 / gpt-5.6-sol')
+    expect(markup).toContain('Client version')
+  })
+
+  test('shows normalized provider policy without raw configuration', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        providerHistory: {
+          provider: 'codex',
+          provider_session_id: 'session-1',
+          provider_environment: {
+            provider: 'codex',
+            model: 'gpt-5.6-sol',
+            client: 'codex-tui',
+            client_version: '0.143.0',
+            approval_policy: 'on-request',
+            sandbox: 'workspace-write',
+            network_access: false,
+            changed_fields: ['reasoning_effort'],
+            raw_configuration: 'PRIVATE_PROVIDER_CONFIGURATION_CANARY',
+          },
+        },
+      }),
+    )
+
+    expect(markup).toContain(
+      'Codex 0.143.0 / gpt-5.6-sol / workspace-write / network disabled',
+    )
+    expect(markup).toContain('on-request')
+    expect(markup).toContain('reasoning effort')
+    expect(markup).not.toContain('PRIVATE_PROVIDER_CONFIGURATION_CANARY')
+  })
+})

@@ -343,10 +343,19 @@ personality, collaboration mode, and summary data.
 | Field | Disposition | Use |
 | --- | --- | --- |
 | `turn_id` | Inspect only or retain when needed | Correlate multi-turn records |
-| `cwd` | Inspect only | Confirm directory for resumed turns |
+| `cwd` | Inspect and project only an exact target-root match | Confirm directory for resumed turns without retaining unrelated paths |
 | model | Retain when structurally available | Recorded execution context |
-| effort and runtime-tuning fields | Ignore initially | Provider-specific and not yet normalized |
-| summary, personality, permissions, workspace roots | Ignore | Private or unnecessary context |
+| approval and sandbox policy | Retain normalized scalar values | Effective execution constraints |
+| permission profile | Inspect and retain only policy labels | Filesystem and network constraints without roots or raw configuration |
+| effort, personality, collaboration, and multi-agent mode | Retain selectively | Provider-recorded operating mode for later run interpretation |
+| current date and timezone | Retain normalized values | Effective temporal context presented to the agent |
+| workspace roots | Inspect only | Derive whether the target is the sole root, included among roots, or outside scope |
+| summary and embedded instructions | Ignore | Private model or developer content |
+
+The adapter retains the first effective in-window configuration. If a later
+`turn_context` changes an allowlisted field, the summary records only the
+normalized field name in `changed_fields`; it does not retain alternate raw
+policy objects or unrelated workspace paths.
 
 The adapter must not treat a resumed turn as a new session automatically. It
 should slice the selected provider session by the SkillTrace run interval.

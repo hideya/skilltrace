@@ -45,6 +45,9 @@ The first cut implements:
 - bounded static extraction of literal `tools.*` calls from Codex
   `custom_tool_call: exec` programs, without executing or retaining JavaScript
 - normalized `apply_patch` target paths as context-only file-edit operations
+- an allowlisted provider execution configuration from `session_meta` and the
+  first in-window `turn_context`, with changed setting names when later turns
+  differ
 - filtering of SkillTrace MCP calls as circular evidence
 - extraction method, confidence, recognized, partial, unsupported, and
   intentionally ignored record diagnostics
@@ -401,6 +404,15 @@ Its payload should contain only operational metadata:
   "provider_session_id": "<provider-session-id>",
   "provider_client_version": "0.143.0",
   "provider_model": "<model-id>",
+  "provider_environment": {
+    "client": "codex-tui",
+    "model": "<initial-model-id>",
+    "approval_policy": "on-request",
+    "sandbox": "workspace-write",
+    "network_access": false,
+    "reasoning_effort": "low",
+    "changed_fields": []
+  },
   "match_confidence": "high",
   "completeness": "explicit_complete",
   "recognized_record_count": 10,
@@ -422,6 +434,9 @@ Its payload should contain only operational metadata:
   "warnings": []
 }
 ```
+
+`provider_environment.changed_fields` is omitted when no allowlisted setting
+changed during the imported run slice.
 
 The implemented Codex summary reports the recognized, partial, unsupported,
 and intentionally ignored record counts above. It temporarily retains
@@ -606,6 +621,12 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - provider-native session and tool-call IDs
 - provider client version when available
 - provider model ID when available and safe
+- normalized provider execution configuration such as client surface, approval
+  policy, sandbox kind, network availability, reasoning effort, collaboration
+  mode, timezone, and target-workspace relationship
+- provider-confirmed working directory only when it exactly matches the known
+  SkillTrace target root
+- names of allowlisted provider settings that changed during the run
 - normalized event timestamp
 - normalized skill or reference path
 - normalized operation kind and repository-relative affected paths
@@ -626,8 +647,11 @@ privacy guarantee depends on minimizing the data that leaves the parser.
   build, or artifact operation
 - program-like custom-tool input needed for bounded nested-call extraction
 - tool-result metadata needed to determine success
-- working directory needed for association and path normalization
+- provider working directories outside the confirmed target, inspected only for
+  association and path normalization
 - provider timestamps and file metadata needed for matching and stability
+- complete workspace-root arrays and nested permission-policy structures needed
+  only to derive bounded scope and access labels
 
 ### Never Retained Or Sent To The Server
 
@@ -644,6 +668,8 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - credentials, authentication state, cookies, or account data
 - telemetry and unrelated application logs
 - provider-generated titles or conversation previews
+- base instructions, embedded developer instructions, turn summaries, and world
+  state snapshots
 
 The detailed field-by-field disposition is maintained in
 [Provider History Formats](./provider-history-formats.md).
