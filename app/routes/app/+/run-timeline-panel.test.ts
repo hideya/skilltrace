@@ -37,7 +37,7 @@ describe('compactPathLabel', () => {
 })
 
 describe('Timeline', () => {
-  test('shows the tool name above a provider execution operation', () => {
+  test('shows the tool name and operation kind above a provider operation', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {
         events: [
@@ -49,7 +49,7 @@ describe('Timeline', () => {
             payload: {
               provider: 'codex',
               tool_name: 'exec_command',
-              operation_kind: 'typecheck',
+              operation_kind: 'file_read',
               outcome: 'failed',
             },
           },
@@ -58,7 +58,14 @@ describe('Timeline', () => {
     )
 
     expect(markup).toContain('exec_command')
+    expect(markup).toContain('file_read')
     expect(markup).toContain('text-amber-600')
+    expect(markup.indexOf('exec_command')).toBeLessThan(
+      markup.indexOf('file_read'),
+    )
+    expect(markup.indexOf('file_read')).toBeLessThan(
+      markup.indexOf('execution_operation_observed'),
+    )
     expect(markup.indexOf('exec_command')).toBeLessThan(
       markup.indexOf('execution_operation_observed'),
     )

@@ -37,6 +37,7 @@ export function Timeline({ events }: TimelineProps) {
 
 function TimelineItem({ event }: TimelineItemProps) {
   let name = primaryLabelForEvent(event)
+  let operationKind = operationKindForEvent(event)
   let isSemantic = isSemanticEvent(event)
   let warning = eventWarning(event)
   let process = observedProcessForEvent(event)
@@ -51,13 +52,20 @@ function TimelineItem({ event }: TimelineItemProps) {
             {name ? (
               <div className="flex items-baseline gap-2">
                 {name || isSemantic || warning ? (
-                  <span
-                    className={`font-mono text-sm font-semibold ${eventFileNameClass(
-                      event,
-                    )}`}
-                  >
-                    <PathLabel label={name} />
-                  </span>
+                  <>
+                    <span
+                      className={`font-mono text-sm font-semibold ${eventFileNameClass(
+                        event,
+                      )}`}
+                    >
+                      <PathLabel label={name} />
+                    </span>
+                    {operationKind ? (
+                      <span className="font-mono text-xs text-amber-600/70">
+                        {operationKind}
+                      </span>
+                    ) : null}
+                  </>
                 ) : null}
                 {isSemantic ? (
                   <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
@@ -247,6 +255,19 @@ function primaryLabelForEvent(event: any) {
   }
 
   return fileNameForEvent(event)
+}
+
+function operationKindForEvent(event: any) {
+  if (
+    !isProviderEvent(event) ||
+    event.event_type !== 'execution_operation_observed'
+  ) {
+    return null
+  }
+
+  let operationKind = event.payload?.operation_kind
+  if (typeof operationKind !== 'string') return null
+  return operationKind.trim() || null
 }
 
 export function compactPathLabel(filePath: string) {
