@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '~/.server/db'
 import { trace_events } from '~/.server/db/schema/trace-events'
+import { withProviderExecutionIdentity } from '~/lib/provider-history'
 import { skillPathFromRoot } from '~/lib/skill-path'
 import { isTraceMode, TRACE_MODES, type TraceMode } from '~/lib/trace-mode'
 import { Run } from './run'
@@ -216,13 +217,17 @@ export async function listRunSummaries() {
     let traceMode = runTraceMode(run, runEvents)
     let status = runDisplayStatus(run, runEvents, starts)
     let matrix = traceConsistencyMatrix(runEvents, { traceMode })
+    let providerHistory = latestProviderHistory(runEvents)
 
     return {
       run,
       status,
       trace_mode: traceMode,
       result: lifecycle ?? summarizeConsistencyMatrix(matrix),
-      context: latestRunContext(runEvents),
+      context: withProviderExecutionIdentity(
+        latestRunContext(runEvents),
+        providerHistory,
+      ),
       reflection: latestEventData(runEvents, 'run_reflection_declared'),
       event_count: runEvents.length,
       last_event_at: lastEvent?.timestamp ?? null,
@@ -346,10 +351,7 @@ export async function getRunTimeline(publicId: string) {
     passive_events: events.filter((event) => event.source === PASSIVE_SOURCE),
     semantic_events: events.filter((event) => event.source === SEMANTIC_SOURCE),
     provider_events: events.filter((event) => event.source === PROVIDER_SOURCE),
-    provider_history: latestEventPayload(
-      events.filter((event) => event.source === SESSION_SOURCE),
-      'provider_history_collection_finished',
-    ),
+    provider_history: latestProviderHistory(events),
     consistency_matrix: consistencyMatrix,
   }
 }
@@ -558,6 +560,13 @@ function runDisplayStatus(
 
 function latestRunContext(events: any[]) {
   return latestEventData(events, 'run_context_declared')
+}
+
+function latestProviderHistory(events: any[]) {
+  return latestEventPayload(
+    events.filter((event) => event.source === SESSION_SOURCE),
+    'provider_history_collection_finished',
+  )
 }
 
 function runGitSnapshot(run: any, events: any[]) {

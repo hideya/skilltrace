@@ -4,9 +4,6 @@ export function ProviderHistoryPanel({
   events,
   summary,
 }: ProviderHistoryPanelProps) {
-  let operations = events.filter(
-    (event) => event.event_type === 'execution_operation_observed',
-  )
   let reads = events.filter((event) =>
     ['skill_file_read', 'skill_reference_read'].includes(event.event_type),
   )
@@ -64,29 +61,6 @@ export function ProviderHistoryPanel({
           </ul>
         </section>
       ) : null}
-
-      {operations.length > 0 ? (
-        <section className="mt-5 border-t border-base-300 pt-4">
-          <h3 className="mb-2 text-sm font-semibold text-base-content/70">
-            Observed operations
-          </h3>
-          <ul className="space-y-2">
-            {operations.map((event) => (
-              <li
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 text-sm"
-                key={event.id}
-              >
-                <span className="truncate font-medium">
-                  {displayValue(event.payload?.operation_kind)}
-                </span>
-                <span className={outcomeClass(event.payload?.outcome)}>
-                  {operationOutcome(event)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </section>
   )
 }
@@ -106,20 +80,6 @@ function panelSummary(summary: Record<string, any>) {
   let provider = displayValue(summary.provider)
   let status = displayValue(summary.status)
   return `${capitalize(provider)} · ${status}`
-}
-
-function operationOutcome(event: any) {
-  let outcome = displayValue(event.payload?.outcome)
-  let exitCode = event.payload?.exit_code
-  return typeof exitCode === 'number'
-    ? `${outcome} · exit ${exitCode}`
-    : outcome
-}
-
-function outcomeClass(outcome: unknown) {
-  if (outcome === 'success') return 'text-xs font-semibold text-success'
-  if (outcome === 'failed') return 'text-xs font-semibold text-error'
-  return 'text-xs font-semibold text-base-content/60'
 }
 
 function displayValue(value: unknown) {

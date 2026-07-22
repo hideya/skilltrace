@@ -1,3 +1,4 @@
+import { withProviderExecutionIdentity } from '~/lib/provider-history'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import {
   CompactDisclosureHeader,
@@ -10,14 +11,14 @@ export function RunContextPanel({
   environment,
   providerHistory,
 }: RunContextPanelProps) {
-  let providerIdentity = providerIdentityForContext(providerHistory)
+  let displayContext = withProviderExecutionIdentity(context, providerHistory)
   let rows: ContextRow[] = [
-    ['Agent', context?.agent],
-    ['Model', providerIdentity.model || context?.model],
-    ['Client', providerIdentity.client || context?.client],
-    ['Working directory', context?.cwd],
-    ['Task', context?.task_summary],
-    ['Agent notes', context?.notes],
+    ['Agent', displayContext?.agent],
+    ['Model', displayContext?.model],
+    ['Client', displayContext?.client],
+    ['Working directory', displayContext?.cwd],
+    ['Task', displayContext?.task_summary],
+    ['Agent notes', displayContext?.notes],
   ].filter((row): row is ContextRow => !!row[1])
   let extra = extraContext(context)
   let environmentRows = executionEnvironmentRows(environment)
@@ -203,18 +204,6 @@ function providerEnvironment(history?: Record<string, any> | null) {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value
     : {}
-}
-
-function providerIdentityForContext(history?: Record<string, any> | null) {
-  if (!history?.provider_session_id) return {}
-  let environment = providerEnvironment(history)
-  let name = environment.client || capitalize(history.provider)
-  let version = environment.client_version || history.provider_client_version
-
-  return {
-    model: environment.model || history.provider_model,
-    client: [name, version].filter(Boolean).join(' '),
-  }
 }
 
 function providerNetwork(environment: Record<string, any>) {
