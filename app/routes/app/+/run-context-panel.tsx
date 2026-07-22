@@ -10,10 +10,11 @@ export function RunContextPanel({
   environment,
   providerHistory,
 }: RunContextPanelProps) {
+  let providerIdentity = providerIdentityForContext(providerHistory)
   let rows: ContextRow[] = [
     ['Agent', context?.agent],
-    ['Model', context?.model],
-    ['Client', context?.client],
+    ['Model', providerIdentity.model || context?.model],
+    ['Client', providerIdentity.client || context?.client],
     ['Working directory', context?.cwd],
     ['Task', context?.task_summary],
     ['Agent notes', context?.notes],
@@ -202,6 +203,18 @@ function providerEnvironment(history?: Record<string, any> | null) {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value
     : {}
+}
+
+function providerIdentityForContext(history?: Record<string, any> | null) {
+  if (!history?.provider_session_id) return {}
+  let environment = providerEnvironment(history)
+  let name = environment.client || capitalize(history.provider)
+  let version = environment.client_version || history.provider_client_version
+
+  return {
+    model: environment.model || history.provider_model,
+    client: [name, version].filter(Boolean).join(' '),
+  }
 }
 
 function providerNetwork(environment: Record<string, any>) {

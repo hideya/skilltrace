@@ -36,7 +36,7 @@ export function Timeline({ events }: TimelineProps) {
 }
 
 function TimelineItem({ event }: TimelineItemProps) {
-  let name = fileNameForEvent(event)
+  let name = primaryLabelForEvent(event)
   let isSemantic = isSemanticEvent(event)
   let warning = eventWarning(event)
   let process = observedProcessForEvent(event)
@@ -235,6 +235,18 @@ function fileNameForEvent(event: any) {
   if (!filePath || typeof filePath !== 'string') return null
 
   return compactPathLabel(filePath)
+}
+
+function primaryLabelForEvent(event: any) {
+  if (
+    isProviderEvent(event) &&
+    event.event_type === 'execution_operation_observed'
+  ) {
+    let toolName = event.payload?.tool_name
+    if (typeof toolName === 'string' && toolName) return toolName
+  }
+
+  return fileNameForEvent(event)
 }
 
 export function compactPathLabel(filePath: string) {

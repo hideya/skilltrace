@@ -7,6 +7,10 @@ describe('RunContextPanel', () => {
   test('shows provider identity from an existing collection summary', () => {
     let markup = renderToStaticMarkup(
       createElement(RunContextPanel, {
+        context: {
+          model: 'GPT-5 (uncertain)',
+          client: 'Codex (uncertain)',
+        },
         providerHistory: {
           provider: 'codex',
           provider_session_id: 'session-1',
@@ -19,6 +23,27 @@ describe('RunContextPanel', () => {
     expect(markup).toContain('Provider execution configuration')
     expect(markup).toContain('Codex 0.143.0 / gpt-5.6-sol')
     expect(markup).toContain('Client version')
+    expect(markup).not.toContain('GPT-5 (uncertain)')
+    expect(markup).not.toContain('Codex (uncertain)')
+  })
+
+  test('keeps declared identity when no provider session was matched', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        context: {
+          model: 'Declared model',
+          client: 'Declared client',
+        },
+        providerHistory: {
+          provider: 'codex',
+          status: 'unavailable',
+        },
+      }),
+    )
+
+    expect(markup).toContain('Declared model')
+    expect(markup).toContain('Declared client')
+    expect(markup).not.toContain('Provider execution configuration')
   })
 
   test('shows normalized provider policy without raw configuration', () => {

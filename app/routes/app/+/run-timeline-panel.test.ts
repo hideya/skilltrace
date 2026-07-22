@@ -1,5 +1,7 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, test } from 'vitest'
-import { compactPathLabel } from './run-timeline-panel'
+import { compactPathLabel, Timeline } from './run-timeline-panel'
 
 describe('compactPathLabel', () => {
   test('shows skill-relative paths for agent skill roots', () => {
@@ -31,5 +33,34 @@ describe('compactPathLabel', () => {
 
   test('falls back to basename for ordinary files', () => {
     expect(compactPathLabel('/tmp/repo/README.md')).toBe('README.md')
+  })
+})
+
+describe('Timeline', () => {
+  test('shows the tool name above a provider execution operation', () => {
+    let markup = renderToStaticMarkup(
+      createElement(Timeline, {
+        events: [
+          {
+            id: 1,
+            timestamp: '2026-07-23T06:00:48.338Z',
+            source: 'provider_history',
+            event_type: 'execution_operation_observed',
+            payload: {
+              provider: 'codex',
+              tool_name: 'exec_command',
+              operation_kind: 'typecheck',
+              outcome: 'failed',
+            },
+          },
+        ],
+      }),
+    )
+
+    expect(markup).toContain('exec_command')
+    expect(markup).toContain('text-amber-600')
+    expect(markup.indexOf('exec_command')).toBeLessThan(
+      markup.indexOf('execution_operation_observed'),
+    )
   })
 })
