@@ -39,18 +39,23 @@ The first cut implements:
   when available and failing closed when multiple candidates remain
 - bounded stability checks before parsing
 - successful `cat`, printing `sed`, `head`, and `tail` reads under configured
-  skill roots
+  skill roots, from direct calls or statically recoverable nested calls
 - recognized test, typecheck, lint, and build operations with correlated exit
   status and duration
+- bounded static extraction of literal `tools.*` calls from Codex
+  `custom_tool_call: exec` programs, without executing or retaining JavaScript
+- normalized `apply_patch` target paths as context-only file-edit operations
 - filtering of SkillTrace MCP calls as circular evidence
+- extraction method, confidence, recognized, partial, unsupported, and
+  intentionally ignored record diagnostics
 - normalized `provider_history` events plus a session-owned collection summary
 - stop-time batch submission with per-run fingerprint deduplication
 - timeline display and a separate Recorded execution context panel
 - synthetic fixture, matching, ambiguity, schema, and privacy regression tests
 
 The first cut does not yet implement Claude Code or Gemini CLI adapters, shell
-search and edit operations, provider columns in the consistency matrix, or any
-change to run verdicts. Provider history remains observational.
+search and general shell-edit operations, provider columns in the consistency
+matrix, or any change to run verdicts. Provider history remains observational.
 
 Provider history is useful because it can reveal structured operations that
 the passive operating-system probe cannot understand. For example:
@@ -418,11 +423,10 @@ Its payload should contain only operational metadata:
 }
 ```
 
-The implemented first cut currently reports unsupported tool calls through
-`ignored_unsupported_call_count`. A future summary should replace that coarse
-field with the recognized, partial, unsupported, and intentionally ignored
-record counts above so collection success and extraction coverage are not
-conflated.
+The implemented Codex summary reports the recognized, partial, unsupported,
+and intentionally ignored record counts above. It temporarily retains
+`ignored_unsupported_call_count` as a coarse call-level diagnostic while the
+newer fields establish their real-run value.
 
 Allowed collection statuses should be:
 
@@ -954,8 +958,8 @@ submission should remain outside the parser.
 
 - Supported provider sessions can be matched without relying on SkillTrace MCP
   calls.
-- Direct successful skill and reference reads become normalized
-  `provider_history` events.
+- Direct and statically recoverable nested successful skill and reference reads
+  become normalized `provider_history` events.
 - Recognized operations become normalized execution-context facts with safe
   categories, outcomes, and paths.
 - Failure, retry, recovery, nesting, and extraction health remain available for

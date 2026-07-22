@@ -2,9 +2,13 @@ import { createHash } from 'crypto'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { parse } from 'acorn'
 
 const FORMAT = 'codex_rollout_jsonl_v1'
 const MAX_SOURCE_BYTES = 128 * 1024 * 1024
+const MAX_CUSTOM_CALL_BYTES = 256 * 1024
+const MAX_CUSTOM_CALL_NODES = 20_000
+const MAX_NESTED_CALLS = 100
 const START_TOLERANCE_MS = 2_000
 const STOP_TOLERANCE_MS = 1_000
 
@@ -90,6 +94,12 @@ export async function collectCodexProviderHistory(
       evidence_event_count: parsed.evidenceCount,
       execution_operation_count: parsed.operationCount,
       operation_counts: parsed.operationCounts,
+      recognized_record_count: parsed.recognizedRecordCount,
+      partially_extracted_record_count: parsed.partiallyExtractedRecordCount,
+      unsupported_record_count: parsed.unsupportedRecordCount,
+      intentionally_ignored_record_count:
+        parsed.intentionallyIgnoredRecordCount,
+      extraction_method_counts: parsed.extractionMethodCounts,
       ignored_circular_call_count: parsed.circularCallCount,
       ignored_unsupported_call_count: parsed.unsupportedCallCount,
       candidate_count: candidates.length,
@@ -119,6 +129,11 @@ export function parseCodexProviderHistory(
       evidenceCount: 0,
       operationCount: 0,
       operationCounts: {},
+      recognizedRecordCount: 0,
+      partiallyExtractedRecordCount: 0,
+      unsupportedRecordCount: 0,
+      intentionallyIgnoredRecordCount: 0,
+      extractionMethodCounts: {},
       circularCallCount: 0,
       unsupportedCallCount: 0,
       warnings: ['missing_provider_session_id'],
@@ -129,6 +144,11 @@ export function parseCodexProviderHistory(
   let outputs = functionOutputs(rows, start, stop)
   let events: ProviderHistoryEvent[] = []
   let fingerprints = new Set<string>()
+  let recognizedRecordCount = 0
+  let partiallyExtractedRecordCount = 0
+  let unsupportedRecordCount = 0
+  let intentionallyIgnoredRecordCount = 0
+  let extractionMethodCounts: Record<string, number> = {}
   let circularCallCount = 0
   let unsupportedCallCount = 0
   let terminal: TerminalRecord | undefined
@@ -165,106 +185,46 @@ export function parseCodexProviderHistory(
     )
       continue
 
-    let name = stringValue(value.payload?.name) ?? ''
-    if (isSkillTraceTool(name)) {
-      circularCallCount += 1
-      continue
-    }
-    if (name !== 'exec_command') {
-      unsupportedCallCount += 1
-      continue
-    }
-
-    let args = jsonObject(value.payload?.arguments)
-    let command = stringValue(args?.cmd)
-    let callId = stringValue(value.payload?.call_id) ?? `record-${row.index}`
-    let cwd = stringValue(args?.workdir) ?? currentCwd
-    let output = outputs.get(callId)
-    let outcome =
-      output?.exitCode === 0
-        ? 'success'
-        : typeof output?.exitCode === 'number'
-          ? 'failed'
-          : 'unknown'
-    let durationMs = duration(timestamp, output?.timestamp)
+    let extraction = extractToolRecord(row)
+    extractionMethodCounts[extraction.method] =
+      (extractionMethodCounts[extraction.method] ?? 0) + 1
     let recognized = 0
+    let ignored = 0
+    let unsupported = 0
+    let output = outputs.get(extraction.outerCallId)
 
-    if (command) {
-      for (let read of skillReads(command, cwd, options.skillRoots)) {
-        if (outcome !== 'success') continue
-
-        let relativePath = displayPath(read.absolutePath, options.targetRoot)
-        let eventType: 'skill_file_read' | 'skill_reference_read' =
-          path.basename(read.absolutePath) === 'SKILL.md'
-            ? 'skill_file_read'
-            : 'skill_reference_read'
-        let fingerprint = sourceFingerprint(
-          sessionId,
-          callId,
-          eventType,
-          relativePath,
-        )
-        if (fingerprints.has(fingerprint)) continue
-        fingerprints.add(fingerprint)
-        recognized += 1
-        events.push({
-          event_type: eventType,
-          timestamp,
-          skill: {
-            name: skillName(read.absolutePath),
-            path: relativePath,
-          },
-          payload: {
-            provider: 'codex',
-            provider_session_id: sessionId,
-            tool_name: name,
-            tool_call_id: callId,
-            outcome,
-            evidence_kind: 'shell_content_read',
-            command_classifier: read.classifier,
-            confidence: 'medium',
-            match_confidence: options.matchConfidence,
-            format: FORMAT,
-            source_record_index: row.index,
-            source_fingerprint: fingerprint,
-          },
-        })
+    for (let call of extraction.calls) {
+      let result = projectToolCall(call, {
+        sessionId,
+        currentCwd,
+        timestamp,
+        rowIndex: row.index,
+        output: correlatedOutput(call, extraction.calls, output),
+        options,
+        events,
+        fingerprints,
+      })
+      if (result === 'recognized') recognized += 1
+      if (result === 'ignored') ignored += 1
+      if (result === 'circular') {
+        ignored += 1
+        circularCallCount += 1
       }
-
-      for (let operation of verificationOperations(command)) {
-        let fingerprint = sourceFingerprint(
-          sessionId,
-          callId,
-          'execution_operation_observed',
-          operation.classifier,
-        )
-        if (fingerprints.has(fingerprint)) continue
-        fingerprints.add(fingerprint)
-        recognized += 1
-        events.push({
-          event_type: 'execution_operation_observed',
-          timestamp,
-          payload: {
-            provider: 'codex',
-            provider_session_id: sessionId,
-            tool_name: name,
-            tool_call_id: callId,
-            operation_kind: operation.kind,
-            command_classifier: operation.classifier,
-            outcome,
-            exit_code: output?.exitCode,
-            duration_ms: durationMs,
-            classification_confidence: 'medium',
-            match_confidence: options.matchConfidence,
-            format: FORMAT,
-            source_record_index: row.index,
-            source_fingerprint: fingerprint,
-          },
-        })
-      }
+      if (result === 'unsupported') unsupported += 1
     }
 
-    if (recognized === 0) unsupportedCallCount += 1
+    if (extraction.calls.length === 0) unsupported += 1
+    unsupportedCallCount += unsupported
+    if (recognized > 0) {
+      recognizedRecordCount += 1
+      if (extraction.partial || unsupported > 0) {
+        partiallyExtractedRecordCount += 1
+      }
+    } else if (unsupported > 0 || extraction.partial) {
+      unsupportedRecordCount += 1
+    } else if (ignored > 0) {
+      intentionallyIgnoredRecordCount += 1
+    }
   }
 
   let evidenceCount = events.filter((event) =>
@@ -289,10 +249,441 @@ export function parseCodexProviderHistory(
     evidenceCount,
     operationCount: operations.length,
     operationCounts: countOperations(operations),
+    recognizedRecordCount,
+    partiallyExtractedRecordCount,
+    unsupportedRecordCount,
+    intentionallyIgnoredRecordCount,
+    extractionMethodCounts,
     circularCallCount,
     unsupportedCallCount,
     warnings: parsed.errorCount > 0 ? ['malformed_records_ignored'] : [],
   }
+}
+
+function correlatedOutput(
+  call: ExtractedToolCall,
+  calls: ExtractedToolCall[],
+  output?: FunctionOutput,
+) {
+  if (calls.length === 1) return output
+  let shellCalls = calls.filter((item) => item.name === 'exec_command')
+  if (
+    call.name === 'exec_command' &&
+    shellCalls.length === 1 &&
+    typeof output?.exitCode === 'number'
+  ) {
+    return {
+      exitCode: output.exitCode,
+      outcome: output.outcome,
+    }
+  }
+  return undefined
+}
+
+function extractToolRecord(row: ParsedRow): RecordExtraction {
+  let payload = row.value.payload ?? {}
+  let name = stringValue(payload.name) ?? ''
+  let outerCallId = stringValue(payload.call_id) ?? `record-${row.index}`
+
+  if (payload.type === 'custom_tool_call' && name === 'exec') {
+    let source = stringValue(payload.input) ?? stringValue(payload.arguments)
+    return extractStaticJsCalls(source, outerCallId)
+  }
+
+  let input = payload.arguments ?? payload.input
+  let value = staticInput(input)
+  return {
+    method: 'direct_envelope',
+    outerCallId,
+    partial: false,
+    calls: [
+      {
+        name,
+        callId: outerCallId,
+        args: jsonObject(input),
+        input: value,
+        extractionMethod: 'direct_envelope',
+        extractionConfidence: value === undefined ? 'low' : 'high',
+      },
+    ],
+  }
+}
+
+function extractStaticJsCalls(
+  source: string | undefined,
+  outerCallId: string,
+): RecordExtraction {
+  let result: RecordExtraction = {
+    method: 'static_js',
+    outerCallId,
+    partial: false,
+    calls: [],
+  }
+  if (!source || Buffer.byteLength(source) > MAX_CUSTOM_CALL_BYTES) {
+    result.partial = true
+    return result
+  }
+
+  let ast: any
+  try {
+    ast = parse(source, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+    })
+  } catch {
+    result.partial = true
+    return result
+  }
+
+  let bindings = topLevelBindings(ast)
+
+  let callWalk = walkAst(ast, (node) => {
+    if (node.type !== 'CallExpression') return
+    let name = toolsMethod(node.callee)
+    if (!name) return
+    if (result.calls.length >= MAX_NESTED_CALLS) {
+      result.partial = true
+      return false
+    }
+
+    let input = staticValue(node.arguments?.[0], bindings)
+    let index = result.calls.length
+    result.calls.push({
+      name,
+      callId: derivedToolCallId(outerCallId, index),
+      parentCallId: outerCallId,
+      args: input.known ? jsonObject(input.value) : undefined,
+      input: input.known ? input.value : undefined,
+      extractionMethod: 'static_js',
+      extractionConfidence: input.known ? 'medium' : 'low',
+    })
+    if (!input.known) result.partial = true
+  })
+  if (!callWalk.complete) result.partial = true
+  return result
+}
+
+function projectToolCall(
+  call: ExtractedToolCall,
+  context: ProjectionContext,
+): ProjectionResult {
+  if (isSkillTraceTool(call.name)) return 'circular'
+  if (['wait', 'write_stdin'].includes(call.name)) return 'ignored'
+
+  let outcome = outputOutcome(context.output)
+  let durationMs = duration(context.timestamp, context.output?.timestamp)
+  let cwd = stringValue(call.args?.workdir) ?? context.currentCwd
+
+  if (call.name === 'exec_command') {
+    let command = stringValue(call.args?.cmd)
+    if (!command) return 'unsupported'
+    let recognized = false
+    let reads = skillReads(command, cwd, context.options.skillRoots)
+
+    if (outcome === 'success') {
+      for (let read of reads) {
+        let relativePath = displayPath(
+          read.absolutePath,
+          context.options.targetRoot,
+        )
+        let eventType: 'skill_file_read' | 'skill_reference_read' =
+          path.basename(read.absolutePath) === 'SKILL.md'
+            ? 'skill_file_read'
+            : 'skill_reference_read'
+        let fingerprint = sourceFingerprint(
+          context.sessionId,
+          call.callId,
+          eventType,
+          relativePath,
+        )
+        recognized = true
+        if (context.fingerprints.has(fingerprint)) continue
+        context.fingerprints.add(fingerprint)
+        context.events.push({
+          event_type: eventType,
+          timestamp: context.timestamp,
+          skill: {
+            name: skillName(read.absolutePath),
+            path: relativePath,
+          },
+          payload: {
+            ...providerPayload(call, context, outcome),
+            evidence_kind: 'shell_content_read',
+            command_classifier: read.classifier,
+            confidence: 'medium',
+            source_fingerprint: fingerprint,
+          },
+        })
+      }
+    } else if (reads.length > 0) {
+      let artifactRefs = reads.map((read) =>
+        displayPath(read.absolutePath, context.options.targetRoot),
+      )
+      let fingerprint = sourceFingerprint(
+        context.sessionId,
+        call.callId,
+        'execution_operation_observed',
+        'file_read',
+        ...artifactRefs,
+      )
+      recognized = true
+      if (!context.fingerprints.has(fingerprint)) {
+        context.fingerprints.add(fingerprint)
+        context.events.push({
+          event_type: 'execution_operation_observed',
+          timestamp: context.timestamp,
+          artifact_refs: artifactRefs,
+          payload: {
+            ...providerPayload(call, context, outcome),
+            operation_kind: 'file_read',
+            command_classifier: 'shell_content_read',
+            exit_code: context.output?.exitCode,
+            duration_ms: durationMs,
+            classification_confidence: 'medium',
+            evidence_status: 'context_only',
+            source_fingerprint: fingerprint,
+          },
+        })
+      }
+    }
+
+    for (let operation of verificationOperations(command)) {
+      let fingerprint = sourceFingerprint(
+        context.sessionId,
+        call.callId,
+        'execution_operation_observed',
+        operation.classifier,
+      )
+      recognized = true
+      if (context.fingerprints.has(fingerprint)) continue
+      context.fingerprints.add(fingerprint)
+      context.events.push({
+        event_type: 'execution_operation_observed',
+        timestamp: context.timestamp,
+        payload: {
+          ...providerPayload(call, context, outcome),
+          operation_kind: operation.kind,
+          command_classifier: operation.classifier,
+          exit_code: context.output?.exitCode,
+          duration_ms: durationMs,
+          classification_confidence: 'medium',
+          evidence_status: 'context_only',
+          source_fingerprint: fingerprint,
+        },
+      })
+    }
+
+    return recognized ? 'recognized' : 'unsupported'
+  }
+
+  if (call.name === 'apply_patch') {
+    let patch = stringValue(call.input) ?? stringValue(call.args?.patch)
+    let artifactRefs = patchTargetPaths(patch, cwd, context.options.targetRoot)
+    if (artifactRefs.length === 0) return 'unsupported'
+
+    let fingerprint = sourceFingerprint(
+      context.sessionId,
+      call.callId,
+      'execution_operation_observed',
+      'file_edit',
+      ...artifactRefs,
+    )
+    if (!context.fingerprints.has(fingerprint)) {
+      context.fingerprints.add(fingerprint)
+      context.events.push({
+        event_type: 'execution_operation_observed',
+        timestamp: context.timestamp,
+        artifact_refs: artifactRefs,
+        payload: {
+          ...providerPayload(call, context, outcome),
+          operation_kind: 'file_edit',
+          command_classifier: 'apply_patch',
+          duration_ms: durationMs,
+          classification_confidence: 'high',
+          evidence_status: 'context_only',
+          source_fingerprint: fingerprint,
+        },
+      })
+    }
+    return 'recognized'
+  }
+
+  return 'unsupported'
+}
+
+function providerPayload(
+  call: ExtractedToolCall,
+  context: ProjectionContext,
+  outcome: Outcome,
+) {
+  return {
+    provider: 'codex',
+    provider_session_id: context.sessionId,
+    tool_name: call.name,
+    tool_call_id: call.callId,
+    parent_tool_call_id: call.parentCallId,
+    outcome,
+    extraction_method: call.extractionMethod,
+    extraction_confidence: call.extractionConfidence,
+    match_confidence: context.options.matchConfidence,
+    format: FORMAT,
+    source_record_index: context.rowIndex,
+  }
+}
+
+function patchTargetPaths(
+  patch: string | undefined,
+  cwd: string,
+  targetRoot: string,
+) {
+  if (!patch) return []
+  let paths: string[] = []
+  let seen = new Set<string>()
+  let pattern =
+    /^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/gm
+
+  for (let match of patch.matchAll(pattern)) {
+    let value = (match[1] ?? match[2])?.trim()
+    if (!value || value === '/dev/null') continue
+    let absolutePath = path.resolve(cwd, value)
+    if (!withinRoot(absolutePath, targetRoot)) continue
+    let display = displayPath(absolutePath, targetRoot)
+    if (seen.has(display)) continue
+    seen.add(display)
+    paths.push(display)
+  }
+
+  return paths
+}
+
+function topLevelBindings(ast: any) {
+  let bindings = new Map<string, unknown>()
+  for (let statement of ast.body ?? []) {
+    if (statement.type !== 'VariableDeclaration') continue
+    for (let declaration of statement.declarations ?? []) {
+      if (declaration.id?.type !== 'Identifier') continue
+      let value = staticValue(declaration.init, bindings)
+      if (value.known) bindings.set(declaration.id.name, value.value)
+    }
+  }
+  return bindings
+}
+
+function staticInput(value: unknown) {
+  if (typeof value !== 'string') return value
+  let parsed = jsonObject(value)
+  return parsed ?? value
+}
+
+function staticValue(
+  node: any,
+  bindings: Map<string, unknown>,
+  depth = 0,
+): StaticValue {
+  if (!node || depth > 20) return { known: false }
+  if (node.type === 'Literal') {
+    return ['string', 'number', 'boolean'].includes(typeof node.value) ||
+      node.value === null
+      ? { known: true, value: node.value }
+      : { known: false }
+  }
+  if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
+    return { known: true, value: node.quasis[0]?.value?.cooked ?? '' }
+  }
+  if (node.type === 'Identifier' && bindings.has(node.name)) {
+    return { known: true, value: bindings.get(node.name) }
+  }
+  if (
+    node.type === 'UnaryExpression' &&
+    ['-', '+', '!'].includes(node.operator)
+  ) {
+    let argument = staticValue(node.argument, bindings, depth + 1)
+    if (!argument.known) return argument
+    if (node.operator === '-' && typeof argument.value === 'number') {
+      return { known: true, value: -argument.value }
+    }
+    if (node.operator === '+' && typeof argument.value === 'number') {
+      return argument
+    }
+    if (node.operator === '!') return { known: true, value: !argument.value }
+    return { known: false }
+  }
+  if (node.type === 'ArrayExpression') {
+    let values: unknown[] = []
+    for (let element of node.elements) {
+      let value = staticValue(element, bindings, depth + 1)
+      if (!value.known) return { known: false }
+      values.push(value.value)
+    }
+    return { known: true, value: values }
+  }
+  if (node.type === 'ObjectExpression') {
+    let object = Object.create(null) as Record<string, unknown>
+    for (let property of node.properties) {
+      if (property.type !== 'Property' || property.kind !== 'init') {
+        return { known: false }
+      }
+      let key =
+        property.key.type === 'Identifier' && !property.computed
+          ? property.key.name
+          : property.key.type === 'Literal' &&
+              typeof property.key.value === 'string'
+            ? property.key.value
+            : undefined
+      if (!key) return { known: false }
+      let value = staticValue(property.value, bindings, depth + 1)
+      if (!value.known) return { known: false }
+      object[key] = value.value
+    }
+    return { known: true, value: object }
+  }
+  return { known: false }
+}
+
+function walkAst(ast: any, visit: (node: any) => false | void) {
+  let nodes = 0
+  let complete = true
+
+  function walk(node: any) {
+    if (!complete || !node || typeof node !== 'object') return
+    if (typeof node.type === 'string') {
+      nodes += 1
+      if (nodes > MAX_CUSTOM_CALL_NODES || visit(node) === false) {
+        complete = false
+        return
+      }
+    }
+    for (let [key, value] of Object.entries(node)) {
+      if (['start', 'end', 'loc', 'range'].includes(key)) continue
+      if (Array.isArray(value)) {
+        for (let item of value) walk(item)
+      } else {
+        walk(value)
+      }
+    }
+  }
+
+  walk(ast)
+  return { complete }
+}
+
+function toolsMethod(callee: any) {
+  if (callee?.type !== 'MemberExpression') return undefined
+  if (callee.object?.type !== 'Identifier' || callee.object.name !== 'tools') {
+    return undefined
+  }
+  if (!callee.computed && callee.property?.type === 'Identifier') {
+    return callee.property.name
+  }
+  if (callee.computed && callee.property?.type === 'Literal') {
+    return stringValue(callee.property.value)
+  }
+  return undefined
+}
+
+function derivedToolCallId(parent: string, index: number) {
+  return `${parent.slice(0, 220)}:nested:${index}`
 }
 
 function discoverCandidates(options: DiscoverCandidatesOptions) {
@@ -485,22 +876,73 @@ function functionOutputs(rows: ParsedRow[], start: number, stop: number) {
     let time = new Date(value.timestamp ?? '').getTime()
     if (
       value.type !== 'response_item' ||
-      value.payload?.type !== 'function_call_output' ||
+      !['function_call_output', 'custom_tool_call_output'].includes(
+        value.payload?.type,
+      ) ||
       !within(time, start, stop)
     )
       continue
 
     let callId = stringValue(value.payload.call_id)
     if (!callId) continue
-    let output = stringValue(value.payload.output) ?? ''
-    let match = output.match(/Process exited with code (-?\d+)/)
+    let output = value.payload.output ?? value.payload.result
+    let exitCode = outputExitCode(output)
     outputs.set(callId, {
-      exitCode: match ? Number(match[1]) : undefined,
+      exitCode,
+      outcome:
+        exitCode === 0
+          ? 'success'
+          : typeof exitCode === 'number'
+            ? 'failed'
+            : outputStatus(output),
       timestamp: timestampValue(value.timestamp),
     })
   }
 
   return outputs
+}
+
+function outputExitCode(value: unknown, depth = 0): number | undefined {
+  if (depth > 8) return undefined
+  if (typeof value === 'string') {
+    let match = value.match(/Process exited with code (-?\d+)/)
+    if (!match) match = value.match(/["']exit_code["']\s*:\s*(-?\d+)/)
+    return match ? Number(match[1]) : undefined
+  }
+  if (!value || typeof value !== 'object') return undefined
+
+  let record = value as Record<string, unknown>
+  for (let key of ['exit_code', 'exitCode']) {
+    if (typeof record[key] === 'number') return record[key]
+  }
+  for (let child of Object.values(record)) {
+    let exitCode = outputExitCode(child, depth + 1)
+    if (typeof exitCode === 'number') return exitCode
+  }
+  return undefined
+}
+
+function outputStatus(value: unknown, depth = 0): Outcome | undefined {
+  if (depth > 8 || !value || typeof value !== 'object') return undefined
+  let record = value as Record<string, unknown>
+  if (record.success === true) return 'success'
+  if (record.success === false) return 'failed'
+  let status = stringValue(record.status)?.toLowerCase()
+  if (['success', 'succeeded', 'completed'].includes(status ?? '')) {
+    return 'success'
+  }
+  if (['failed', 'error', 'cancelled', 'canceled'].includes(status ?? '')) {
+    return 'failed'
+  }
+  for (let child of Object.values(record)) {
+    let outcome = outputStatus(child, depth + 1)
+    if (outcome) return outcome
+  }
+  return undefined
+}
+
+function outputOutcome(output?: FunctionOutput): Outcome {
+  return output?.outcome ?? 'unknown'
 }
 
 function skillReads(command: string, cwd: string, skillRoots: string[]) {
@@ -728,6 +1170,11 @@ function collectionResult(
       provider: 'codex',
       evidence_event_count: 0,
       execution_operation_count: 0,
+      recognized_record_count: 0,
+      partially_extracted_record_count: 0,
+      unsupported_record_count: 0,
+      intentionally_ignored_record_count: 0,
+      extraction_method_counts: {},
       ignored_circular_call_count: 0,
       ignored_unsupported_call_count: 0,
       warnings: [],
@@ -848,6 +1295,7 @@ export type ProviderHistoryEvent = {
     | 'skill_reference_read'
     | 'execution_operation_observed'
   timestamp?: string
+  artifact_refs?: string[]
   skill?: {
     name?: string
     path?: string
@@ -889,6 +1337,11 @@ type ParsedCodexProviderHistory = {
   evidenceCount: number
   operationCount: number
   operationCounts: Record<string, number>
+  recognizedRecordCount: number
+  partiallyExtractedRecordCount: number
+  unsupportedRecordCount: number
+  intentionallyIgnoredRecordCount: number
+  extractionMethodCounts: Record<string, number>
   circularCallCount: number
   unsupportedCallCount: number
   warnings: string[]
@@ -931,8 +1384,41 @@ type ParsedRow = {
 
 type FunctionOutput = {
   exitCode?: number
+  outcome?: Outcome
   timestamp?: string
 }
+
+type RecordExtraction = {
+  method: ExtractionMethod
+  outerCallId: string
+  partial: boolean
+  calls: ExtractedToolCall[]
+}
+
+type ExtractedToolCall = {
+  name: string
+  callId: string
+  parentCallId?: string
+  args?: Record<string, unknown>
+  input?: unknown
+  extractionMethod: ExtractionMethod
+  extractionConfidence: Confidence
+}
+
+type ProjectionContext = {
+  sessionId: string
+  currentCwd: string
+  timestamp?: string
+  rowIndex: number
+  output?: FunctionOutput
+  options: ParseCodexProviderHistoryOptions
+  events: ProviderHistoryEvent[]
+  fingerprints: Set<string>
+}
+
+type StaticValue =
+  | { known: true; value: unknown }
+  | { known: false; value?: undefined }
 
 type SkillRead = {
   absolutePath: string
@@ -959,3 +1445,7 @@ type CollectionStatus =
 type MatchConfidence = 'high' | 'medium' | 'unknown'
 type Completeness = 'explicit_complete' | 'explicit_aborted' | 'stable_at_stop'
 type OperationKind = 'test' | 'typecheck' | 'lint' | 'build'
+type Outcome = 'success' | 'failed' | 'unknown'
+type Confidence = 'high' | 'medium' | 'low'
+type ExtractionMethod = 'direct_envelope' | 'static_js'
+type ProjectionResult = 'recognized' | 'ignored' | 'circular' | 'unsupported'

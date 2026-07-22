@@ -153,6 +153,8 @@ describe('providerHistoryBatchSchema', () => {
             evidence_kind: 'shell_content_read',
             command_classifier: 'cat',
             confidence: 'medium',
+            extraction_method: 'direct_envelope',
+            extraction_confidence: 'high',
             match_confidence: 'high',
             format: 'codex_rollout_jsonl_v1',
             source_record_index: 3,

@@ -398,16 +398,25 @@ This is evidence of envelope variation associated with the model change, not
 proof that the model alone caused it. A simultaneous provider-side tool-protocol
 change remains possible.
 
-The current Codex first cut matched the later session successfully but emitted
-no normalized provider events for its nested operations. It reported eight
-unsupported calls. Static inspection of the program-like inputs recovered the
-following operations without reading prompt, response, reasoning, or tool-output
-content:
+Before shape-aware extraction was added, the Codex first cut matched the later
+session successfully but emitted no normalized provider events for its nested
+operations. It reported eight unsupported calls. Static inspection of the
+program-like inputs recovered the following operations without reading prompt,
+response, reasoning, or tool-output content:
 
 - two skill or reference content-read commands
 - two typecheck executions, first failing and then succeeding
 - one patch application
 - five nested SkillTrace MCP calls that should remain circular evidence
+
+Replaying that same rollout through the shape-aware adapter produces five
+normalized context operations: two skill/reference read attempts with unknown
+outcomes, a failed typecheck with exit code 2, one file edit with an unknown
+outcome, and a successful typecheck with exit code 0. The five SkillTrace calls
+remain excluded as circular. The reads do not become positive consistency
+evidence because their custom-call outputs contain content but no structurally
+correlated exit status; this is intentional uncertainty, not a collection
+failure.
 
 This result separates two health questions that must remain visible:
 
@@ -415,19 +424,19 @@ This result separates two health questions that must remain visible:
 - **Extraction health:** the adapter understood enough of those records to emit
   normalized facts.
 
-Collection succeeded in this case; extraction coverage did not. The other
-SkillTrace streams continued to describe the run, so the missing provider
-projection did not invalidate the trace. It did, however, remove provider-unique
-operation and outcome detail.
+Collection succeeded in the original import; extraction coverage did not. The
+other SkillTrace streams continued to describe the run, so the missing provider
+projection did not invalidate the trace. The shape-aware replay now restores
+the recoverable operation and outcome detail while keeping uncorrelated read
+outcomes explicit.
 
-The adapter should therefore dispatch by observed envelope shape rather than by
-model name. At minimum it should distinguish direct calls, program-like custom
-calls, and unknown response items. A custom program should first produce safe
-outer-call provenance, then optionally produce nested derived operations through
-bounded static analysis. Each derived operation should retain the outer line and
-call ID, an extraction method such as `static_js`, and confidence. Failure to
-decode the nested program must remain a partial-extraction diagnostic, not an
-empty successful import.
+The implemented adapter therefore dispatches by observed envelope shape rather
+than by model name. It distinguishes direct calls from program-like custom calls
+and uses bounded static analysis for literal `tools.*` invocations. Each derived
+operation retains the outer call ID, source record, `static_js` extraction
+method, and confidence. Dynamic or undecodable input remains visible through
+partial or unsupported extraction diagnostics instead of appearing as an empty
+successful import.
 
 ### `event_msg`
 

@@ -81,6 +81,90 @@ describe('Codex provider history adapter', () => {
     expect(result.success).toBe(true)
   })
 
+  test('projects bounded static calls from the program-like exec envelope', () => {
+    let result = parseCodexProviderHistory(customExecFixture(), {
+      ...runOptions(),
+      matchConfidence: 'high',
+    })
+
+    expect(result.model).toBe('gpt-5.6')
+    expect(result.evidenceCount).toBe(1)
+    expect(result.operationCount).toBe(3)
+    expect(result.operationCounts).toEqual({
+      typecheck: 1,
+      file_edit: 1,
+      lint: 1,
+    })
+    expect(result.circularCallCount).toBe(1)
+    expect(result.unsupportedCallCount).toBe(2)
+    expect(result.recognizedRecordCount).toBe(3)
+    expect(result.partiallyExtractedRecordCount).toBe(1)
+    expect(result.unsupportedRecordCount).toBe(1)
+    expect(result.intentionallyIgnoredRecordCount).toBe(1)
+    expect(result.extractionMethodCounts).toEqual({
+      static_js: 3,
+      direct_envelope: 2,
+    })
+
+    let read = result.events.find(
+      (event) => event.event_type === 'skill_file_read',
+    )
+    expect(read).toMatchObject({
+      skill: { path: '.agents/skills/type-fix/SKILL.md' },
+      payload: {
+        parent_tool_call_id: 'outer-read',
+        tool_call_id: 'outer-read:nested:0',
+        outcome: 'success',
+        extraction_method: 'static_js',
+        extraction_confidence: 'medium',
+      },
+    })
+
+    let edit = result.events.find(
+      (event) => event.payload.operation_kind === 'file_edit',
+    )
+    expect(edit).toMatchObject({
+      artifact_refs: ['src/example.ts'],
+      payload: {
+        parent_tool_call_id: 'outer-multi',
+        outcome: 'unknown',
+        command_classifier: 'apply_patch',
+        evidence_status: 'context_only',
+      },
+    })
+    let typecheck = result.events.find(
+      (event) =>
+        event.payload.operation_kind === 'typecheck' &&
+        event.payload.parent_tool_call_id === 'outer-multi',
+    )
+    expect(typecheck?.payload).toMatchObject({
+      outcome: 'success',
+      exit_code: 0,
+    })
+    expect(typecheck?.payload.duration_ms).toBeUndefined()
+    expect(
+      providerHistoryBatchSchema.safeParse({
+        run_id: 'demo-run',
+        events: result.events,
+      }).success,
+    ).toBe(true)
+  })
+
+  test('does not retain custom JavaScript, patch bodies, or tool output', () => {
+    let projected = JSON.stringify(
+      parseCodexProviderHistory(customExecFixture(), {
+        ...runOptions(),
+        matchConfidence: 'high',
+      }),
+    )
+
+    expect(projected).not.toContain('CUSTOM_JS_PRIVATE_CANARY')
+    expect(projected).not.toContain('CUSTOM_OUTPUT_PRIVATE_CANARY')
+    expect(projected).not.toContain('PATCH_BODY_PRIVATE_CANARY')
+    expect(projected).not.toContain('pnpm tsc')
+    expect(projected).not.toContain('tools.exec_command')
+  })
+
   test('does not treat write destinations or in-place edits as reads', () => {
     let result = parseFixture()
     let reads = result.events.filter((event) =>
@@ -190,6 +274,118 @@ function fixtureText() {
     new URL('./fixtures/codex-rollout.jsonl', import.meta.url),
     'utf8',
   )
+}
+
+function customExecFixture() {
+  let rows = [
+    {
+      timestamp: '2026-07-20T10:00:05.000Z',
+      type: 'session_meta',
+      payload: {
+        id: 'codex-custom-session-1',
+        cwd: '/workspace/demo',
+        cli_version: '0.143.0',
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:00:06.000Z',
+      type: 'turn_context',
+      payload: { cwd: '/workspace/demo', model: 'gpt-5.6' },
+    },
+    {
+      timestamp: '2026-07-20T10:01:00.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call',
+        name: 'exec',
+        call_id: 'outer-read',
+        input: [
+          "const note = 'CUSTOM_JS_PRIVATE_CANARY tools.apply_patch()'",
+          "const args = { cmd: 'cat .agents/skills/type-fix/SKILL.md', workdir: '/workspace/demo' }",
+          'const result = await tools.exec_command(args)',
+          'text(result.output)',
+        ].join('\n'),
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:01:01.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call_output',
+        call_id: 'outer-read',
+        output: {
+          exit_code: 0,
+          output: 'CUSTOM_OUTPUT_PRIVATE_CANARY',
+        },
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:02:00.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call',
+        name: 'exec',
+        call_id: 'outer-multi',
+        input: [
+          "const patch = '*** Begin Patch\\n*** Update File: src/example.ts\\n@@\\n-PATCH_BODY_PRIVATE_CANARY\\n+changed\\n*** End Patch'",
+          'const results = await Promise.all([',
+          "  tools.exec_command({ cmd: 'pnpm tsc', workdir: '/workspace/demo' }),",
+          '  tools.apply_patch(patch),',
+          "  tools.mcp__skilltrace__skill_trace_context({ run_id: 'demo-run' }),",
+          '])',
+          'text(results.length)',
+        ].join('\n'),
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:02:02.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call_output',
+        call_id: 'outer-multi',
+        output: {
+          exit_code: 0,
+          output: 'CUSTOM_OUTPUT_PRIVATE_CANARY',
+        },
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:03:00.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call',
+        name: 'exec',
+        call_id: 'outer-partial',
+        input: [
+          "const args = { cmd: 'pnpm lint', workdir: '/workspace/demo' }",
+          'await tools.exec_command(args)',
+          'await tools.exec_command(makeArgs())',
+        ].join('\n'),
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:03:20.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'function_call',
+        name: 'wait',
+        call_id: 'call-wait',
+        arguments: '{"cell_id":"cell-1"}',
+      },
+    },
+    {
+      timestamp: '2026-07-20T10:03:30.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'custom_tool_call',
+        name: 'unknown_tool',
+        call_id: 'call-unknown',
+        input: 'CUSTOM_JS_PRIVATE_CANARY',
+      },
+    },
+  ]
+
+  return rows.map((row) => JSON.stringify(row)).join('\n')
 }
 
 function fixtureCodexHome(text: string) {

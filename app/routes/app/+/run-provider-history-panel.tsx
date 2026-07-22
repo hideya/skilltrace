@@ -68,7 +68,7 @@ export function ProviderHistoryPanel({
       {operations.length > 0 ? (
         <section className="mt-5 border-t border-base-300 pt-4">
           <h3 className="mb-2 text-sm font-semibold text-base-content/70">
-            Verification operations
+            Observed operations
           </h3>
           <ul className="space-y-2">
             {operations.map((event) => (

@@ -73,6 +73,7 @@ export const providerHistoryEventSchema = z
       })
       .strict()
       .optional(),
+    artifact_refs: z.array(z.string().trim().min(1).max(4096)).optional(),
     payload: z
       .object({
         provider: z.literal('codex'),
@@ -83,14 +84,25 @@ export const providerHistoryEventSchema = z
           .max(256),
         tool_name: z.string().trim().min(1).max(256),
         tool_call_id: z.string().trim().min(1).max(256),
+        parent_tool_call_id: z.string().trim().min(1).max(256).optional(),
         outcome: z.enum(['success', 'failed', 'unknown']),
         evidence_kind: z.literal('shell_content_read').optional(),
         operation_kind: z
-          .enum(['test', 'typecheck', 'lint', 'build'])
+          .enum([
+            'file_read',
+            'file_edit',
+            'test',
+            'typecheck',
+            'lint',
+            'build',
+          ])
           .optional(),
         command_classifier: z.string().trim().min(1).max(256),
         confidence: z.enum(['high', 'medium', 'low']).optional(),
         classification_confidence: z.enum(['high', 'medium', 'low']).optional(),
+        extraction_method: z.enum(['direct_envelope', 'static_js']),
+        extraction_confidence: z.enum(['high', 'medium', 'low']),
+        evidence_status: z.literal('context_only').optional(),
         match_confidence: z.enum(['high', 'medium', 'unknown']),
         format: z.literal('codex_rollout_jsonl_v1'),
         exit_code: z.number().int().optional(),
@@ -185,7 +197,7 @@ export async function appendProviderHistoryEvents(
       event_type: event.event_type,
       skill_name: event.skill?.name,
       skill_path: event.skill?.path,
-      artifact_refs: [],
+      artifact_refs: event.artifact_refs ?? [],
       payload: event.payload,
     })),
   )
