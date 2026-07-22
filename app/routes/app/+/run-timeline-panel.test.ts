@@ -37,7 +37,7 @@ describe('compactPathLabel', () => {
 })
 
 describe('Timeline', () => {
-  test('shows the tool name and operation kind above a provider operation', () => {
+  test('shows tool, operation kind, and known outcome above an operation', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {
         events: [
@@ -59,9 +59,16 @@ describe('Timeline', () => {
 
     expect(markup).toContain('exec_command')
     expect(markup).toContain('file_read')
+    expect(markup).toContain('failed')
     expect(markup).toContain('text-amber-600')
+    expect(markup).toContain('font-normal opacity-70')
+    expect(markup).toContain('font-semibold text-amber-500')
     expect(markup.indexOf('exec_command')).toBeLessThan(
       markup.indexOf('file_read'),
+    )
+    expect(markup.indexOf('file_read')).toBeLessThan(markup.indexOf('failed'))
+    expect(markup.indexOf('failed')).toBeLessThan(
+      markup.indexOf('execution_operation_observed'),
     )
     expect(markup.indexOf('file_read')).toBeLessThan(
       markup.indexOf('execution_operation_observed'),
@@ -69,5 +76,28 @@ describe('Timeline', () => {
     expect(markup.indexOf('exec_command')).toBeLessThan(
       markup.indexOf('execution_operation_observed'),
     )
+  })
+
+  test('omits an unknown provider operation outcome', () => {
+    let markup = renderToStaticMarkup(
+      createElement(Timeline, {
+        events: [
+          {
+            id: 1,
+            timestamp: '2026-07-23T06:00:48.338Z',
+            source: 'provider_history',
+            event_type: 'execution_operation_observed',
+            payload: {
+              provider: 'codex',
+              tool_name: 'exec_command',
+              operation_kind: 'file_edit',
+              outcome: 'unknown',
+            },
+          },
+        ],
+      }),
+    )
+
+    expect(markup).not.toContain('text-amber-500 opacity-70">unknown')
   })
 })

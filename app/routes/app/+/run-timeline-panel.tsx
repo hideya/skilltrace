@@ -1,5 +1,4 @@
 import { Fragment } from 'react'
-
 import { skillPathFromRoot } from '~/lib/skill-path'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
@@ -38,6 +37,7 @@ export function Timeline({ events }: TimelineProps) {
 function TimelineItem({ event }: TimelineItemProps) {
   let name = primaryLabelForEvent(event)
   let operationKind = operationKindForEvent(event)
+  let outcome = outcomeForEvent(event)
   let isSemantic = isSemanticEvent(event)
   let warning = eventWarning(event)
   let process = observedProcessForEvent(event)
@@ -54,15 +54,22 @@ function TimelineItem({ event }: TimelineItemProps) {
                 {name || isSemantic || warning ? (
                   <>
                     <span
-                      className={`font-mono text-sm font-semibold ${eventFileNameClass(
-                        event,
-                      )}`}
+                      className={`font-mono text-sm ${
+                        operationKind
+                          ? 'font-normal opacity-70'
+                          : 'font-semibold'
+                      } ${eventFileNameClass(event)}`}
                     >
                       <PathLabel label={name} />
                     </span>
                     {operationKind ? (
-                      <span className="font-mono text-xs text-amber-600/70">
+                      <span className="font-mono text-sm font-semibold text-amber-500">
                         {operationKind}
+                      </span>
+                    ) : null}
+                    {outcome ? (
+                      <span className="font-mono text-sm text-amber-500 opacity-70">
+                        {outcome}
                       </span>
                     ) : null}
                   </>
@@ -199,7 +206,7 @@ function eventDotSizeClass(event: any) {
 function eventTitleClass(event: any) {
   if (isSemanticEvent(event)) return 'font-semibold text-sm'
   if (isPassiveReadEvent(event)) return 'font-semibold text-sm'
-  if (isProviderEvent(event)) return 'font-semibold text-sm'
+  if (isProviderEvent(event)) return 'font-normal text-sm'
   return 'font-normal'
 }
 
@@ -268,6 +275,22 @@ function operationKindForEvent(event: any) {
   let operationKind = event.payload?.operation_kind
   if (typeof operationKind !== 'string') return null
   return operationKind.trim() || null
+}
+
+function outcomeForEvent(event: any) {
+  if (
+    !isProviderEvent(event) ||
+    event.event_type !== 'execution_operation_observed'
+  ) {
+    return null
+  }
+
+  let outcome = event.payload?.outcome
+  if (typeof outcome !== 'string') return null
+
+  outcome = outcome.trim()
+  if (!outcome || outcome.toLowerCase() === 'unknown') return null
+  return outcome
 }
 
 export function compactPathLabel(filePath: string) {
