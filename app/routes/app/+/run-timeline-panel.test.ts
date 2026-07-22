@@ -46,6 +46,7 @@ describe('Timeline', () => {
             timestamp: '2026-07-23T06:00:48.338Z',
             source: 'provider_history',
             event_type: 'execution_operation_observed',
+            artifact_refs: ['.agents/skills/type-fix/SKILL.md'],
             payload: {
               provider: 'codex',
               tool_name: 'exec_command',
@@ -59,6 +60,9 @@ describe('Timeline', () => {
 
     expect(markup).toContain('exec_command')
     expect(markup).toContain('file_read')
+    expect(markup).toContain('.agents/')
+    expect(markup).toContain('type-fix/')
+    expect(markup).toContain('SKILL.md')
     expect(markup).toContain('failed')
     expect(markup).toContain('text-amber-600')
     expect(markup).toContain('font-normal opacity-70')
@@ -67,6 +71,8 @@ describe('Timeline', () => {
       markup.indexOf('file_read'),
     )
     expect(markup.indexOf('file_read')).toBeLessThan(markup.indexOf('failed'))
+    expect(markup.indexOf('file_read')).toBeLessThan(markup.indexOf('.agents/'))
+    expect(markup.indexOf('.agents/')).toBeLessThan(markup.indexOf('failed'))
     expect(markup.indexOf('failed')).toBeLessThan(
       markup.indexOf('execution_operation_observed'),
     )
@@ -78,7 +84,7 @@ describe('Timeline', () => {
     )
   })
 
-  test('omits an unknown provider operation outcome', () => {
+  test('shows file-edit targets but omits an unknown outcome', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {
         events: [
@@ -87,6 +93,7 @@ describe('Timeline', () => {
             timestamp: '2026-07-23T06:00:48.338Z',
             source: 'provider_history',
             event_type: 'execution_operation_observed',
+            artifact_refs: ['src/profile.ts', 'src/profile.test.ts'],
             payload: {
               provider: 'codex',
               tool_name: 'exec_command',
@@ -98,6 +105,9 @@ describe('Timeline', () => {
       }),
     )
 
+    expect(markup).toContain('src/')
+    expect(markup).toContain('profile.ts')
+    expect(markup).toContain('profile.test.ts')
     expect(markup).not.toContain('text-amber-500 opacity-70">unknown')
   })
 })

@@ -37,6 +37,7 @@ export function Timeline({ events }: TimelineProps) {
 function TimelineItem({ event }: TimelineItemProps) {
   let name = primaryLabelForEvent(event)
   let operationKind = operationKindForEvent(event)
+  let artifactRefs = artifactRefsForEvent(event)
   let outcome = outcomeForEvent(event)
   let isSemantic = isSemanticEvent(event)
   let warning = eventWarning(event)
@@ -50,7 +51,7 @@ function TimelineItem({ event }: TimelineItemProps) {
         <>
           <div className="flex min-w-0 flex-col items-baseline gap-2">
             {name ? (
-              <div className="flex items-baseline gap-2">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
                 {name || isSemantic || warning ? (
                   <>
                     <span
@@ -67,6 +68,16 @@ function TimelineItem({ event }: TimelineItemProps) {
                         {operationKind}
                       </span>
                     ) : null}
+                    {artifactRefs.map((artifactRef, index) => (
+                      <span
+                        className="min-w-0 font-mono text-sm text-amber-500"
+                        key={`${artifactRef}-${index}`}
+                        title={artifactRef}
+                      >
+                        <PathLabel label={artifactRef} />
+                        {index < artifactRefs.length - 1 ? ',' : null}
+                      </span>
+                    ))}
                     {outcome ? (
                       <span className="font-mono text-sm text-amber-500 opacity-70">
                         {outcome}
@@ -275,6 +286,21 @@ function operationKindForEvent(event: any) {
   let operationKind = event.payload?.operation_kind
   if (typeof operationKind !== 'string') return null
   return operationKind.trim() || null
+}
+
+function artifactRefsForEvent(event: any) {
+  if (
+    !isProviderEvent(event) ||
+    event.event_type !== 'execution_operation_observed' ||
+    !Array.isArray(event.artifact_refs)
+  ) {
+    return []
+  }
+
+  return event.artifact_refs
+    .filter((artifactRef: unknown) => typeof artifactRef === 'string')
+    .map((artifactRef: string) => artifactRef.trim())
+    .filter(Boolean)
 }
 
 function outcomeForEvent(event: any) {
