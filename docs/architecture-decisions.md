@@ -557,6 +557,31 @@ Reasons:
 - per-run source fingerprints make repeated batch submission idempotent without
   a schema migration
 
+Provider-history retention follows this principle:
+
+> Be aggressive about semantic coverage, but conservative about retained
+> content.
+
+SkillTrace should preserve privacy-safe operation order, nesting, failures,
+retries, recovery, verification transitions, affected paths, and extraction
+health even when those facts do not affect today's verdict or appear
+individually in today's UI. It must continue to exclude prompts, responses,
+reasoning, raw output, complete commands, provider program wrappers, patches,
+and file contents.
+
+The durable model separates:
+
+1. **Observation:** what the provider recorded, represented by a safely
+   normalized mechanical fact.
+2. **Evidence status:** the current policy decision about consistency use.
+3. **Interpretation:** a revisable postmortem or skill-improvement conclusion.
+
+This lets future versions reinterpret a run without treating temporal proximity
+as causation or replacing granular facts with generated prose.
+
+The future interpretation model is documented in
+[postmortem-and-skill-improvement.md](postmortem-and-skill-improvement.md).
+
 The format observations, lifecycle, privacy policy, and remaining roadmap are
 documented in
 [provider-history-event-source.md](provider-history-event-source.md) and

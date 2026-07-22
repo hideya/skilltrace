@@ -578,7 +578,9 @@ WARNING: skill_use_started was logged for db-migration-review, but no file acces
 PASS: pr-review was read, started, and finished.
 ```
 
-Later versions may include LLM-assisted log analysis and postmortem drafting. MVP v0 only needs simple consistency checks.
+Later versions may include LLM-assisted log analysis and postmortem drafting.
+MVP v0 only needs simple consistency checks. The current future design is in
+[Postmortem And Skill Improvement Design](./postmortem-and-skill-improvement.md).
 
 ## 15. Initial Experiment Plan
 
@@ -707,6 +709,10 @@ In this framing:
 > Skills are executable procedural knowledge units that should mature through failures.
 
 ## 19. Long-Term Vision
+
+The observation, evidence-status, postmortem, and skill-improvement path is
+expanded in
+[Postmortem And Skill Improvement Design](./postmortem-and-skill-improvement.md).
 
 Beyond the MVP, the project may evolve toward:
 

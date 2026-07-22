@@ -215,6 +215,35 @@ Provider history should be described as client-recorded evidence, not ground
 truth. A provider can omit events, buffer writes, redact data, or change its
 serialization. Local files can also be edited after the fact.
 
+## Semantic Coverage And Retention Principle
+
+The guiding principle is:
+
+> Be aggressive about semantic coverage, but conservative about retained
+> content.
+
+Aggressive semantic coverage means recognizing and preserving a broad set of
+privacy-safe facts that may help future run postmortems and skill improvement:
+skill and reference consultation, operation order, nesting, failures, retries,
+recovery, verification transitions, affected paths, artifacts, terminal state,
+and extraction uncertainty. It does not mean lowering the validation threshold
+for consistency evidence or attempting to retain a complete forensic transcript.
+
+Conservative retention means projecting those facts into a small allowlisted
+schema. Raw commands, program wrappers, arguments, output, patches,
+conversational content, and reasoning remain transient even when the adapter
+uses them to classify an operation.
+
+The collector should retain high-signal normalized operations individually when
+their order or transition may matter later. In particular, it should not reduce
+a failed verification, corrective edit, and successful retry to one final
+success. Repetitive low-value activity may be summarized after preserving
+failures, recovery, verification, and other meaningful transitions.
+
+Storage and display have different needs. SkillTrace may retain more normalized
+facts than the current timeline displays. Today's UI can summarize them while a
+future analysis derives a new postmortem from the original normalized sequence.
+
 ## Proposed Event Model
 
 Provider history produces two related projections:
@@ -223,6 +252,28 @@ Provider history produces two related projections:
 2. normalized execution-context facts that do not initially affect verdicts
 
 Both keep provider provenance. Neither stores conversational content.
+
+### Observation, Evidence Status, And Interpretation
+
+SkillTrace must keep three concepts separate:
+
+1. **Observation** records what the provider mechanically persisted and what the
+   adapter safely normalized, including provenance and extraction uncertainty.
+2. **Evidence status** records whether that observation currently qualifies for
+   consistency checking, is context-only, is circular, or could not be
+   sufficiently classified.
+3. **Interpretation** is a later conclusion such as a generated postmortem,
+   possible skill influence, or skill-improvement suggestion.
+
+Observation is the durable input. Evidence status is a versioned policy decision
+over observations. Interpretation is derived, revisable, and should cite the
+observations and uncertainty that support it. An operation following a skill read
+may be relevant to a postmortem without becoming proof that the skill caused it.
+
+Provider events should therefore retain enough safe provenance to support later
+reclassification: provider and session identity, event order, outer and nested
+call relationships, extraction method, confidence, and adapter format version.
+Generated postmortem prose must not replace those underlying facts.
 
 Evidence events use the existing trace envelope with a new `source`:
 
@@ -286,11 +337,15 @@ A proposed event is:
     "provider": "claude_code",
     "provider_session_id": "<provider-session-id>",
     "tool_call_id": "<provider-tool-call-id>",
+    "parent_tool_call_id": null,
     "operation_kind": "test",
     "outcome": "success",
     "exit_code": 0,
     "duration_ms": 1840,
     "classification_confidence": "high",
+    "extraction_method": "direct_envelope",
+    "extraction_confidence": "high",
+    "evidence_status": "context_only",
     "format": "claude_code_jsonl_v1",
     "source_record_index": 57
   }
@@ -315,6 +370,12 @@ provider session and tool-call IDs still place that evidence in the operation
 sequence. Other normalized operations provide the surrounding execution
 context.
 
+Program-like custom calls should first produce safe outer-call provenance. When
+bounded static analysis can recover nested calls, each derived operation should
+link to the outer call and record its extraction method and confidence. Failure
+to recover nested operations is partial extraction, not evidence that no
+operations occurred.
+
 `other` should be used sparingly. An unclassified arbitrary command is not
 useful merely because it can be stored.
 
@@ -337,6 +398,10 @@ Its payload should contain only operational metadata:
   "provider_model": "<model-id>",
   "match_confidence": "high",
   "completeness": "explicit_complete",
+  "recognized_record_count": 10,
+  "partially_extracted_record_count": 1,
+  "unsupported_record_count": 2,
+  "intentionally_ignored_record_count": 14,
   "evidence_event_count": 2,
   "execution_operation_count": 8,
   "operation_counts": {
@@ -344,11 +409,20 @@ Its payload should contain only operational metadata:
     "test": 1,
     "other": 5
   },
+  "extraction_method_counts": {
+    "direct_envelope": 5,
+    "static_js": 5
+  },
   "ignored_circular_call_count": 5,
-  "ignored_unsupported_call_count": 3,
   "warnings": []
 }
 ```
+
+The implemented first cut currently reports unsupported tool calls through
+`ignored_unsupported_call_count`. A future summary should replace that coarse
+field with the recognized, partial, unsupported, and intentionally ignored
+record counts above so collection success and extraction coverage are not
+conflated.
 
 Allowed collection statuses should be:
 
@@ -532,17 +606,21 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - normalized skill or reference path
 - normalized operation kind and repository-relative affected paths
 - tool name or shell-operation classifier
+- outer and nested call relationships and normalized operation order
 - success, failure, abort, or completeness state
 - exit code and duration when structurally available
-- match and evidence confidence
+- match, classification, and evidence confidence
+- extraction method, extraction confidence, and partial-extraction status
 - non-content source fingerprint and record position
-- aggregate ignored-record counts and safe warning codes
+- aggregate recognized, partial, unsupported, circular, and intentionally
+  ignored record counts plus safe warning codes
 
 ### Inspected Transiently But Not Retained
 
 - tool arguments needed to extract exact paths and operation kind
 - shell command text needed to classify a read, edit, test, typecheck, lint,
   build, or artifact operation
+- program-like custom-tool input needed for bounded nested-call extraction
 - tool-result metadata needed to determine success
 - working directory needed for association and path normalization
 - provider timestamps and file metadata needed for matching and stability
@@ -554,6 +632,7 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - reasoning, thinking, summaries, or hidden model content
 - raw tool output
 - complete shell commands
+- JavaScript or other provider program wrappers
 - file contents
 - patch bodies, edited content, or file snapshots
 - attachments or images
@@ -615,17 +694,31 @@ allowing SkillTrace's interpretation to evolve later.
 Useful facts include:
 
 - provider, model, client, session, and completion metadata
-- operation categories and ordering
+- operation categories, ordering, and outer or nested call relationships
 - normalized repository-relative input and output paths
-- successful, failed, and aborted tool outcomes
+- successful, failed, and aborted tool outcomes, including retries and recovery
 - exit codes and durations when structurally available
-- verification attempts such as tests, type checks, lints, and builds
+- verification attempts and transitions such as a failing typecheck followed by
+  an edit and a successful retry
 - files edited and artifacts produced, without retaining their contents
 - the interval between skill consultation and later operations
+- extraction method, confidence, completeness, and unsupported-shape diagnostics
 
 The stored facts should remain granular enough to derive a new summary in a
 future version. SkillTrace should not store only a generated paragraph whose
 interpretation cannot later be revised.
+
+### Future Postmortems And Skill Improvement
+
+Provider history is one input to future automatic postmortems and
+skill-improvement candidates. The analysis must combine normalized observations
+with source health, skill and instruction provenance, passive evidence, semantic
+declarations, reflection, and repository outcomes without claiming causation
+from temporal order alone.
+
+The cross-source analysis model, output requirements, confidence rules, and
+phased roadmap are documented in
+[Postmortem And Skill Improvement Design](./postmortem-and-skill-improvement.md).
 
 ### Skill Influence Windows
 
@@ -816,6 +909,9 @@ submission should remain outside the parser.
 - classifies allowed shell content reads
 - classifies structured edits and recognized verification commands
 - projects safe paths, outcomes, exit codes, and durations
+- preserves operation order, outer-call provenance, and recovered nesting
+- preserves failure, correction, retry, and success transitions
+- records extraction method, confidence, and partial-extraction diagnostics
 - rejects listings and path mentions as reads
 - correlates tool call and result status
 - filters every known SkillTrace MCP naming form
@@ -839,6 +935,7 @@ submission should remain outside the parser.
 - normalized events contain no reasoning or thinking content
 - normalized events contain no raw tool output
 - normalized events contain no complete shell command
+- normalized events contain no JavaScript or provider program wrapper
 - execution-context events contain no patch or edited content
 - repository paths are normalized and home-directory paths are redacted
 - warnings redact the home directory
@@ -861,6 +958,8 @@ submission should remain outside the parser.
   `provider_history` events.
 - Recognized operations become normalized execution-context facts with safe
   categories, outcomes, and paths.
+- Failure, retry, recovery, nesting, and extraction health remain available for
+  future analysis even when the current UI summarizes them.
 - Run details can derive Recorded execution context separately from Agent
   reflection.
 - Circular SkillTrace calls never become provider evidence.
@@ -871,6 +970,14 @@ submission should remain outside the parser.
 - Existing run verdicts do not change merely because provider history is absent.
 - `skilltrace stop` remains bounded and responsive.
 - Provider-specific fixtures and privacy regression tests cover every adapter.
+
+## Future Interpretation Phase
+
+Future interpretation should begin only after collection coverage and privacy
+boundaries are measured in real runs. It must operate on normalized observations,
+preserve its policy version, cite supporting facts, and remain replaceable. See
+[Postmortem And Skill Improvement Design](./postmortem-and-skill-improvement.md)
+for the dedicated roadmap.
 
 ## Open Questions
 
