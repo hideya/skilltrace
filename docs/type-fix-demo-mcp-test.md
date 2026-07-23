@@ -517,8 +517,14 @@ If no unique provider session can be matched, provider collection should report 
 unavailable, ambiguous, unsupported, or possibly incomplete status without
 changing the run verdict or preventing stop from completing.
 
-The consistency table should show aligned rows for `.agents/skills/type-fix/SKILL.md`
-and `.agents/skills/type-fix/references/checklist.md`.
+The consistency table should show aligned rows for
+`.agents/skills/type-fix/SKILL.md` and
+`.agents/skills/type-fix/references/checklist.md`. Its Provider column should
+show amber observations for matching normalized provider reads. A path found
+only in provider history should appear as **not evaluated**, without changing
+the run verdict. A completed collection with no matching read uses a neutral
+hollow dot; unavailable, ambiguous, unsupported, failed, and possibly
+incomplete collections use a dash instead.
 
 If the demo working copy has local changes to `AGENTS.md`, `.agents/skills/**`,
 `.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a
@@ -533,8 +539,9 @@ page should show `Compare Modes` on that run group. It preselects the latest
 successful run for each mode; change the selected runs if needed, then click
 `Compare Selected`. The comparison report should show whether the same
 skill/reference files were captured across the selected mode runs. Neutral
-`discovered` skill-entrypoint rows are omitted from comparison so startup skill
-catalog scans do not obscure material skill or reference use.
+`discovered` skill-entrypoint rows and provider-only rows are omitted from
+comparison so startup skill catalog scans and advisory observations do not
+obscure material skill or reference use.
 
 If the consistency table shows a missing passive dot for a file that was
 declared semantically, the MCP semantic path worked but the passive probe did

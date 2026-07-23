@@ -1,8 +1,10 @@
+import { InfoIcon, MinusIcon } from 'lucide-react'
 import { skillPathFromRoot } from '~/lib/skill-path'
 import { SectionSummaryHeader } from './run-detail-ui'
 
 export function ConsistencyPanel({
   isFinal = true,
+  providerHistory,
   rows,
   traceMode,
 }: ConsistencyPanelProps) {
@@ -27,6 +29,23 @@ export function ConsistencyPanel({
                 <th className="text-center">Passive</th>
                 <th className="text-center">Semantic</th>
                 <th className="text-center">Reflection</th>
+                <th className="text-center">
+                  <span className="inline-flex items-center gap-1">
+                    Provider
+                    <span
+                      aria-label="Advisory provider evidence"
+                      className="tooltip tooltip-bottom tooltip-end inline-flex cursor-help items-center font-normal outline-none before:w-48 before:whitespace-normal focus-visible:ring-2 focus-visible:ring-primary"
+                      data-tip="Advisory only. Does not affect consistency status."
+                      role="note"
+                      tabIndex={0}
+                    >
+                      <InfoIcon
+                        aria-hidden="true"
+                        className="size-3 text-base-content/40"
+                      />
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -75,6 +94,12 @@ export function ConsistencyPanel({
                       tone="semantic"
                     />
                   </td>
+                  <td className="text-center">
+                    <ProviderConsistencyDot
+                      active={row.provider}
+                      summary={providerHistory}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -104,13 +129,14 @@ function ConsistencyStatusBadge({
   let className =
     status === 'pass'
       ? 'badge-success'
-      : status === 'discovered'
+      : status === 'discovered' || status === 'provider_only'
         ? 'badge-outline text-base-content/60'
         : status === 'error'
           ? 'badge-error'
           : 'badge-warning'
 
-  return <span className={`badge badge-sm ${className}`}>{status}</span>
+  let label = status === 'provider_only' ? 'not evaluated' : status
+  return <span className={`badge badge-sm ${className}`}>{label}</span>
 }
 
 function ConsistencyDot({
@@ -155,6 +181,56 @@ function ConsistencyDot({
   )
 }
 
+function ProviderConsistencyDot({
+  active,
+  summary,
+}: ProviderConsistencyDotProps) {
+  if (active) {
+    return (
+      <span
+        aria-label="Observed in provider history"
+        className="inline-block size-3 rounded-full bg-amber-400"
+        title="Observed in provider history; advisory only"
+      />
+    )
+  }
+
+  if (summary?.status === 'collected') {
+    return (
+      <span
+        aria-label="Not observed in provider history"
+        className="inline-block size-3 rounded-full border border-base-content/30"
+        title="Not observed in collected provider history; advisory only"
+      />
+    )
+  }
+
+  let label = providerUnavailableLabel(summary?.status)
+
+  return (
+    <span
+      aria-label={label}
+      className="inline-flex size-3 items-center justify-center text-xs leading-none text-base-content/40"
+      title={label}
+    >
+      <MinusIcon aria-hidden="true" className="size-3" />
+    </span>
+  )
+}
+
+function providerUnavailableLabel(status?: string) {
+  if (status === 'possibly_incomplete') {
+    return 'Not established; provider collection may be incomplete'
+  }
+  if (status === 'unavailable') return 'Provider history unavailable'
+  if (status === 'ambiguous') return 'Provider history match was ambiguous'
+  if (status === 'unsupported_format') {
+    return 'Provider history format was unsupported'
+  }
+  if (status === 'failed') return 'Provider history collection failed'
+  return 'Provider history was not collected'
+}
+
 function consistencyDescription(mode?: string) {
   if (mode === 'passive_only') return 'checking passive observations'
   if (mode === 'passive_reflection') {
@@ -176,6 +252,7 @@ function displayRunFilePath(filePath: string) {
 
 type ConsistencyPanelProps = {
   isFinal?: boolean
+  providerHistory?: Record<string, any> | null
   rows: any[]
   traceMode?: string
 }
@@ -188,7 +265,12 @@ type ConsistencyDotProps = {
   tone: 'passive' | 'semantic'
 }
 
+type ProviderConsistencyDotProps = {
+  active: boolean
+  summary?: Record<string, any> | null
+}
+
 type ConsistencyStatusBadgeProps = {
   isFinal: boolean
-  status: 'pass' | 'warning' | 'error' | 'discovered'
+  status: 'pass' | 'warning' | 'error' | 'discovered' | 'provider_only'
 }

@@ -478,7 +478,10 @@ function comparisonRows(runs: ModeComparisonRun[]) {
   let rows = new Map<string, ModeComparisonRow>()
 
   for (let run of runs) {
-    for (let row of run.matrix.filter((item) => item.status !== 'discovered')) {
+    for (let row of run.matrix.filter(
+      (item) =>
+        item.status !== 'discovered' && item.status !== 'provider_only',
+    )) {
       let key = `${row.kind}:${normalizeComparePath(row.file)}`
       let comparison = rows.get(key) ?? {
         kind: row.kind,

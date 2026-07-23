@@ -431,7 +431,10 @@ An `unknown` outcome remains stored with the event but is omitted from the
 compact timeline header.
 
 It shows a consistency table across passive, semantic, and reflection evidence,
-and compares whether there is consistent evidence of skill usage.
+and compares whether there is consistent evidence of skill usage. A Provider
+column aligns normalized provider-history reads as advisory observations.
+Provider history does not affect the consistency status, issue count, or run
+result. Provider-only paths remain visible as neutral **not evaluated** rows.
 
 Passive `SKILL.md` reads that only look like startup skill discovery appear as
 `discovered` rows. They remain visible in run details, but they do not turn the
@@ -481,8 +484,9 @@ those runs. Since instrumentation may affect an agent's decisions, Compare
 Modes helps you gain confidence that the target skills still appear to be used
 when tracing becomes less intrusive.
 
-Neutral `discovered` rows are omitted from mode comparison so broad startup
-skill scans do not obscure differences in material skill or reference use.
+Neutral `discovered` and provider-only rows are omitted from mode comparison so
+broad startup skill scans and advisory observations do not obscure differences
+in material skill or reference use.
 
 <table>
   <tr>

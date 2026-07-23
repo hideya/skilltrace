@@ -550,6 +550,11 @@ semantic MCP declarations, and agent reflection. It does not participate in the
 consistency verdict yet, and missing, ambiguous, unsupported, or changing
 history never blocks the run from stopping.
 
+The consistency matrix aligns positive provider skill and reference reads in an
+advisory column. Provider-only paths are shown as neutral `not evaluated` rows.
+The column does not affect issue counts, run results, or mode comparison, and it
+does not substitute for an expected passive, semantic, or reflection signal.
+
 When a matched provider session supplies model or client identity, the runs list
 and primary Run context rows prefer those recorded values over agent-declared
 ones. Declared values remain the fallback when provider history is unavailable

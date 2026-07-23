@@ -101,6 +101,7 @@ export default function Page({ loaderData }: PageProps) {
 
       <ConsistencyPanel
         isFinal={timeline.status === 'finished'}
+        providerHistory={timeline.provider_history}
         rows={timeline.consistency_matrix}
         traceMode={timeline.trace_mode}
       />

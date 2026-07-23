@@ -13,9 +13,9 @@ export function traceConsistencyMatrix(
   for (let event of events) {
     if (event.source === 'passive_file_harness') {
       if (event.event_type === 'skill_file_read') {
-        upsertMatrixRow(rows, 'Skill', passivePath(event), 'passive')
+        upsertMatrixRow(rows, 'Skill', observedPath(event), 'passive')
       } else if (event.event_type === 'skill_reference_read') {
-        upsertMatrixRow(rows, 'Reference', passivePath(event), 'passive')
+        upsertMatrixRow(rows, 'Reference', observedPath(event), 'passive')
       }
     }
 
@@ -43,6 +43,14 @@ export function traceConsistencyMatrix(
         )
       }
     }
+
+    if (event.source === 'provider_history') {
+      if (event.event_type === 'skill_file_read') {
+        upsertMatrixRow(rows, 'Skill', observedPath(event), 'provider')
+      } else if (event.event_type === 'skill_reference_read') {
+        upsertMatrixRow(rows, 'Reference', observedPath(event), 'provider')
+      }
+    }
   }
 
   for (let file of stringList(reflection?.skills_read)) {
@@ -62,9 +70,12 @@ export function traceConsistencyMatrix(
 }
 
 export function summarizeConsistencyMatrix(rows: ConsistencyMatrixRow[]) {
-  if (rows.length === 0) return 'unknown'
+  let judgedRows = rows.filter((row) => row.status !== 'provider_only')
+  if (judgedRows.length === 0) return 'unknown'
   if (
-    rows.some((row) => row.status !== 'pass' && row.status !== 'discovered')
+    judgedRows.some(
+      (row) => row.status !== 'pass' && row.status !== 'discovered',
+    )
   ) {
     return 'warning'
   }
@@ -81,11 +92,11 @@ function latestReflection(events: TraceEventLike[]) {
     )[0]?.payload?.data
 }
 
-function passivePath(event: TraceEventLike) {
-  return passivePathCandidates(event)[0]
+function observedPath(event: TraceEventLike) {
+  return observedPathCandidates(event)[0]
 }
 
-function passivePathCandidates(event: TraceEventLike) {
+function observedPathCandidates(event: TraceEventLike) {
   return [
     event.skill_path,
     event.payload?.file_path,
@@ -156,11 +167,12 @@ function upsertMatrixRow(
       semantic_started: false,
       semantic_finished: false,
       reflection: false,
+      provider: false,
     }
     rows.push(row)
   }
 
-  row.file = displayFile(row.file, file)
+  if (source !== 'provider') row.file = displayFile(row.file, file)
   if (source === 'semantic_started') {
     row.semantic_started = true
   } else if (source === 'semantic_finished') {
@@ -236,10 +248,13 @@ function finalizeMatrixRow(
   expected: ConsistencyMatrixExpectedSources,
   rows: ConsistencyMatrixDraftRow[],
 ): ConsistencyMatrixRow {
+  let isProviderOnly = providerOnlyMatrixRow(row)
   let isDiscovered = isDiscoveredMatrixRow(row, rows)
-  let rowExpected = isDiscovered
-    ? { passive: true, semantic: false, reflection: false }
-    : expected
+  let rowExpected = isProviderOnly
+    ? { passive: false, semantic: false, reflection: false }
+    : isDiscovered
+      ? { passive: true, semantic: false, reflection: false }
+      : expected
   let next = {
     ...row,
     semantic: semanticState(row) === 'complete',
@@ -251,9 +266,25 @@ function finalizeMatrixRow(
 
   return {
     ...next,
-    issue_count: isDiscovered ? 0 : matrixIssueCount(next, rowExpected),
-    status: isDiscovered ? 'discovered' : matrixStatus(next, rowExpected),
+    issue_count:
+      isProviderOnly || isDiscovered ? 0 : matrixIssueCount(next, rowExpected),
+    status: isProviderOnly
+      ? 'provider_only'
+      : isDiscovered
+        ? 'discovered'
+        : matrixStatus(next, rowExpected),
   }
+}
+
+function providerOnlyMatrixRow(row: ConsistencyMatrixDraftRow) {
+  return (
+    row.provider &&
+    !row.passive &&
+    !row.semantic &&
+    !row.semantic_started &&
+    !row.semantic_finished &&
+    !row.reflection
+  )
 }
 
 function semanticState(row: ConsistencyMatrixDraftRow): SemanticState {
@@ -281,7 +312,7 @@ export type ConsistencyMatrixRow = ConsistencyMatrixDraftRow & {
   semantic_expected: boolean
   reflection_expected: boolean
   issue_count: number
-  status: 'pass' | 'warning' | 'error' | 'discovered'
+  status: 'pass' | 'warning' | 'error' | 'discovered' | 'provider_only'
 }
 
 type ConsistencyMatrixDraftRow = {
@@ -292,6 +323,7 @@ type ConsistencyMatrixDraftRow = {
   semantic_started: boolean
   semantic_finished: boolean
   reflection: boolean
+  provider: boolean
 }
 
 type ConsistencyFileKind = 'Skill' | 'Reference'
@@ -301,6 +333,7 @@ type ConsistencyMatrixSource =
   | 'semantic_started'
   | 'semantic_finished'
   | 'reflection'
+  | 'provider'
 
 type ConsistencyMatrixExpectedSources = Record<
   'passive' | 'semantic' | 'reflection',

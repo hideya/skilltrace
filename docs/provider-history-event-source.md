@@ -897,14 +897,19 @@ Provider history remains observational:
 - show it in the run timeline
 - show a recorded execution-context summary beside agent reflection
 - show collection status and confidence
+- align positive skill and reference reads in an advisory Provider column
+- show provider-only paths as neutral `not evaluated` rows
 - do not require provider history for `pass`
 - do not let `unavailable`, `ambiguous`, or unsupported history turn a run into
   a warning
 - do not let provider evidence silently substitute for expected passive or
   semantic evidence
 
-A provider-history consistency column and explicit cross-source path alignment
-remain future work.
+The consistency column uses an amber dot for a positive provider observation, a
+neutral hollow dot when a completed collection did not observe the row, and a
+dash when collection was unavailable, ambiguous, unsupported, failed, or
+possibly incomplete. These display states never affect consistency status,
+issue count, run result, or mode comparison.
 
 Useful early discrepancies include:
 
@@ -999,11 +1004,12 @@ Implemented for Codex, Claude Code, and Gemini CLI:
 - Prefer matched provider identity and show the provider execution
   configuration.
 - Keep Recorded execution context distinct from Agent reflection.
+- Align provider skill and reference reads in a verdict-neutral consistency
+  column.
 
 Remaining:
 
 - Add the source to timeline filters and run-source summaries.
-- Add an observational provider column to the consistency matrix.
 - Derive summaries from normalized facts instead of stored prose.
 - Explain evidence confidence and circular filtering in compact UI copy.
 
@@ -1084,6 +1090,8 @@ Remaining:
   stored in SkillTrace.
 - Missing, ambiguous, unsupported, and incomplete history are visible but
   nonfatal.
+- Provider-only consistency rows remain neutral and do not enter mode
+  comparison.
 - Existing run verdicts do not change merely because provider history is absent.
 - `skilltrace stop` remains bounded and responsive.
 - Provider-specific fixtures and privacy regression tests cover every adapter.
@@ -1127,6 +1135,6 @@ behavior plus the remaining roadmap. Current behavior is limited to the items
 in Current Implementation. Later-phase language describes intended behavior,
 not a supported feature.
 
-In particular, the consistency matrix does not yet include provider history,
-and existing verdicts do not change when provider history is missing,
-ambiguous, incomplete, or unsupported.
+In particular, the consistency matrix includes provider history only as an
+advisory column. Existing verdicts do not change when provider history is
+present, missing, ambiguous, incomplete, or unsupported.
