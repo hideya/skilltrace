@@ -247,9 +247,15 @@ Remaining refinements:
 ## Non-Goals
 
 - do not try to recover hidden chain-of-thought
+- do not mine reasoning prose during normal provider collection; prefer explicit
+  semantic declarations and bounded decision categories
 - do not treat reflection as objective truth
 - do not make passive-only checks claim semantic intent
 - do not require all real-repo runs to use full semantic lifecycle logging
+
+Any future experiment with provider-exposed reasoning requires the separate
+research-mode gate in
+[Data And Evidence Management](./data-and-evidence-management.md).
 
 ## Product Rationale
 

@@ -10,6 +10,8 @@ inspect transiently, and what SkillTrace should intentionally ignore.
 
 The architectural proposal is in
 [Provider History Event Source](./provider-history-event-source.md).
+The cross-source retention, evidence, reasoning, and future research policy is
+in [Data And Evidence Management](./data-and-evidence-management.md).
 Concrete client, version, model, and validation combinations are tracked
 separately in
 [Tested Clients And Models](./tested-clients-and-models.md).
@@ -84,7 +86,7 @@ snapshots, and test failures must follow the same retention boundary.
 | Tool output | command stdout, file contents, result text | Inspect structured or wrapper status and exit metadata only | Never retain content |
 | Prompt text | user messages, last prompt | Ignore | Not required for evidence |
 | Assistant response | model messages and summaries | Ignore | Not required for evidence |
-| Reasoning | thinking, encrypted reasoning, summaries | Ignore | Private and unnecessary |
+| Reasoning | thinking, encrypted reasoning, summaries | Ignore | Sensitive, provider-dependent, and not authoritative evidence; see the future decision-signal policy |
 | Token usage | input, output, cached, reasoning tokens | Ignore | Unrelated to skill evidence |
 | Git metadata | branch, commit, origin | Inspect only | Cross-check the SkillTrace run snapshot; do not duplicate provider values initially |
 | Structured edit target | `file_path`, replace target, patch target | Retain normalized path and outcome | Recorded execution context, not proof of prior influence |
@@ -214,7 +216,7 @@ may retain:
 - classification confidence
 
 It must not retain the command line, test names derived only from output,
-stdout, stderr, stack traces, or generated summaries.
+stdout, stderr, stack traces, or provider-generated verification summaries.
 
 ### Influence And Outcome Limits
 
@@ -489,8 +491,9 @@ whole provider session.
 - A session can be resumed after SkillTrace stops.
 - Provider indexes and SQLite schema suffixes can change independently of the
   rollout format.
-- Newer records may include encrypted or summarized reasoning that SkillTrace
-  has no reason to inspect.
+- Newer records may include encrypted or summarized reasoning. SkillTrace does
+  not inspect it in normal collection; possible semantic value does not justify
+  widening the current privacy boundary.
 
 ## Claude Code
 
@@ -960,7 +963,12 @@ outside the first implementation:
 - provider-generated summaries or titles
 
 SkillTrace already has explicit semantic and reflection channels. Mining prose
-would add privacy risk and weak, provider-dependent inference.
+would add privacy risk and weak, provider-dependent inference. Some reasoning
+content may contain useful planning or uncertainty clues, but the normal path
+should capture those through explicit declarations and bounded decision
+categories instead. Any provider-text experiment belongs behind the separate
+research-mode gate in
+[Data And Evidence Management](./data-and-evidence-management.md).
 
 ### Raw Change Detail
 

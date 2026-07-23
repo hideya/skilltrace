@@ -106,7 +106,7 @@ Passive mechanical trace は、モデルの自己申告に依存せず、機械�
 - script が実行された
 - skill file の hash
 - skill file の path
-- MCP tool call の request / response
+- MCP tool call の発生と、安全に正規化された metadata
 - artifact が読まれた
 - artifact が生成された
 
@@ -138,7 +138,12 @@ Active semantic trace は、LLM に skill の使用意図や判断を明示的�
 これは「モデルがその skill をどう使ったつもりだったか」のログである。
 
 重要なのは、この semantic trace はモデルの内部思考そのものではないという点である。  
-必要なのは chain-of-thought ではなく、後から失敗を再構成し、改善につなげるための観測可能な宣言である。
+raw reasoning には計画や不確実性に関する手がかりが含まれる可能性が
+あるが、機密性が高く、provider ごとに形式が異なり、確実な判断根拠でも
+ないため、通常の収集では保存しない。必要なのは chain-of-thought では
+なく、後から失敗を再構成し、改善につなげるための、明示的で構造化された
+観測可能な宣言である。retention と将来の decision signal に関する方針は
+[Data And Evidence Management](../data-and-evidence-management.md) に定める。
 
 設計原則は次である。
 

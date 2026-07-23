@@ -144,7 +144,13 @@ This trace answers the question:
 
 > How did the model claim to understand and use the skill?
 
-This is not meant to capture the model’s hidden chain of thought. The goal is not to log private reasoning. The goal is to obtain explicit, structured, inspectable declarations that help reconstruct failures and improve skills.
+This is not meant to capture the model's hidden chain of thought. The goal is
+not to log private reasoning. Raw reasoning may contain useful clues, but it is
+sensitive, provider-dependent, difficult to redact, and not authoritative
+evidence. The safer goal is to obtain explicit, structured, inspectable
+declarations that help reconstruct failures and improve skills. The retention
+and future decision-signal policy is defined in
+[Data And Evidence Management](./data-and-evidence-management.md).
 
 The guiding principle is:
 

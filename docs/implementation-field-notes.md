@@ -255,6 +255,25 @@ preserves the mechanical clue without upgrading it into a yes/no claim.
 Context-only operations never create rows, and ordinary operation targets such
 as source files remain in the timeline only.
 
+## Raw Reasoning Has High Apparent Value But Poor Durable Fit
+
+Provider histories may expose reasoning or summaries that appear useful for
+understanding planning, uncertainty, alternatives, and why verification changed
+an action. Retaining that text would also turn SkillTrace toward a sensitive,
+provider-dependent transcript store. Reasoning can reproduce unrelated private
+context, is difficult to redact, and is not guaranteed to be a faithful causal
+record.
+
+The safer direction is to retain explicit semantic declarations and, in a
+future version, bounded decision categories with provenance and confidence.
+Those signals remain interpretation context rather than automatic consistency
+evidence. Any experiment that inspects or retains provider-exposed reasoning
+must be an off-by-default research mode with a separate privacy and storage
+boundary.
+
+The authoritative policy is
+[Data And Evidence Management](./data-and-evidence-management.md).
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:

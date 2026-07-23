@@ -698,10 +698,18 @@ local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
 session.
 SkillTrace checks all three supported local stores and imports only one
 uniquely matched session. Multiple plausible provider matches are reported as
-ambiguous and import no provider events. SkillTrace does not store or send
-prompts, responses, reasoning, raw tool output, full shell commands, file
-contents, or patch bodies. `skilltrace stop --discard` skips provider-history
-collection.
+ambiguous and import no provider events. Provider-history collection does not
+store or send prompts, responses, reasoning, raw tool output, full shell
+commands, returned file contents, or patch bodies. `skilltrace stop --discard`
+skips provider-history collection.
+
+Raw reasoning can contain useful planning or uncertainty clues, but normal
+SkillTrace collection deliberately excludes it because it is sensitive,
+provider-dependent, difficult to redact, and not authoritative evidence.
+SkillTrace instead asks for concise structured semantic declarations and run
+reflection. See
+[`docs/data-and-evidence-management.md`](docs/data-and-evidence-management.md)
+for the current policy and gated future direction.
 
 Do not run SkillTrace on sensitive repositories unless you understand what is
 being recorded. Review captured runs before sharing logs, screenshots, or run
@@ -741,6 +749,7 @@ decisions, see:
 - [docs/architecture-decisions.md](https://github.com/hideya/skilltrace/blob/main/docs/architecture-decisions.md)
 - [docs/auth-admin-scaffold.md](https://github.com/hideya/skilltrace/blob/main/docs/auth-admin-scaffold.md)
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skilltrace/blob/main/docs/agent-profile-architecture.md)
+- [docs/data-and-evidence-management.md](https://github.com/hideya/skilltrace/blob/main/docs/data-and-evidence-management.md) (retention, evidence, reasoning, and future analysis policy)
 - [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
 - [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (Codex, Claude Code, and Gemini CLI implementation and roadmap)

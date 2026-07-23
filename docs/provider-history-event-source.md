@@ -135,7 +135,12 @@ preserve a compact normalized form of those facts. Positive skill and reference
 reads participate only as advisory path alignment; operations and outcomes
 remain execution context, and no provider fact affects the verdict. Future
 versions can then reinterpret past runs without retaining transcripts or raw
-tool data.
+tool data. Raw reasoning remains excluded even when it appears informative;
+future decision-level analysis should prefer explicit semantic declarations
+and bounded categories.
+
+The cross-source retention and reasoning policy is defined in
+[Data And Evidence Management](./data-and-evidence-management.md).
 
 ## Origin Of The Idea
 
@@ -767,8 +772,15 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - base instructions, embedded developer instructions, turn summaries, and world
   state snapshots
 
+An allowlisted setting such as `reasoning_effort` is execution metadata, not
+reasoning content. The collector may retain the normalized setting label while
+continuing to exclude thinking blocks, reasoning summaries, encrypted
+reasoning, and reasoning-token content.
+
 The detailed field-by-field disposition is maintained in
-[Provider History Formats](./provider-history-formats.md).
+[Provider History Formats](./provider-history-formats.md). The shared lifecycle,
+future decision-signal strategy, and research-mode gate are maintained in
+[Data And Evidence Management](./data-and-evidence-management.md).
 
 ## Path Handling
 

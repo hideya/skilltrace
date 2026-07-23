@@ -368,7 +368,11 @@ Ask the agent to call it after completing the task and after emitting
 ```
 
 It creates a `run_reflection_declared` semantic event. Reflections should be
-concise diagnostic summaries, not hidden chain-of-thought.
+concise diagnostic summaries, not hidden chain-of-thought. They should report
+inspectable conclusions, uncertainties, and attribution rather than narrating
+private reasoning. See
+[Data And Evidence Management](./data-and-evidence-management.md) for the
+retention and future decision-signal policy.
 
 The `skill_log_event` tool accepts:
 

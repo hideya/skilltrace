@@ -485,8 +485,16 @@ evidence with semantic self-report:
 
 SkillTrace does not attempt to capture hidden chain-of-thought. It asks the
 model to emit explicit, inspectable declarations that can be compared with
-passive traces. If instrumentation is unavailable, the agent should continue the
-task normally and report which tracing calls could not be made.
+passive traces. Raw reasoning may contain useful planning or uncertainty clues,
+but it is sensitive, provider-dependent, difficult to redact, and not
+authoritative evidence. Future decision-level analysis should prefer bounded
+structured signals over reasoning excerpts. If instrumentation is unavailable,
+the agent should continue the task normally and report which tracing calls
+could not be made.
+
+The full data lifecycle, reasoning boundary, and research-mode gate are defined
+in
+[`docs/data-and-evidence-management.md`](./docs/data-and-evidence-management.md).
 
 ---
 

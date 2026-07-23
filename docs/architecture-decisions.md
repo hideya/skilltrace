@@ -599,6 +599,14 @@ summarized in the UI. It must continue to exclude prompts, responses, reasoning,
 raw output, complete commands, provider program wrappers, patches, and file
 contents.
 
+This exclusion applies to reasoning content, including thinking blocks and
+provider-generated reasoning summaries. An allowlisted scalar setting such as
+`reasoning_effort` is execution metadata and may be retained without retaining
+the reasoning itself. Although reasoning text may contain useful planning or
+uncertainty clues, normal collection should prefer explicit semantic
+declarations and bounded decision categories. Any experiment that inspects or
+retains reasoning requires a separate opt-in research boundary.
+
 The durable model separates:
 
 1. **Observation:** what the provider recorded, represented by a safely
@@ -611,6 +619,9 @@ as causation or replacing granular facts with generated prose.
 
 The future interpretation model is documented in
 [postmortem-and-skill-improvement.md](postmortem-and-skill-improvement.md).
+The cross-source lifecycle, reasoning policy, and research-mode gate are
+documented in
+[data-and-evidence-management.md](data-and-evidence-management.md).
 
 The format observations, lifecycle, privacy policy, and remaining roadmap are
 documented in

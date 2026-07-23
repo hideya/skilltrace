@@ -20,6 +20,9 @@ SkillTrace should preserve a broad set of privacy-safe mechanical facts while
 rejecting raw conversational and execution content. Future analysis needs the
 sequence of meaningful events, not a transcript.
 
+The cross-source retention and reasoning policy is defined in
+[Data And Evidence Management](./data-and-evidence-management.md).
+
 Aggressive semantic coverage does not lower the threshold for consistency
 evidence. Failed attempts, retries, edits, searches, and unsupported envelopes
 may be useful postmortem context without becoming proof that a skill was used or
@@ -63,6 +66,7 @@ which it was produced.
 | Semantic MCP events              | Declared skill lifecycle, applicability, and deviations     | Cooperative agent self-report                      |
 | Provider history                 | Tool operations, ordering, outcomes, paths, and terminal state | Provider-owned and format-unstable               |
 | Final reflection                 | Agent attribution, uncertainty, and outcome assessment      | Retrospective self-report                          |
+| Structured decision observations | Plan revisions, uncertainty, conflicts, and changed hypotheses | Future bounded categories, not raw reasoning     |
 | Repository outcome               | Changed files, artifacts, and later regression results      | Does not establish why a change happened           |
 
 No source is ground truth. A postmortem should state which inputs were available,
@@ -97,7 +101,8 @@ verification transitions, and other facts whose sequence affects interpretation.
 The collector may inspect private provider fields transiently to classify a
 record, but it must not retain or send:
 
-- prompts, responses, generated summaries, or reasoning
+- prompts, responses, provider-generated conversation or reasoning summaries,
+  or reasoning content
 - raw tool output or error streams
 - complete shell commands
 - JavaScript or other provider program wrappers
@@ -111,6 +116,30 @@ record, but it must not retain or send:
 The retained schema should be an allowlist. An opaque extension bag is not a
 future-proofing mechanism because it silently recreates the provider transcript
 inside SkillTrace.
+
+## Reasoning And Decision Signals
+
+Raw reasoning may expose planning, uncertainty, alternatives, instruction
+conflicts, or changing failure hypotheses. It is still a poor durable analysis
+input because it can contain sensitive unrelated content, varies by provider,
+is difficult to redact, and is not guaranteed to be a faithful causal account.
+Normal SkillTrace collection therefore does not mine or retain it.
+
+The preferred path is to ask for concise structured declarations through run
+context, semantic events, and reflection. Future deterministic analysis may
+also derive bounded categories such as `plan_revised`,
+`verification_changed_course`, or `failure_hypothesis_rejected` from those
+declarations and observed execution transitions.
+
+Decision signals are context for interpretation, not automatic consistency
+evidence. They must carry source, extraction method, confidence, and supporting
+observation references without retaining prose excerpts.
+
+Any future evaluation of provider-exposed reasoning must remain a separately
+approved, off-by-default research mode. It requires local-only processing,
+explicit per-run consent, separate encrypted storage, short retention,
+exclusion from normal exports and diagnostics, and evidence that structured
+declarations cannot answer the same question.
 
 ## Postmortem Construction
 
@@ -197,6 +226,8 @@ analysis version to produce a different summary.
 
 - derive consultation and verification sequences
 - identify failure, correction, retry, and recovery episodes
+- derive bounded decision categories from explicit declarations and mechanical
+  transitions
 - expose source disagreement and coverage gaps without generated prose
 
 ### Phase 3: Postmortem Drafts
@@ -220,3 +251,5 @@ analysis version to produce a different summary.
 - Which external evaluators can establish task-level or evaluated outcomes?
 - How should accepted improvements link later runs back to the originating
   failure and postmortem?
+- Which decision categories are useful and reliable enough to retain without
+  reasoning excerpts?
