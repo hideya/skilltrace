@@ -401,9 +401,11 @@ reflection, or reference-file evidence shows material use. See
 Useful pages:
 
 - `/app/runs`: grouped trace runs, status, mode, result, model/client context,
-  and mode comparison.
-- `/app/runs/<run-id>`: timeline, run context, Git snapshot if available,
-  captured instruction contents, consistency table, and reflection.
+  and mode comparison. When a provider session is matched, its recorded model
+  and client identity take precedence over agent-declared values.
+- `/app/runs/<run-id>`: timeline, run context, provider collection summary, Git
+  snapshot if available, captured instruction contents, consistency table, and
+  reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and MCP registration for supported command-line clients.
 
@@ -421,6 +423,12 @@ repo group together, while repos with the same folder name in different
 locations remain distinguishable.
 
 The run detail page checks consistency among the captured probing results.
+
+Provider-history operations appear in the timeline as a compact sequence of
+tool name, operation kind, normalized target paths, and known outcome. Target
+paths are operation context, not proof that a skill influenced the operation.
+An `unknown` outcome remains stored with the event but is omitted from the
+compact timeline header.
 
 It shows a consistency table across passive, semantic, and reflection evidence,
 and compares whether there is consistent evidence of skill usage.
@@ -664,9 +672,9 @@ Depending on the trace mode and repository state, captured data may include:
 - bounded plain-text contents for changed instruction-relevant files
 - agent-declared summaries, uncertainties, and file attribution
 - MCP semantic logging events
-- normalized Codex provider-history facts such as skill paths, verification
-  categories and outcomes, provider session/client/model identifiers, and
-  collection status
+- normalized Codex provider-history facts such as skill paths, operation target
+  paths, verification categories and outcomes, provider session/client/model
+  identifiers, and collection status
 - SkillTrace version and local runtime metadata such as OS platform, CPU
   architecture, Node.js version, and probe backend
 

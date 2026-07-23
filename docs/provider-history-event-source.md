@@ -19,7 +19,7 @@ results, and file-related operations in local history files. SkillTrace can
 inspect the history for the session that overlaps an active run and extract a
 small, privacy-preserving set of skill evidence and execution-context facts.
 
-The proposed source is:
+The implemented source is:
 
 ```text
 provider_history
@@ -40,6 +40,8 @@ The first cut implements:
 - bounded stability checks before parsing
 - successful `cat`, printing `sed`, `head`, and `tail` reads under configured
   skill roots, from direct calls or statically recoverable nested calls
+- context-only file-read operations with normalized targets when a recognized
+  read cannot be correlated with a successful result
 - recognized test, typecheck, lint, and build operations with correlated exit
   status and duration
 - bounded static extraction of literal `tools.*` calls from Codex
@@ -53,7 +55,9 @@ The first cut implements:
   intentionally ignored record diagnostics
 - normalized `provider_history` events plus a session-owned collection summary
 - stop-time batch submission with per-run fingerprint deduplication
-- timeline display and a separate Recorded execution context panel
+- provider-recorded model/client precedence on the runs list and in Run context
+- timeline display of tool, operation kind, normalized targets, and known
+  outcome, plus a separate Recorded execution context summary
 - synthetic fixture, matching, ambiguity, schema, and privacy regression tests
 
 The first cut does not yet implement Claude Code or Gemini CLI adapters, shell
@@ -252,14 +256,16 @@ Storage and display have different needs. SkillTrace may retain more normalized
 facts than the current timeline displays. Today's UI can summarize them while a
 future analysis derives a new postmortem from the original normalized sequence.
 
-## Proposed Event Model
+## Normalized Event Model
 
 Provider history produces two related projections:
 
 1. consistency-oriented skill and reference evidence
 2. normalized execution-context facts that do not initially affect verdicts
 
-Both keep provider provenance. Neither stores conversational content.
+Both keep provider provenance. Neither stores conversational content. The event
+envelope and Codex payload below are implemented. Provider-specific literals
+and formats will be generalized when another adapter is added.
 
 ### Observation, Evidence Status, And Interpretation
 
@@ -278,7 +284,7 @@ over observations. Interpretation is derived, revisable, and should cite the
 observations and uncertainty that support it. An operation following a skill read
 may be relevant to a postmortem without becoming proof that the skill caused it.
 
-Provider events should therefore retain enough safe provenance to support later
+Provider events therefore retain enough safe provenance to support later
 reclassification: provider and session identity, event order, outer and nested
 call relationships, extraction method, confidence, and adapter format version.
 Generated postmortem prose must not replace those underlying facts.
@@ -294,46 +300,48 @@ Evidence events use the existing trace envelope with a new `source`:
     "path": ".agents/skills/type-fix/references/checklist.md"
   },
   "payload": {
-    "provider": "gemini_cli",
+    "provider": "codex",
     "provider_session_id": "<provider-session-id>",
-    "tool_name": "read_file",
+    "tool_name": "exec_command",
     "tool_call_id": "<provider-tool-call-id>",
     "outcome": "success",
-    "evidence_kind": "direct_file_read",
-    "confidence": "high",
-    "format": "gemini_cli_json_stream_v1",
+    "evidence_kind": "shell_content_read",
+    "command_classifier": "cat",
+    "confidence": "medium",
+    "extraction_method": "direct_envelope",
+    "extraction_confidence": "high",
+    "match_confidence": "high",
+    "format": "codex_rollout_jsonl_v1",
     "source_record_index": 42,
-    "source_fingerprint": "<non-content fingerprint>"
+    "source_fingerprint": "sha256:<non-content fingerprint>"
   }
 }
 ```
 
-This is a proposed shape, not an implemented API.
-
 ### Evidence Event Types
 
-The first version should reuse path-oriented event types where their meaning is
+The Codex adapter reuses path-oriented event types where their meaning is
 already understood:
 
 - `skill_file_read`
 - `skill_reference_read`
 
 The `source` distinguishes provider evidence from passive evidence. Reusing
-the event type also lets the consistency layer align records by normalized
-path without pretending the evidence was captured by the passive harness.
+the event type also preserves a path for future consistency alignment without
+pretending the evidence was captured by the passive harness.
 
 Provider operations that only list, glob, or discover a path should not become
 read events. They may still become neutral execution-context operations.
 
 ### Execution-Context Event Type
 
-Provider operations that help explain how the run proceeded should use:
+Provider operations that help explain how the run proceeded use:
 
 ```text
 execution_operation_observed
 ```
 
-A proposed event is:
+An implemented Codex event is:
 
 ```json
 {
@@ -342,41 +350,42 @@ A proposed event is:
   "timestamp": "2026-07-09T02:44:18.500Z",
   "artifact_refs": ["src/example.ts"],
   "payload": {
-    "provider": "claude_code",
+    "provider": "codex",
     "provider_session_id": "<provider-session-id>",
+    "tool_name": "apply_patch",
     "tool_call_id": "<provider-tool-call-id>",
-    "parent_tool_call_id": null,
-    "operation_kind": "test",
+    "operation_kind": "file_edit",
+    "command_classifier": "apply_patch",
     "outcome": "success",
-    "exit_code": 0,
     "duration_ms": 1840,
     "classification_confidence": "high",
     "extraction_method": "direct_envelope",
     "extraction_confidence": "high",
+    "match_confidence": "high",
     "evidence_status": "context_only",
-    "format": "claude_code_jsonl_v1",
-    "source_record_index": 57
+    "format": "codex_rollout_jsonl_v1",
+    "source_record_index": 57,
+    "source_fingerprint": "sha256:<non-content fingerprint>"
   }
 }
 ```
 
-Initial operation kinds should remain deliberately small:
+The implemented Codex operation kinds remain deliberately small:
 
 - `file_read`
-- `file_search`
 - `file_edit`
 - `test`
 - `typecheck`
 - `lint`
 - `build`
-- `artifact`
-- `other`
 
 An operation that reads a skill file can create a `skill_file_read` or
-`skill_reference_read` event instead of a duplicate generic read operation. The
-provider session and tool-call IDs still place that evidence in the operation
-sequence. Other normalized operations provide the surrounding execution
-context.
+`skill_reference_read` event when its successful result is structurally
+correlated. If the target is recoverable but the outcome is failed or unknown,
+the adapter instead creates a context-only `execution_operation_observed` with
+`operation_kind: file_read` and the target in `artifact_refs`. It does not
+promote an attempted or uncertain read into positive skill evidence. Provider
+session and tool-call IDs place either projection in the operation sequence.
 
 Program-like custom calls should first produce safe outer-call provenance. When
 bounded static analysis can recover nested calls, each derived operation should
@@ -384,8 +393,8 @@ link to the outer call and record its extraction method and confidence. Failure
 to recover nested operations is partial extraction, not evidence that no
 operations occurred.
 
-`other` should be used sparingly. An unclassified arbitrary command is not
-useful merely because it can be stored.
+A future `other` category should be used sparingly. An unclassified arbitrary
+command is not useful merely because it can be stored.
 
 ### Collection Status Event
 
@@ -405,13 +414,15 @@ Its payload should contain only operational metadata:
   "provider_client_version": "0.143.0",
   "provider_model": "<model-id>",
   "provider_environment": {
+    "provider": "codex",
     "client": "codex-tui",
+    "client_version": "0.143.0",
+    "source": "cli",
     "model": "<initial-model-id>",
     "approval_policy": "on-request",
     "sandbox": "workspace-write",
     "network_access": false,
-    "reasoning_effort": "low",
-    "changed_fields": []
+    "reasoning_effort": "low"
   },
   "match_confidence": "high",
   "completeness": "explicit_complete",
@@ -422,9 +433,10 @@ Its payload should contain only operational metadata:
   "evidence_event_count": 2,
   "execution_operation_count": 8,
   "operation_counts": {
+    "file_read": 2,
     "file_edit": 2,
-    "test": 1,
-    "other": 5
+    "typecheck": 3,
+    "test": 1
   },
   "extraction_method_counts": {
     "direct_envelope": 5,
@@ -443,7 +455,7 @@ and intentionally ignored record counts above. It temporarily retains
 `ignored_unsupported_call_count` as a coarse call-level diagnostic while the
 newer fields establish their real-run value.
 
-Allowed collection statuses should be:
+Allowed collection statuses are:
 
 - `collected`
 - `unavailable`
@@ -695,26 +707,24 @@ The provider adapter should not invent a second path policy.
 Provider-history events must not be deduplicated against passive evidence.
 The fact that two independent sources observed the same path is the point.
 
-Deduplication should occur only within `provider_history`. A proposed identity
-is:
+Deduplication occurs only within `provider_history`. The implemented Codex
+fingerprint is scoped by the run on the server and hashes non-content event
+identity such as:
 
 ```text
-run_id
-+ provider
-+ provider_session_id
-+ provider_tool_call_id or source_record_index
+provider_session_id
++ provider_tool_call_id
 + normalized_event_type
-+ normalized_path
++ normalized classifier or target paths
 ```
 
 When a provider repeats the same logical tool call in a snapshot and an
 incremental record, the adapter must collapse it using the provider tool-call
 ID. Gemini's observed `$set.messages` snapshots make this especially important.
 
-The source fingerprint should be based on stable, non-content metadata such as
-provider, session ID, source filename basename, bounded byte length, and record
-position. It should not hash or persist prompt or response text merely to prove
-provenance.
+The source record index is retained separately as provenance. The fingerprint
+does not hash or persist prompt, response, command, patch, or tool-output content
+merely to prove identity.
 
 ## Recorded Execution Context
 
@@ -783,53 +793,62 @@ Agent reflection and human judgment remain necessary for evaluated outcomes.
 
 ## Run Interpretation And Consistency UI
 
-The existing Run reflection area is informative, but provider records should
-not be blended into the reflection as though the agent reported them. A future
-run-details view should group related interpretation while preserving source:
+Provider records are not blended into reflection as though the agent reported
+them. The current run-details view preserves source through three complementary
+surfaces:
 
 ```text
-Run interpretation
+Timeline
+  Provider operations in event order: tool, operation kind, targets, outcome
 
-Agent reflection
-  What the agent says influenced the work and how it evaluates the result
+Run context
+  Declared context with matched provider model/client identity preferred
+  Collapsed provider execution configuration and SkillTrace environment
 
 Recorded execution context
-  What provider history mechanically recorded about operations and outcomes
-
-Evidence comparison
-  Where passive, semantic, reflection, and provider records align or disagree
+  Provider identity, collection quality, and confirmed skill/reference reads
 ```
 
-This may be implemented by expanding or renaming the current Run reflection
-section. The exact visual hierarchy can follow the UI at implementation time;
-the architectural requirement is that agent interpretation and recorded
-activity remain visibly distinct.
+Agent reflection remains separate. Provider operations are not repeated in the
+Recorded execution context card because the timeline now carries their order
+and richer per-event context.
 
-Provider-history summaries should be derived from normalized events. Useful
-initial summary rows include:
+For an `execution_operation_observed` event, the compact timeline presents these
+optional values in order:
 
-- provider, model, client version, and completeness
-- skill and reference reads
-- counts and ordering of searches, reads, edits, and verification operations
-- verification outcomes and exit codes
-- repository-relative files affected and artifacts produced
-- failed or aborted operations
-- match, classification, and completeness confidence
+```text
+tool_name  operation_kind  artifact_refs  outcome
+```
+
+`artifact_refs` are operation targets, not proof of semantic skill use or
+causal influence. Missing values are omitted. The normalized `unknown` outcome
+remains stored and visible in event details but is omitted from the compact
+header. Expanded event data retains confidence, extraction, exit-code, duration,
+and provenance fields.
+
+The runs list and primary Run context rows prefer model and client identity from
+a matched provider session. Agent-declared identity remains the fallback when
+provider history is unavailable, ambiguous, or lacks the corresponding value.
+
+A future evidence-comparison view may align provider paths with passive,
+semantic, and reflection paths. It must preserve the same source and confidence
+boundaries.
 
 ### Consistency Policy
 
-Provider history should initially be observational:
+Provider history remains observational:
 
 - show it in the run timeline
-- add a provider-history column or detail to the consistency view
 - show a recorded execution-context summary beside agent reflection
 - show collection status and confidence
-- align provider paths with passive, semantic, and reflection paths
 - do not require provider history for `pass`
 - do not let `unavailable`, `ambiguous`, or unsupported history turn a run into
   a warning
 - do not let provider evidence silently substitute for expected passive or
   semantic evidence
+
+A provider-history consistency column and explicit cross-source path alignment
+remain future work.
 
 Useful early discrepancies include:
 
@@ -883,7 +902,12 @@ Provider adapters should be pure where practical: bytes or parsed records in,
 normalized private records out. Discovery, filesystem access, matching, and HTTP
 submission should remain outside the parser.
 
-## Implementation Phases
+## Cross-Provider Implementation Phases
+
+Phases 0 through 2 and the current timeline/context portion of Phase 3 are
+implemented for Codex. The consistency-view work in Phase 3 remains deferred.
+Each additional provider should pass through the same phases rather than being
+added directly to stop-time collection.
 
 ### Phase 0: Fixtures And Contracts
 
@@ -896,7 +920,8 @@ submission should remain outside the parser.
 
 ### Phase 1: Read-Only Collector
 
-- Implement discovery and adapters for Codex, Claude Code, and Gemini CLI.
+- Implement discovery and an adapter for one provider. Codex is implemented;
+  Claude Code and Gemini CLI remain planned.
 - Run against fixtures and explicitly selected local files.
 - Produce a local diagnostic report without changing SkillTrace runs.
 - Measure candidate ambiguity, evidence precision, and operation-classification
@@ -912,11 +937,17 @@ submission should remain outside the parser.
 
 ### Phase 3: UI Correlation
 
+Implemented for Codex:
+
 - Display provider-history events and collection status.
+- Prefer matched provider identity and show the provider execution
+  configuration.
+- Keep Recorded execution context distinct from Agent reflection.
+
+Remaining:
+
 - Add the source to timeline filters and run-source summaries.
 - Add an observational provider column to the consistency matrix.
-- Add Recorded execution context beside Agent reflection under a broader Run
-  interpretation view.
 - Derive summaries from normalized facts instead of stored prose.
 - Explain evidence confidence and circular filtering in compact UI copy.
 

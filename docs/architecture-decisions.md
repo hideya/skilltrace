@@ -537,14 +537,30 @@ unavailable and continues the run normally.
 
 A normal `skilltrace stop` now inspects the matching Codex CLI rollout file and
 projects a strict, privacy-filtered subset into `provider_history` events. The
-first cut retains successful skill and reference reads plus recognized test,
-typecheck, lint, and build outcomes. It never persists prompts, responses,
+first cut retains successful skill and reference reads, context-only read
+attempts with recoverable targets, normalized patch targets, and recognized
+test, typecheck, lint, and build outcomes. It also retains an allowlisted
+provider execution configuration. It never persists prompts, responses,
 reasoning, raw output, full commands, file contents, or patch bodies.
 
 Provider history is stored and displayed independently from the passive probe,
 semantic MCP declarations, and agent reflection. It does not participate in the
 consistency verdict yet, and missing, ambiguous, unsupported, or changing
 history never blocks the run from stopping.
+
+When a matched provider session supplies model or client identity, the runs list
+and primary Run context rows prefer those recorded values over agent-declared
+ones. Declared values remain the fallback when provider history is unavailable
+or ambiguous.
+
+The timeline is the primary representation of normalized provider operations.
+It presents the tool, operation kind, `artifact_refs` targets, and known outcome
+in event order. An artifact target records what an operation addressed; it does
+not prove semantic skill use or causal influence. Unknown outcomes remain in
+the stored event but are not promoted into the compact header. The Recorded
+execution context card therefore summarizes provider identity, collection
+quality, and provider-confirmed skill or reference reads without duplicating
+the operation sequence.
 
 Reasons:
 
@@ -564,10 +580,10 @@ Provider-history retention follows this principle:
 
 SkillTrace should preserve privacy-safe operation order, nesting, failures,
 retries, recovery, verification transitions, affected paths, and extraction
-health even when those facts do not affect today's verdict or appear
-individually in today's UI. It must continue to exclude prompts, responses,
-reasoning, raw output, complete commands, provider program wrappers, patches,
-and file contents.
+health even when those facts do not affect today's verdict or are only compactly
+summarized in the UI. It must continue to exclude prompts, responses, reasoning,
+raw output, complete commands, provider program wrappers, patches, and file
+contents.
 
 The durable model separates:
 
