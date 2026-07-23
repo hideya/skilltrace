@@ -695,9 +695,13 @@ Depending on the trace mode and repository state, captured data may include:
 
 During a normal `skilltrace stop`, SkillTrace transiently inspects the matching
 local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
-session. It does not store or send prompts, responses, reasoning, raw tool
-output, full shell commands, file contents, or patch bodies.
-`skilltrace stop --discard` skips provider-history collection.
+session.
+SkillTrace checks all three supported local stores and imports only one
+uniquely matched session. Multiple plausible provider matches are reported as
+ambiguous and import no provider events. SkillTrace does not store or send
+prompts, responses, reasoning, raw tool output, full shell commands, file
+contents, or patch bodies. `skilltrace stop --discard` skips provider-history
+collection.
 
 Do not run SkillTrace on sensitive repositories unless you understand what is
 being recorded. Review captured runs before sharing logs, screenshots, or run

@@ -578,6 +578,30 @@ association hint. It is not evidence that the referenced skill was read.
 The collector must match a SkillTrace run to no more than one provider session.
 It must not choose a convenient-looking session when multiple candidates remain.
 
+### Cross-Provider Selection
+
+Agent-declared client or model identity is not used to choose a provider
+adapter. During `skilltrace stop`, the dispatcher runs the Codex, Claude Code,
+and Gemini CLI adapters against their respective local stores. Each adapter
+independently returns its best provider-specific match and confidence.
+
+The dispatcher then selects across those results:
+
+1. If exactly one usable result has `high` confidence, select it.
+2. If multiple usable results have `high` confidence, report `ambiguous`.
+3. If no result has `high` confidence but exactly one result is usable, select
+   it. This includes a unique `medium` confidence directory-and-time match.
+4. If multiple results are usable, report `ambiguous`.
+5. If no result is usable, preserve one uniquely relevant non-`unavailable`
+   result, such as `unsupported_format` or `failed`; multiple relevant results
+   are reported as `ambiguous`.
+6. If every adapter reports `unavailable`, report `unavailable`.
+
+Here, usable means `collected` or `possibly_incomplete`. An ambiguous
+cross-provider result imports no provider events. Provider identity shown later
+in the UI comes from the selected provider session; it is an output of matching,
+not an input to it.
+
 ### Candidate Signals
 
 Signals are ordered from strongest to weakest:
