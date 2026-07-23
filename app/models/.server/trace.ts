@@ -296,6 +296,7 @@ export async function getModeComparisonForRuns(publicIds: string[]) {
       trace_mode: traceMode,
       result,
       matrix,
+      provider_status: latestProviderHistory(runEvents)?.status,
       event_count: runEvents.length,
       started_at: run.started_at,
       finished_at: run.finished_at,
@@ -474,7 +475,7 @@ function pathHashFromRunId(publicId: string) {
   return match?.[1]
 }
 
-function comparisonRows(runs: ModeComparisonRun[]) {
+export function comparisonRows(runs: ModeComparisonRun[]) {
   let rows = new Map<string, ModeComparisonRow>()
 
   for (let run of runs) {
@@ -496,8 +497,34 @@ function comparisonRows(runs: ModeComparisonRun[]) {
         passive: row.passive,
         semantic: row.semantic,
         reflection: row.reflection,
+        provider: row.provider,
+        provider_context: row.provider_context,
+        provider_status: run.provider_status,
       }
       rows.set(key, comparison)
+    }
+  }
+
+  for (let [key, row] of rows) {
+    for (let run of runs) {
+      let source = run.matrix.find(
+        (item) =>
+          `${item.kind}:${normalizeComparePath(item.file)}` === key,
+      )
+      let cell = row.modes[run.trace_mode] ?? {
+        present: false,
+        passive: false,
+        semantic: false,
+        reflection: false,
+        provider: false,
+        provider_context: false,
+        provider_status: run.provider_status,
+      }
+
+      cell.provider = source?.provider ?? false
+      cell.provider_context = source?.provider_context ?? false
+      cell.provider_status = run.provider_status
+      row.modes[run.trace_mode] = cell
     }
   }
 
@@ -682,6 +709,7 @@ type ModeComparisonRun = {
   trace_mode: TraceMode
   result: string
   matrix: ConsistencyMatrixRow[]
+  provider_status?: string
   event_count: number
   started_at: Date | string
   finished_at: Date | string | null
@@ -699,4 +727,7 @@ type ModeComparisonCell = {
   passive: boolean
   semantic: boolean
   reflection: boolean
+  provider: boolean
+  provider_context: boolean
+  provider_status?: string
 }

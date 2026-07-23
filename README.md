@@ -504,6 +504,11 @@ Neutral `discovered` and execution-log-only rows are omitted from mode
 comparison so broad startup skill scans and advisory observations do not
 obscure differences in material skill or reference use.
 
+For files established by verdict-bearing evidence, each mode cell also shows
+the same verdict-neutral **Agent log** state used in Run details. This advisory
+marker does not make a missing file present and does not affect
+**Aligned/Different**.
+
 <table>
   <tr>
     <td>

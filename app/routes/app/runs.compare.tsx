@@ -2,6 +2,7 @@ import { ChevronLeftIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { traceModeLabel } from '~/lib/trace-mode'
 import { getModeComparisonForRuns } from '~/models/.server/trace'
+import { AgentLogDot } from './+/agent-log-dot'
 
 // Remote/auth mode reference:
 // import { requireUser } from '~/.server/auth/middlewares'
@@ -75,7 +76,7 @@ export default function Page({ loaderData }: PageProps) {
                 <h2 className="section-title">Cross-mode files</h2>
                 <p className="text-sm text-base-content/60">
                   Selected successful runs, compared by normalized skill and
-                  reference files.
+                  reference files, with advisory Agent log observations.
                 </p>
               </div>
               <p className="text-sm text-base-content/60">
@@ -198,23 +199,34 @@ function RunCard({ item }: RunCardProps) {
 }
 
 function ModeCell({ cell, mode }: ModeCellProps) {
-  if (!cell?.present) {
-    return <span className="text-base-content/40">missing</span>
-  }
-
   return (
     <div className="flex items-center justify-center gap-1.5">
-      <EvidenceDot active={cell.passive} label="Passive" tone="passive" />
-      {mode === 'full' ? (
-        <EvidenceDot active={cell.semantic} label="Semantic" tone="semantic" />
-      ) : null}
-      {mode !== 'passive_only' ? (
-        <EvidenceDot
-          active={cell.reflection}
-          label="Reflection"
-          tone="semantic"
-        />
-      ) : null}
+      {cell?.present ? (
+        <>
+          <EvidenceDot active={cell.passive} label="Passive" tone="passive" />
+          {mode === 'full' ? (
+            <EvidenceDot
+              active={cell.semantic}
+              label="Semantic"
+              tone="semantic"
+            />
+          ) : null}
+          {mode !== 'passive_only' ? (
+            <EvidenceDot
+              active={cell.reflection}
+              label="Reflection"
+              tone="semantic"
+            />
+          ) : null}
+        </>
+      ) : (
+        <span className="text-base-content/40">missing</span>
+      )}
+      <AgentLogDot
+        active={cell?.provider}
+        context={cell?.provider_context}
+        status={cell?.provider_status}
+      />
     </div>
   )
 }
@@ -283,6 +295,9 @@ type ModeCellProps = {
     passive: boolean
     semantic: boolean
     reflection: boolean
+    provider: boolean
+    provider_context: boolean
+    provider_status?: string
   }
   mode: string
 }

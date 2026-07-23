@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  comparisonRows,
   passiveEventSchema,
   providerHistoryBatchSchema,
   runLifecycleResult,
@@ -330,3 +331,104 @@ describe('runLifecycleResult', () => {
     expect(result).toBe('incomplete')
   })
 })
+
+describe('comparisonRows', () => {
+  test('shows an agent-log observation without aligning a missing mode', () => {
+    let file = '.agents/skills/type-fix/SKILL.md'
+    let rows = comparisonRows([
+      comparisonRun('full', [
+        comparisonRow(file, {
+          provider: false,
+          status: 'pass',
+        }),
+      ]),
+      comparisonRun('passive_reflection', [
+        comparisonRow(file, {
+          passive: false,
+          semantic: false,
+          reflection: false,
+          provider: true,
+          status: 'provider_only',
+        }),
+      ]),
+    ])
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        status: 'different',
+        modes: {
+          full: expect.objectContaining({
+            present: true,
+            provider: false,
+            provider_status: 'collected',
+          }),
+          passive_reflection: expect.objectContaining({
+            present: false,
+            provider: true,
+            provider_status: 'collected',
+          }),
+        },
+      }),
+    ])
+  })
+
+  test('does not create cross-mode rows from agent logs alone', () => {
+    let file = '.agents/skills/type-fix/SKILL.md'
+    let runs = [
+      comparisonRun('full', [
+        comparisonRow(file, {
+          passive: false,
+          semantic: false,
+          reflection: false,
+          provider: true,
+          status: 'provider_only',
+        }),
+      ]),
+      comparisonRun('passive_only', [
+        comparisonRow(file, {
+          passive: false,
+          semantic: false,
+          reflection: false,
+          provider: true,
+          status: 'provider_only',
+        }),
+      ]),
+    ]
+
+    expect(comparisonRows(runs)).toEqual([])
+  })
+})
+
+function comparisonRun(traceMode, matrix) {
+  return {
+    run: {},
+    trace_mode: traceMode,
+    result: 'pass',
+    matrix,
+    provider_status: 'collected',
+    event_count: 0,
+    started_at: '2026-07-23T00:00:00Z',
+    finished_at: '2026-07-23T00:01:00Z',
+  }
+}
+
+function comparisonRow(file, overrides) {
+  return {
+    kind: 'Skill',
+    file,
+    passive: true,
+    semantic: true,
+    semantic_started: true,
+    semantic_finished: true,
+    reflection: true,
+    provider: false,
+    provider_context: false,
+    semantic_state: 'complete',
+    passive_expected: true,
+    semantic_expected: true,
+    reflection_expected: true,
+    issue_count: 0,
+    status: 'pass',
+    ...overrides,
+  }
+}

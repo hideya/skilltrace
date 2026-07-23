@@ -561,7 +561,9 @@ create matrix rows. A gray outline represents completed collection without a
 matching record; a dash represents collection that was unavailable, ambiguous,
 unsupported, failed, possibly incomplete, or absent. The column does not affect
 issue counts, run results, or mode comparison, and it does not substitute for
-an expected passive, semantic, or reflection signal.
+an expected passive, semantic, or reflection signal. Cross-mode cells reuse the
+same advisory state for existing rows, but it cannot create a row, mark a mode
+present, or change `Aligned/Different`.
 
 When a matched agent log session supplies model or client identity, the runs
 list and primary Run context rows prefer those recorded values over

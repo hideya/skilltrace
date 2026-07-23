@@ -953,6 +953,7 @@ The execution-log event stream remains observational:
 - show a recorded execution-context summary beside agent reflection
 - show collection status and confidence
 - align positive skill and reference reads in an advisory Agent log column
+- show the same advisory state in cross-mode cells for existing comparison rows
 - show execution-log-only paths as neutral `not evaluated` rows
 - do not require agent execution logs for `pass`
 - do not let `unavailable`, `ambiguous`, or unsupported history turn a run into
@@ -966,8 +967,10 @@ the same already-keyed path, a gray outline when a completed collection found
 no matching record, and a dash when collection was unavailable, ambiguous,
 unsupported, failed, possibly incomplete, or absent. Context-only operations
 never create matrix rows, and their targets are not promoted to positive
-evidence. These display states never affect consistency status, issue count,
-run result, or mode comparison.
+evidence. The same states may annotate existing cross-mode rows, including a
+mode that remains missing by verdict-bearing evidence. They never affect
+consistency status, issue count, run result, cross-mode presence, or
+`Aligned/Different`.
 
 Useful early discrepancies include:
 

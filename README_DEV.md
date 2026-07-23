@@ -330,7 +330,9 @@ When a run group has at least two successful modes, the runs page shows
 default; the user can choose a different successful run for each mode before
 opening the report. The comparison report shows whether skill and reference file
 usage remains stable as instrumentation is reduced from full tracing to
-passive-only capture.
+passive-only capture. Each mode cell also carries the verdict-neutral Agent log
+state for an existing comparison row. That state never creates a row, marks a
+mode present, or changes `Aligned/Different`.
 
 At `skilltrace start`, after any stale SkillTrace overlay cleanup and before
 the current run's overlay is injected, SkillTrace also records a lightweight Git

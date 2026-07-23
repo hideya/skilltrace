@@ -212,7 +212,8 @@ Current implementation note:
   successful modes; it preselects the latest successful run per mode, allows
   one selected run per mode, and compares the selected runs by normalized
   skill/reference files while omitting neutral `discovered` and
-  execution-log-only rows
+  execution-log-only rows; existing comparison rows show each mode's advisory
+  Agent log state without changing presence or alignment
 
 Possible result labels:
 
