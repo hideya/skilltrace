@@ -14,11 +14,11 @@ the work to specific skills, references, files, steps, and uncertainties.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/a486b3cd-a0e5-4167-bbe5-885705ea4328" target=”_blank”>
+      <a href="https://github.com/user-attachments/assets/5f315791-d207-4255-b524-f2265a61c1cb" target=”_blank”>
         <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
-      <sub>SkillTrace demo movie clip</sub>
+      <sub>SkillTrace demo video clip</sub>
     </td>
     <td>
       <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-diagram.webp" height="250px" />
