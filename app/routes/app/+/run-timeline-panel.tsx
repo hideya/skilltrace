@@ -224,7 +224,7 @@ function eventTitleClass(event: any) {
 function eventFileNameClass(event: any) {
   if (isSemanticEvent(event)) return 'text-indigo-500'
   if (isPassiveEvent(event)) return 'text-teal-500'
-  if (isProviderEvent(event)) return 'text-amber-600'
+  if (isProviderEvent(event)) return 'text-amber-500'
   return 'text-base-content/60'
 }
 
