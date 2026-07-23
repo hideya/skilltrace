@@ -1,5 +1,6 @@
 import { collectClaudeProviderHistory } from './claude'
 import { collectCodexProviderHistory } from './codex'
+import { collectGeminiProviderHistory } from './gemini'
 import type {
   CollectProviderHistoryOptions,
   ProviderHistoryCollection,
@@ -16,7 +17,11 @@ export async function collectProviderHistory(
     ...options,
     claudeHome: options.claudeHome,
   })
-  let collections = [codex, claude]
+  let gemini = await collectGeminiProviderHistory({
+    ...options,
+    geminiHome: options.geminiHome,
+  })
+  let collections = [codex, claude, gemini]
   let exact = collections.filter(
     (collection) =>
       usable(collection) && collection.summary.match_confidence === 'high',

@@ -38,6 +38,7 @@ export type CollectProviderHistoryOptions = {
   stoppedAt: string
   codexHome?: string
   claudeHome?: string
+  geminiHome?: string
   stabilityIntervalMs?: number
   stabilityAttempts?: number
 }

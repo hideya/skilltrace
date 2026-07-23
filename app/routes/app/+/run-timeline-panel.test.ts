@@ -64,7 +64,7 @@ describe('Timeline', () => {
     expect(markup).toContain('type-fix/')
     expect(markup).toContain('SKILL.md')
     expect(markup).toContain('failed')
-    expect(markup).toContain('text-amber-600')
+    expect(markup).toContain('text-amber-500')
     expect(markup).toContain('font-normal opacity-70')
     expect(markup).toContain('font-semibold text-amber-500')
     expect(markup.indexOf('exec_command')).toBeLessThan(

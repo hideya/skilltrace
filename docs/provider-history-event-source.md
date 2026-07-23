@@ -1,11 +1,11 @@
 # Provider History Event Source
 
-Status: Codex and Claude Code adapters implemented; Gemini CLI planned
+Status: Codex, Claude Code, and Gemini CLI adapters implemented
 
 This document defines a fourth SkillTrace evidence source derived from the local
-history persisted by agent clients. It records the implemented Codex and Claude
-Code adapters, the trust boundaries and collection lifecycle, and the roadmap
-for broader provider and operation support.
+history persisted by agent clients. It records the implemented Codex, Claude
+Code, and Gemini CLI adapters, the trust boundaries and collection lifecycle,
+and the roadmap for broader operation support.
 
 Detailed observations of the Codex, Claude Code, and Gemini CLI file formats
 live in [Provider History Formats](./provider-history-formats.md). Those
@@ -33,8 +33,9 @@ changing, or unsupported provider history never prevents the run from stopping.
 
 The shared collection path implements:
 
-- a provider-neutral dispatcher that selects one uniquely matched Codex or
-  Claude Code session and fails closed on cross-provider ambiguity
+- a provider-neutral dispatcher that selects one uniquely matched Codex,
+  Claude Code, or Gemini CLI session and fails closed on cross-provider
+  ambiguity
 - bounded stability checks before parsing
 - normalized `provider_history` events plus a session-owned collection summary
 - stop-time batch submission with per-run fingerprint deduplication
@@ -85,15 +86,37 @@ The Claude Code adapter implements:
 - `stable_at_stop` completeness because no general terminal marker is present
 - safe counters for unsupported and intentionally ignored records
 
-The current implementation does not yet include a Gemini CLI adapter, shell
-search and general shell-edit operations, provider columns in the consistency
-matrix, or any change to run verdicts. Provider history remains observational.
+The Gemini CLI adapter implements:
+
+- allowlisted discovery under
+  `~/.gemini/tmp/<project-key>/chats/session-*.jsonl`, after validating the
+  adjacent `.project_root` against the run target
+- session-header validation, exact run-window slicing, and high-confidence run
+  matching through structured SkillTrace tool-call arguments when available
+- successful `activate_skill` projection as high-confidence skill-file
+  evidence when its name resolves to one configured skill root
+- successful structured `read_file` calls as direct skill/reference evidence
+  or context-only ordinary project reads
+- structured `replace` targets and conservative `run_shell_command`
+  verification classification without retaining edit text, commands, results,
+  or model output
+- normalized tool status, model, working directory, session kind, and
+  `lastUpdated` completeness metadata
+- incremental-record extraction only; `$set.messages` snapshots are ignored,
+  and tool-call IDs provide a second deduplication guard
+- `stable_at_stop` completeness because no general terminal marker or
+  client-version field is present in the selected history format
+
+The current implementation does not yet include shell search and general
+shell-edit operations, provider columns in the consistency matrix, or any
+change to run verdicts. Provider history remains observational.
 
 Provider history is useful because it can reveal structured operations that
 the passive operating-system probe cannot understand. For example:
 
 - Claude Code records a `Read` tool call with an exact `file_path`.
-- Gemini CLI records a `read_file` call with arguments and completion status.
+- Gemini CLI records `activate_skill` and `read_file` calls with structured
+  arguments and completion status.
 - Codex records an `exec_command` call whose command can explicitly read a
   skill file with `cat` or `sed`.
 
@@ -345,7 +368,7 @@ Evidence events use the existing trace envelope with a new `source`:
 
 ### Evidence Event Types
 
-The Codex adapter reuses path-oriented event types where their meaning is
+The provider adapters reuse path-oriented event types where their meaning is
 already understood:
 
 - `skill_file_read`
@@ -354,6 +377,11 @@ already understood:
 The `source` distinguishes provider evidence from passive evidence. Reusing
 the event type also preserves a path for future consistency alignment without
 pretending the evidence was captured by the passive harness.
+
+Gemini's successful `activate_skill` is represented as `skill_file_read` only
+when the structured skill name resolves to exactly one configured `SKILL.md`.
+Its `evidence_kind: direct_skill_activation` distinguishes model-visible skill
+activation from an ordinary `direct_file_read`.
 
 Provider operations that only list, glob, or discover a path should not become
 read events. They may still become neutral execution-context operations.
@@ -395,7 +423,7 @@ An implemented normalized Codex event is:
 }
 ```
 
-The implemented Codex and Claude Code operation kinds remain deliberately small:
+The implemented cross-provider operation kinds remain deliberately small:
 
 - `file_read`
 - `file_edit`
@@ -930,9 +958,9 @@ submission should remain outside the parser.
 ## Cross-Provider Implementation Phases
 
 Phases 0 through 2 and the current timeline/context portion of Phase 3 are
-implemented for Codex and Claude Code. The consistency-view work in Phase 3
-remains deferred. Each additional provider should pass through the same phases
-rather than being added directly to stop-time collection.
+implemented for Codex, Claude Code, and Gemini CLI. The consistency-view work
+in Phase 3 remains deferred. Each additional provider should pass through the
+same phases rather than being added directly to stop-time collection.
 
 ### Phase 0: Fixtures And Contracts
 
@@ -945,8 +973,8 @@ rather than being added directly to stop-time collection.
 
 ### Phase 1: Read-Only Collector
 
-- Implement discovery and an adapter for one provider. Codex and Claude Code
-  are implemented; Gemini CLI remains planned.
+- Implement discovery and a dedicated adapter for each provider. Codex, Claude
+  Code, and Gemini CLI are implemented.
 - Run against fixtures and explicitly selected local files.
 - Produce a local diagnostic report without changing SkillTrace runs.
 - Measure candidate ambiguity, evidence precision, and operation-classification
@@ -962,7 +990,7 @@ rather than being added directly to stop-time collection.
 
 ### Phase 3: UI Correlation
 
-Implemented for Codex and Claude Code:
+Implemented for Codex, Claude Code, and Gemini CLI:
 
 - Display provider-history events and collection status.
 - Prefer matched provider identity and show the provider execution
@@ -1091,10 +1119,10 @@ for the dedicated roadmap.
 
 ## Documentation Boundary
 
-This document now covers implemented Codex and Claude Code behavior plus the
-remaining roadmap. Current behavior is limited to the items in Current
-Implementation. Later-phase language describes intended behavior, not a
-supported feature.
+This document now covers implemented Codex, Claude Code, and Gemini CLI
+behavior plus the remaining roadmap. Current behavior is limited to the items
+in Current Implementation. Later-phase language describes intended behavior,
+not a supported feature.
 
 In particular, the consistency matrix does not yet include provider history,
 and existing verdicts do not change when provider history is missing,

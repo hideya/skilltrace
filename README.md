@@ -645,8 +645,8 @@ Known limitations include:
 - Instrumentation may change model behavior, especially in `full` mode.
 - Passive-only mode can show that files were accessed, but not whether they were
   actually used.
-- Provider-history collection currently supports Codex CLI rollout files and
-  Claude Code project-session files. Gemini CLI remains planned.
+- Provider-history collection currently supports Codex CLI rollout files,
+  Claude Code project-session files, and Gemini CLI chat-session files.
 - Provider history is a local, provider-owned, version-unstable format. Missing,
   ambiguous, or changing history is nonfatal and may yield no events.
 - Passive `SKILL.md` access may be startup discovery rather than task-specific

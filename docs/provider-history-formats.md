@@ -1,7 +1,7 @@
 # Provider History Formats
 
-Status: observed field guide for the implemented Codex and Claude Code adapters
-and planned Gemini CLI expansion; not a provider contract
+Status: observed field guide for the implemented Codex, Claude Code, and Gemini
+CLI adapters; not a provider contract
 
 This document records the local provider-history formats inspected while
 designing and implementing SkillTrace's `provider_history` event source. It
@@ -16,16 +16,17 @@ The architectural proposal is in
 The initial observations were made on one macOS machine on 2026-07-21. The
 matching SkillTrace runs occurred between 2026-06-28 and 2026-07-09. A follow-up
 inspection on 2026-07-23 examined a newer Codex run, the current `ctx` Codex
-adapter, and two native Claude Code validation runs without broadening the
-machine or platform sample.
+adapter, two native Claude Code validation runs, and two native Gemini CLI
+provider-history validation runs without broadening the machine or platform
+sample.
 
 Observed provider versions included:
 
 - Codex CLI `0.143.0`
 - Codex Desktop CLI `0.145.0-alpha.18`
 - Claude Code `2.1.198` and `2.1.218`
-- Gemini CLI history that did not include an obvious client-version field in
-  the selected chat records
+- Gemini CLI `0.46.0`; its selected chat records did not include an obvious
+  client-version field
 
 The paths, schemas, record names, and field names in this document are owned by
 their providers. They can change without notice. Adapters must treat this as
@@ -228,7 +229,7 @@ semantic declarations, reflection, Git state, and human judgment.
 | --- | --- | --- | --- | --- |
 | Codex | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | Session metadata and optional local index | Parsed successful shell content-read command | `task_complete` or `turn_aborted` when present |
 | Claude Code | `~/.claude/projects/<encoded-project>/<session-id>.jsonl` | Encoded project directory plus `sessionId` and `cwd` | Structured `Read` tool use and result | File stability; no general terminal record observed |
-| Gemini CLI | `~/.gemini/tmp/<project-key>/chats/session-*.jsonl` | `.project_root` plus session header | Structured successful `read_file` tool call | `lastUpdated` plus file stability |
+| Gemini CLI | `~/.gemini/tmp/<project-key>/chats/session-*.jsonl` | `.project_root` plus session header | Structured successful `activate_skill` or `read_file` call | `lastUpdated` plus file stability |
 
 ## Codex
 
@@ -795,12 +796,16 @@ snapshot.
 
 ```json
 {"sessionId":"<session-id>","projectHash":"<project-hash>","startTime":"<time>","lastUpdated":"<time>","kind":"main"}
-{"type":"gemini","id":"<message-id>","timestamp":"<time>","content":"<response omitted>","toolCalls":[{"id":"<call-id>","name":"read_file","args":{"file_path":".agents/skills/type-fix/SKILL.md"},"status":"success","result":"<private file content omitted>"}]}
+{"type":"gemini","id":"<message-id>","timestamp":"<time>","content":"<response omitted>","toolCalls":[{"id":"<activation-id>","name":"activate_skill","args":{"name":"type-fix"},"status":"success","result":"<private skill body omitted>"},{"id":"<read-id>","name":"read_file","args":{"file_path":".agents/skills/type-fix/references/checklist.md"},"status":"success","result":"<private file content omitted>"}]}
 {"$set":{"lastUpdated":"<time>"}}
 ```
 
-The `read_file` call provides a structured exact path and status. `content`,
-`thoughts`, and `result` are not retained.
+The `activate_skill` call provides a structured skill name and status. Gemini
+CLI 0.46.0 resolves that name, activates the skill, and returns its complete
+body to the model. SkillTrace resolves the name only against configured skill
+roots and retains this as `direct_skill_activation` evidence. The `read_file`
+call provides a structured exact path and status. `content`, `thoughts`,
+`result`, and `resultDisplay` are not retained.
 
 ### Session Header
 
@@ -860,6 +865,7 @@ Relevant observed operations included:
 
 | Tool | Classification |
 | --- | --- |
+| `activate_skill` | Direct high-confidence skill evidence after successful status and unique configured-root resolution |
 | `read_file` | Direct high-confidence read after successful status |
 | `run_shell_command` | Parse through the shell command classifier |
 | `glob` | File-search execution context, not content-read evidence |
@@ -867,8 +873,18 @@ Relevant observed operations included:
 | `update_topic` | Conversation metadata, not evidence |
 | `mcp_skilltrace_*` | Circular; association hint only |
 
-Every passive skill path in the four associated Gemini CLI runs also appeared
-in a successful `read_file` call.
+Every passive skill path in the four earlier associated Gemini CLI runs also
+appeared in a successful `read_file` call. In two Gemini CLI 0.46.0 validation
+runs on 2026-07-23, the selected skill was first recorded through
+`activate_skill`. One run did not separately read `SKILL.md`; the other did.
+This is why the adapter recognizes envelope semantics rather than assuming that
+skill access always appears under one tool name.
+
+The final validation run matched one session at high confidence, reached
+`stable_at_stop`, and retained three provider evidence events: successful
+activation, a separate direct `SKILL.md` read, and a checklist read. It also
+retained ten context-only read, edit, and typecheck operations with no
+unsupported calls or privacy warnings.
 
 ### `$set` Records And Deduplication
 
@@ -899,7 +915,9 @@ successful final tool call is not itself proof that the session has ended.
 
 - Snapshot and incremental records can duplicate tool calls.
 - `$set` records are state updates, not ordinary timeline events.
-- `result` can contain the full contents of a read file.
+- `result` can contain the full contents of a read file or activated skill.
+- `activate_skill` names must resolve to one configured skill root before they
+  become local skill evidence.
 - Project keys are not sufficient without `.project_root` validation.
 - Other products under `~/.gemini` have unrelated and highly sensitive stores.
 - No explicit terminal event or client-version field was observed in selected
@@ -916,6 +934,7 @@ successful final tool call is not itself proof that the session has ended.
 | Claude `Read` with `file_path` and non-error result | Correlate `tool_use.id` and `tool_result.tool_use_id` | Matching read event when path qualifies | Read sequence represented by the evidence event |
 | Claude `Bash` classified command | Apply shared shell classifier and result check | Matching read event when applicable | Classified search, verification, build, or artifact operation |
 | Claude `Edit` or `Write` | Extract structured target path and result | None | `file_edit` operation |
+| Gemini `activate_skill` with safe `name` and `status: success` | Resolve one existing `SKILL.md` under configured skill roots | `skill_file_read` with `direct_skill_activation` provenance | Activation sequence represented by the evidence event |
 | Gemini `read_file` with `file_path` and `status: success` | Deduplicate by tool ID | Matching read event when path qualifies | Read sequence represented by the evidence event |
 | Gemini `run_shell_command` classified command | Apply shared shell classifier and status check | Matching read event when applicable | Classified search, verification, build, or artifact operation |
 | Gemini `replace` | Extract structured target path and status | None | `file_edit` operation |

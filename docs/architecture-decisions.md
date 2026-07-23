@@ -535,14 +535,15 @@ unavailable and continues the run normally.
 
 ## Provider History Is Observational
 
-A normal `skilltrace stop` now inspects the matching Codex CLI rollout or Claude
-Code project-session file and projects a strict, privacy-filtered subset into
-`provider_history` events. The adapters retain successful skill and reference
-reads, context-only reads with recoverable targets, structured or patch-derived
-edit targets, and recognized test, typecheck, lint, and build outcomes. They
-also retain an allowlisted provider execution configuration. They never persist
-prompts, responses, reasoning, raw output, full commands, file contents, or
-patch bodies.
+A normal `skilltrace stop` now inspects the matching Codex CLI rollout, Claude
+Code project-session file, or Gemini CLI chat-session file and projects a
+strict, privacy-filtered subset into `provider_history` events. The adapters
+retain successful skill and reference reads, Gemini's explicit successful
+skill activation, context-only reads with recoverable targets, structured or
+patch-derived edit targets, and recognized test, typecheck, lint, and build
+outcomes. They also retain an allowlisted provider execution configuration.
+They never persist prompts, responses, reasoning, raw output, full commands,
+file contents, or patch bodies.
 
 Provider history is stored and displayed independently from the passive probe,
 semantic MCP declarations, and agent reflection. It does not participate in the

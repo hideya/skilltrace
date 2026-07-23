@@ -484,8 +484,8 @@ The timeline should show the semantic started, reference-read, and finished
 events. It should also show passive file access for `.agents/skills/type-fix/SKILL.md`
 and `.agents/skills/type-fix/references/checklist.md`.
 
-After `skilltrace-dev stop` or `skilltrace stop`, a uniquely matching Codex or
-Claude Code session should add `provider_history` events and a
+After `skilltrace-dev stop` or `skilltrace stop`, a uniquely matching Codex,
+Claude Code, or Gemini CLI session should add `provider_history` events and a
 `provider_history_collection_finished` summary. Provider operations appear in
 the timeline in this order when values are available:
 
@@ -496,9 +496,12 @@ tool name  operation kind  target paths  outcome
 For this demo, expect normalized targets such as
 `.agents/skills/type-fix/SKILL.md`,
 `.agents/skills/type-fix/references/checklist.md`, and `src/profile.ts`, plus
-the failed and successful typecheck sequence. A read with an `unknown` outcome
-remains a context-only operation rather than positive provider skill evidence;
-the compact row omits `unknown`, while the expanded event data retains it.
+the failed and successful typecheck sequence. Gemini CLI 0.46.0 may record
+`activate_skill` for the skill entrypoint, a separate `read_file`, or both. A
+successful activation that resolves to the configured skill root is retained
+as `direct_skill_activation` evidence. A read with an `unknown` outcome remains
+a context-only operation rather than positive provider skill evidence; the
+compact row omits `unknown`, while the expanded event data retains it.
 
 The runs list should prefer the matched provider model and client over uncertain
 agent-declared values. The Run context card should show the same preferred
@@ -554,8 +557,8 @@ This test verifies:
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
 - The active session ID correlates passive probe events and MCP semantic events.
-- `skilltrace stop` can match and privacy-filter the corresponding Codex or
-  Claude Code session.
+- `skilltrace stop` can match and privacy-filter the corresponding Codex,
+  Claude Code, or Gemini CLI session.
 - Provider operations retain normalized kinds, targets, outcomes, and
   extraction provenance without retaining commands or tool output.
 - The SkillTrace UI can display the resulting run timeline.
@@ -563,7 +566,6 @@ This test verifies:
 This test does not yet verify:
 
 - general compliance across many skills
-- Gemini CLI provider-history adapter
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Windows passive probing

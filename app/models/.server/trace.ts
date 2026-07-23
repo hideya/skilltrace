@@ -77,7 +77,7 @@ export const providerHistoryEventSchema = z
     artifact_refs: z.array(z.string().trim().min(1).max(4096)).optional(),
     payload: z
       .object({
-        provider: z.enum(['codex', 'claude_code']),
+        provider: z.enum(['codex', 'claude_code', 'gemini_cli']),
         provider_session_id: z
           .string()
           .trim()
@@ -88,7 +88,11 @@ export const providerHistoryEventSchema = z
         parent_tool_call_id: z.string().trim().min(1).max(256).optional(),
         outcome: z.enum(['success', 'failed', 'unknown']),
         evidence_kind: z
-          .enum(['shell_content_read', 'direct_file_read'])
+          .enum([
+            'shell_content_read',
+            'direct_file_read',
+            'direct_skill_activation',
+          ])
           .optional(),
         operation_kind: z
           .enum([
@@ -111,6 +115,7 @@ export const providerHistoryEventSchema = z
         format: z.enum([
           'codex_rollout_jsonl_v1',
           'claude_code_session_jsonl_v1',
+          'gemini_cli_session_jsonl_v1',
         ]),
         exit_code: z.number().int().optional(),
         duration_ms: z.number().int().nonnegative().optional(),

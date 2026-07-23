@@ -214,6 +214,25 @@ This is another concrete reason SkillTrace keeps the evidence streams separate.
 The tool can distinguish "the client/profile integration works" from "this
 particular run followed the semantic reporting schema exactly."
 
+## Gemini Skill Activation Is Stronger Than A Generic Read
+
+Gemini CLI 0.46.0 introduced a structured `activate_skill` call. Its local
+implementation resolves the named skill, marks it active, and sends the skill
+body plus available resources to the model. In a July 23 provider-history run,
+Gemini used this call without separately reading `SKILL.md`; in the next run it
+recorded both activation and a direct read.
+
+SkillTrace therefore recognizes a successful activation when the name resolves
+to exactly one configured skill root. It records `skill_file_read` with
+`evidence_kind: direct_skill_activation`, preserving compatibility with the
+current consistency model while making the stronger provenance visible. This
+is not inferred from assistant prose, and failed or ambiguous activations are
+not promoted to positive evidence.
+
+This finding also reinforces the format-drift rule: classify structured
+envelope semantics instead of branching on model names or expecting one fixed
+tool sequence.
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:
