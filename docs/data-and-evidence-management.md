@@ -4,11 +4,11 @@ Status: current policy plus gated future direction
 
 This document defines how SkillTrace inspects, normalizes, retains, classifies,
 derives, shares, and deletes run data. It applies across passive probing,
-semantic MCP declarations, provider history, run reflection, Git snapshots, and
-future postmortem or skill-improvement analysis.
+semantic MCP declarations, agent execution logs, run reflection, Git snapshots,
+and future postmortem or skill-improvement analysis.
 
-Provider-specific field dispositions remain in
-[Provider History Formats](./provider-history-formats.md). Future analysis
+Client-specific field dispositions remain in
+[Agent Execution Log Formats](./provider-history-formats.md). Future analysis
 design remains in
 [Postmortem And Skill Improvement](./postmortem-and-skill-improvement.md).
 
@@ -19,7 +19,7 @@ design remains in
 
 The policy follows these rules:
 
-1. Retain normalized observations, not provider transcripts.
+1. Retain normalized observations, not agent transcripts.
 2. Prefer explicit, structured declarations over inferred private reasoning.
 3. Treat every source as fallible; no stream is ground truth.
 4. Keep observation, evidence status, and interpretation separate.
@@ -32,7 +32,7 @@ The policy follows these rules:
 
 | Layer | Meaning | Normal retention |
 | --- | --- | --- |
-| Raw source material | Provider records, tool arguments and output, prompts, responses, reasoning, repository content, and private configuration | Not retained as a SkillTrace transcript; selected fields may be inspected transiently under an explicit allowlist |
+| Raw source material | Agent log records, tool arguments and output, prompts, responses, reasoning, repository content, and private configuration | Not retained as a SkillTrace transcript; selected fields may be inspected transiently under an explicit allowlist |
 | Normalized observation | A bounded fact such as a path, operation kind, timestamp, outcome, source ID, or collection-health signal | Retained with the run |
 | Evidence status | A versioned policy judgment such as positive evidence, context-only, circular, excluded, or partially understood | Retained or reproducibly derived without changing the observation |
 | Interpretation | A reflection statement, postmortem conclusion, or skill-improvement candidate | Labeled by source; generated interpretations are versioned, replaceable, and must cite observations |
@@ -50,7 +50,7 @@ Depending on the trace mode and source availability, SkillTrace may retain:
 - operation categories, order, nesting, timestamps, and safe target paths
 - normalized success, failure, abort, timeout, and completeness states
 - bounded exit codes, durations, confidence, and extraction provenance
-- provider, client, model, source format, and safe execution-configuration
+- agent, client, model, source format, and safe execution-configuration
   labels
 - passive process attribution for retained skill and reference reads
 - explicit semantic declarations and concise run reflection fields
@@ -68,19 +68,19 @@ Normal SkillTrace collection must not retain or send:
 
 - user prompts or assistant responses
 - raw reasoning, thinking blocks, hidden chain-of-thought, encrypted reasoning,
-  or provider-generated reasoning summaries
+  or agent-client-generated reasoning summaries
 - raw tool output, stdout, stderr, or returned file contents
-- complete shell commands, arbitrary tool arguments, or provider program
+- complete shell commands, arbitrary tool arguments, or agent-client program
   wrappers
 - patch bodies, replacement strings, file snapshots, or unrelated repository
   contents
-- provider-embedded base instructions, developer messages, world-state
-  snapshots, or opaque provider policy objects
+- agent-client-embedded base instructions, developer messages, world-state
+  snapshots, or opaque agent-client policy objects
 - credentials, cookies, authentication or account state, billing data,
   attachments, telemetry, or unrelated application logs
 - absolute paths outside the approved path policy
 
-Provider-specific parsers may transiently inspect a bounded subset of raw
+Client-specific parsers may transiently inspect a bounded subset of raw
 fields to identify a session, classify an operation, extract a safe path, or
 correlate an outcome. The server must independently validate the resulting
 allowlisted event shape.
@@ -93,14 +93,14 @@ also has an unusually poor risk-to-signal ratio:
 
 - it may reproduce secrets, prompts, source contents, personal data, or
   unrelated context
-- provider definitions and formats differ and can change without notice
+- agent-client definitions and log formats differ and can change without notice
 - it can be large and difficult to redact reliably
 - generated reasoning is not guaranteed to be a faithful causal account
 - storing it makes run sharing, export, support, and deletion more sensitive
-- mining prose encourages weak provider-dependent inference
+- mining prose encourages weak client-dependent inference
 
 For these reasons, SkillTrace does not currently inspect reasoning for semantic
-extraction and does not retain raw reasoning even when a provider file exposes
+extraction and does not retain raw reasoning even when an agent log file exposes
 it.
 
 `reasoning_effort` or a similar allowlisted execution setting is metadata, not
@@ -120,7 +120,7 @@ declaration:
 - human feedback or an identified evaluator for external judgment
 
 These declarations are self-reports, not objective truth. Their value comes
-from comparison with passive observations, provider operations, repository
+from comparison with passive observations, execution-log operations, repository
 outcomes, and one another.
 
 Future analysis may introduce bounded decision observations such as:
@@ -135,8 +135,8 @@ Future analysis may introduce bounded decision observations such as:
 
 The first implementation of such signals should derive them from explicit
 semantic declarations and deterministic execution transitions. A later
-experiment may evaluate transient projection from provider-exposed text only
-after a separate privacy and quality review.
+experiment may evaluate transient projection from text exposed in agent logs
+only after a separate privacy and quality review.
 
 A retained decision observation must:
 
@@ -163,7 +163,7 @@ At minimum, such a mode would need:
 - exclusion from normal APIs, screenshots, diagnostics, logs, fixtures, and
   exports
 - clear separation from consistency evidence and production run records
-- provider-specific format, privacy, and false-inference tests
+- client-specific format, privacy, and false-inference tests
 - a demonstrated benefit that cannot be obtained from structured declarations
   or normalized observations
 
@@ -174,7 +174,7 @@ feature.
 ## Generated Analysis
 
 Future postmortems and skill-improvement candidates may contain generated prose.
-They are interpretations produced by SkillTrace, not provider conversation
+They are interpretations produced by SkillTrace, not agent-client conversation
 content and not evidence.
 
 Generated analysis must:
@@ -186,16 +186,16 @@ Generated analysis must:
 - distinguish operation success from task or evaluated success
 - require human acceptance before changing a skill
 
-Provider-generated summaries remain excluded from normal collection. This does
-not prevent SkillTrace from later storing its own clearly labeled, versioned
-analysis derived from retained observations.
+Agent-client-generated summaries remain excluded from normal collection. This
+does not prevent SkillTrace from later storing its own clearly labeled,
+versioned analysis derived from retained observations.
 
 ## Retention, Export, And Deletion
 
 - Normalized observations follow the lifecycle of their run.
 - Deleting or discarding a run must delete its attached observations and
   interpretations.
-- `skilltrace stop --discard` must skip provider-history collection.
+- `skilltrace stop --discard` must skip execution-log collection.
 - Exports must use explicit schemas and exclude transient source material.
 - Debug and error paths must emit safe codes, never rejected private values.
 - Fixtures must use invented identifiers, paths, and content.
@@ -230,7 +230,7 @@ excluded.
 
 - [Architecture Decisions](./architecture-decisions.md)
 - [MCP Semantic Logger](./mcp-semantic-logger.md)
-- [Provider History Event Source](./provider-history-event-source.md)
-- [Provider History Formats](./provider-history-formats.md)
+- [Agent Execution Log Event Source](./provider-history-event-source.md)
+- [Agent Execution Log Formats](./provider-history-formats.md)
 - [Postmortem And Skill Improvement](./postmortem-and-skill-improvement.md)
 - [Phased Skill Debugging Plan](./phased-skill-debugging-plan.md)

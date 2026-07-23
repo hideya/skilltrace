@@ -664,7 +664,9 @@ async function collectActiveProviderHistory(server: string, session: any) {
     await recordProviderCollectionFailure(server, session.run_id, [
       'collector_failed',
     ])
-    console.warn('Warning: provider history collection failed; stopping normally.')
+    console.warn(
+      'Warning: agent execution log collection failed; stopping normally.',
+    )
     return
   }
 
@@ -679,7 +681,9 @@ async function collectActiveProviderHistory(server: string, session: any) {
         ...summaryWarnings(collection.summary),
         'provider_event_submission_failed',
       ])
-      console.warn('Warning: provider events could not be stored; stopping normally.')
+      console.warn(
+        'Warning: execution-log events could not be stored; stopping normally.',
+      )
       return
     }
   }
@@ -717,13 +721,19 @@ function summaryWarnings(summary: Record<string, unknown>) {
 
 function printProviderCollectionWarning(status: string) {
   if (status === 'ambiguous') {
-    console.warn('Warning: provider history was ambiguous; no events were imported.')
+    console.warn(
+      'Warning: agent execution log match was ambiguous; no events were imported.',
+    )
   } else if (status === 'unsupported_format') {
-    console.warn('Warning: provider history format is unsupported; no events were imported.')
+    console.warn(
+      'Warning: agent execution log format is unsupported; no events were imported.',
+    )
   } else if (status === 'possibly_incomplete') {
-    console.warn('Warning: provider history may be incomplete.')
+    console.warn('Warning: agent execution log may be incomplete.')
   } else if (status === 'failed') {
-    console.warn('Warning: provider history collection failed; stopping normally.')
+    console.warn(
+      'Warning: agent execution log collection failed; stopping normally.',
+    )
   }
 }
 

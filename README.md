@@ -32,8 +32,8 @@ Skill usage is hard to capture because it is often buried inside the LLM's
 decision-making process. Unlike MCP tool calls, skills do not necessarily cross
 a clear execution boundary.
 
-SkillTrace combines passive file-access probing, client-recorded operation
-history, dedicated MCP tool invocations, and structured post-run reflection so
+SkillTrace combines passive file-access probing, local agent execution logs,
+dedicated MCP tool invocations, and structured post-run reflection so
 you can compare what was observed, what the client recorded, what was declared,
 and what the agent later believed influenced the run.
 
@@ -45,22 +45,22 @@ SkillTrace records four evidence streams from the same run:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
-- **Provider history**: local execution logs maintained by the agent client
-  (Codex CLI, Claude Code, or Gemini CLI), including skill reads, tool
-  operations, and verification outcomes (privacy-filtered).
 - **Semantic traces**: instructed MCP invocations such as skill start,
   reference read, and skill finish.
 - **Reflection**: structured post-run attribution by the agent, including which
   skills, references, files, steps, uncertainties, and recommended skill changes
   it believes were relevant to the run.
+- **Agent execution logs**: local records maintained by Codex CLI, Claude Code,
+  or Gemini CLI, including skill reads, tool operations, and verification
+  outcomes (privacy-filtered).
 
 The UI lists and compares the events obtained from those streams so you can see
 when evidence aligns, when the agent skipped a declaration, or when passive
 probing saw something the reflection omitted.
 
 Reflection is a self-report, not ground truth. Its value comes from being
-compared with passive traces, provider history, semantic MCP declarations, and
-human judgment.
+compared with passive traces, agent execution logs, semantic MCP declarations,
+and human judgment.
 
 Each run also records basic SkillTrace execution metadata, such as the
 SkillTrace version, dev/package mode, OS platform, Node.js version, and passive
@@ -382,17 +382,16 @@ skilltrace start --mode passive_only
   normal task flow.
 - `passive_only`: passive file access as the only verdict-bearing consistency
   source, with no instruction injection or required reflection.
-  Best-effort provider history (local execution logs maintained by the agent
-  client) may still be collected after the run as advisory evidence.
+  Best-effort agent execution logs may still be collected after the run as
+  advisory evidence.
   This mode should minimally interfere with the agent, though passive probing
   may still have platform-specific overhead or blind spots.
 
 The default is `full`.
 
 These modes control instruction injection and the verdict-bearing evidence
-expected by the consistency checker. Best-effort provider-history collection
-can annotate a supported run in any mode, but it never becomes an expected
-source.
+expected by the consistency checker. Best-effort execution-log collection can
+annotate a supported run in any mode, but it never becomes an expected source.
 
 Passive traces are evidence of file access, not proof of skill use. Some agent
 clients scan multiple `SKILL.md` entrypoints while building a catalog of
@@ -406,11 +405,11 @@ reflection, or reference-file evidence shows material use. See
 Useful pages:
 
 - `/app/runs`: grouped trace runs, status, mode, result, model/client context,
-  and mode comparison. When a provider session is matched, its recorded model
-  and client identity take precedence over agent-declared values.
-- `/app/runs/<run-id>`: timeline, run context, provider collection summary, Git
-  snapshot if available, captured instruction contents, consistency table, and
-  reflection.
+  and mode comparison. When an agent execution log is matched, its recorded
+  model and client identity take precedence over agent-declared values.
+- `/app/runs/<run-id>`: timeline, run context, execution-log collection
+  summary, Git snapshot if available, captured instruction contents,
+  consistency table, and reflection.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and MCP registration for supported command-line clients.
 
@@ -429,21 +428,29 @@ locations remain distinguishable.
 
 The run detail page checks consistency among the captured evidence.
 
-Provider-history (local execution logs maintained by the agent client)
-operations appear in the timeline as a compact sequence of tool name, operation
-kind, normalized target paths, and known outcome. Note that these events are
-operation context, not proof that a skill influenced the operation.
-
 It shows a consistency table across passive, semantic, and reflection evidence,
 and compares whether there is consistent evidence of skill usage.
 
-A Provider column aligns normalized provider-history records as advisory observations.
-A filled amber dot means positive provider evidence, while an amber outline means
-that a context-only file-read operation targeted the same path without becoming
-positive evidence. A gray outline means completed collection found no matching
-record, and a dash means collection could not establish one. Provider history
-does not affect the consistency status, issue count, or run result.
-Provider-only positive paths remain visible as neutral **not evaluated** rows.
+Operations from agent execution logs appear in the timeline as a compact
+sequence of tool name, operation kind, normalized target paths, and known
+outcome. These events are operation context, not proof that a skill influenced
+the operation.
+
+The execution-log event stream can provide rich operation context, but it
+remains advisory. Agent execution logs are client-owned, version-unstable
+records that were not designed as definitive skill-use evidence. They may be
+incomplete or ambiguous, and a recorded operation does not prove that a skill
+influenced it. Execution-log observations therefore do not participate in the
+consistency verdict.
+
+An **Agent log** column aligns normalized execution-log records as advisory
+observations. A filled amber dot means a positive execution-log observation,
+while an amber outline means that a context-only file-read operation targeted
+the same path without becoming positive evidence. A gray outline means
+completed collection found no matching record, and a dash means collection
+could not establish one. Agent execution logs do not affect the consistency
+status, issue count, or run result. Execution-log-only positive paths remain
+visible as neutral **not evaluated** rows.
 
 Passive `SKILL.md` reads that only look like startup skill discovery appear as
 `discovered` rows. They remain visible in run details, but they do not turn the
@@ -493,9 +500,9 @@ those runs. Since instrumentation may affect an agent's decisions, Compare
 Modes helps you gain confidence that the target skills still appear to be used
 when tracing becomes less intrusive.
 
-Neutral `discovered` and provider-only rows are omitted from mode comparison so
-broad startup skill scans and advisory observations do not obscure differences
-in material skill or reference use.
+Neutral `discovered` and execution-log-only rows are omitted from mode
+comparison so broad startup skill scans and advisory observations do not
+obscure differences in material skill or reference use.
 
 <table>
   <tr>
@@ -610,14 +617,10 @@ SkillTrace focuses on a narrower question:
 It does this by recording four evidence streams:
 
 - passive file-access traces
-- privacy-filtered local provider history from Codex CLI, Claude Code, or
-  Gemini CLI
 - MCP semantic declarations
 - structured post-run reflection
-
-Provider history appears both as recorded execution context and as an advisory
-column aligned with the other file-oriented evidence. It does not participate
-in the consistency verdict.
+- privacy-filtered local agent execution logs from Codex CLI, Claude Code, or
+  Gemini CLI
 
 SkillTrace is not a replacement for LangSmith, Langfuse, Phoenix, Braintrust,
 Weave, or OpenTelemetry-based tracing. It is a complementary local probe for
@@ -660,10 +663,10 @@ Known limitations include:
 - Instrumentation may change model behavior, especially in `full` mode.
 - Passive-only mode can show that files were accessed, but not whether they were
   actually used.
-- Provider-history collection currently supports Codex CLI rollout files,
-  Claude Code project-session files, and Gemini CLI chat-session files.
-- Provider history is a local, provider-owned, version-unstable format. Missing,
-  ambiguous, or changing history is nonfatal and may yield no events.
+- Execution-log collection currently supports Codex CLI rollout files, Claude
+  Code project-session files, and Gemini CLI chat-session files.
+- Agent execution logs use local, client-owned, version-unstable formats.
+  Missing, ambiguous, or changing logs are nonfatal and may yield no events.
 - Passive `SKILL.md` access may be startup discovery rather than task-specific
   use; SkillTrace treats entrypoint-only scans as neutral `discovered` rows.
 - SkillTrace currently focuses on observability, not automatic postmortem
@@ -687,9 +690,9 @@ Depending on the trace mode and repository state, captured data may include:
 - bounded plain-text contents for changed instruction-relevant files
 - agent-declared summaries, uncertainties, and file attribution
 - MCP semantic logging events
-- normalized provider-history facts such as skill paths, operation target
-  paths, verification categories and outcomes, provider session/client/model
-  identifiers, and collection status
+- normalized execution-log facts such as skill paths, operation target paths,
+  verification categories and outcomes, agent session/client/model identifiers,
+  and collection status
 - SkillTrace version and local runtime metadata such as OS platform, CPU
   architecture, Node.js version, and probe backend
 
@@ -697,15 +700,15 @@ During a normal `skilltrace stop`, SkillTrace transiently inspects the matching
 local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
 session.
 SkillTrace checks all three supported local stores and imports only one
-uniquely matched session. Multiple plausible provider matches are reported as
-ambiguous and import no provider events. Provider-history collection does not
-store or send prompts, responses, reasoning, raw tool output, full shell
-commands, returned file contents, or patch bodies. `skilltrace stop --discard`
-skips provider-history collection.
+uniquely matched session. Multiple plausible execution-log matches are reported
+as ambiguous and import no events. SkillTrace does not store or send
+prompts, responses, reasoning, raw tool output, full shell commands, file
+contents, or patch bodies. `skilltrace stop --discard` skips execution-log
+collection.
 
 Raw reasoning can contain useful planning or uncertainty clues, but normal
 SkillTrace collection deliberately excludes it because it is sensitive,
-provider-dependent, difficult to redact, and not authoritative evidence.
+client-dependent, difficult to redact, and not authoritative evidence.
 SkillTrace instead asks for concise structured semantic declarations and run
 reflection. See
 [`docs/data-and-evidence-management.md`](docs/data-and-evidence-management.md)
@@ -752,7 +755,7 @@ decisions, see:
 - [docs/data-and-evidence-management.md](https://github.com/hideya/skilltrace/blob/main/docs/data-and-evidence-management.md) (retention, evidence, reasoning, and future analysis policy)
 - [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
-- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (Codex, Claude Code, and Gemini CLI implementation and roadmap)
-- [docs/provider-history-formats.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-formats.md) (observed format field guide)
+- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (agent execution-log event source implementation and roadmap)
+- [docs/provider-history-formats.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-formats.md) (observed agent execution-log format field guide)
 - [docs/tested-clients-and-models.md](https://github.com/hideya/skilltrace/blob/main/docs/tested-clients-and-models.md) (dated client, model, and workflow validation ledger)
 - [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skilltrace/blob/main/docs/type-fix-demo-mcp-test.md)

@@ -1,26 +1,26 @@
-# Provider History Event Source
+# Agent Execution Log Event Source
 
 Status: Codex, Claude Code, and Gemini CLI adapters implemented
 
-This document defines a fourth SkillTrace evidence source derived from the local
-history persisted by agent clients. It records the implemented Codex, Claude
-Code, and Gemini CLI adapters, the trust boundaries and collection lifecycle,
-and the roadmap for broader operation support.
+This document defines a fourth SkillTrace evidence source derived from local
+agent execution logs. It records the implemented Codex, Claude Code, and Gemini
+CLI adapters, the trust boundaries and collection lifecycle, and the roadmap
+for broader operation support.
 
 Detailed observations of the Codex, Claude Code, and Gemini CLI file formats
-live in [Provider History Formats](./provider-history-formats.md). Those
-observations are deliberately separate because provider-owned formats can
+live in [Agent Execution Log Formats](./provider-history-formats.md). Those
+observations are deliberately separate because client-owned formats can
 change independently of this design.
 
-Dated workflow and provider-recorded model coverage lives in
+Dated workflow and model coverage recorded in execution logs lives in
 [Tested Clients And Models](./tested-clients-and-models.md).
 
 ## Summary
 
 Agent clients already persist session metadata, messages, tool calls, tool
-results, and file-related operations in local history files. SkillTrace can
-inspect the history for the session that overlaps an active run and extract a
-small, privacy-preserving set of skill evidence and execution-context facts.
+results, and file-related operations in local execution-log files. SkillTrace
+can inspect the records for the session that overlaps an active run and extract
+a small, privacy-preserving set of skill evidence and execution-context facts.
 
 The implemented source is:
 
@@ -28,25 +28,35 @@ The implemented source is:
 provider_history
 ```
 
-The provider-neutral dispatcher collects it during `skilltrace stop`, before
-the run is marked finished. Collection is best effort. Missing, ambiguous,
-changing, or unsupported provider history never prevents the run from stopping.
+In user-facing prose, **agent execution logs** refers to the local source files,
+**execution-log event stream** to the normalized SkillTrace source, and
+**execution-log observations** to the projected facts shown in the UI.
+Stable internal identifiers such as `provider_history`, `provider_session_id`,
+and the existing document filenames retain their original names. The word
+**provider** is otherwise reserved for raw schema fields, model providers, and
+internal cross-client adapter concepts.
+
+The client-neutral dispatcher collects the stream during `skilltrace stop`,
+before the run is marked finished. Collection is best effort. Missing,
+ambiguous, changing, or unsupported agent execution logs never prevent the run
+from stopping.
 
 ## Current Implementation
 
 The shared collection path implements:
 
-- a provider-neutral dispatcher that selects one uniquely matched Codex,
-  Claude Code, or Gemini CLI session and fails closed on cross-provider
+- a client-neutral dispatcher that selects one uniquely matched Codex,
+  Claude Code, or Gemini CLI session and fails closed on cross-client
   ambiguity
 - bounded stability checks before parsing
 - normalized `provider_history` events plus a session-owned collection summary
 - stop-time batch submission with per-run fingerprint deduplication
 - filtering of SkillTrace MCP calls as circular evidence
-- provider-recorded model/client precedence on the runs list and in Run context
+- precedence for model/client values from matched execution logs on the runs
+  list and in Run context
 - timeline display of tool, operation kind, normalized targets, and known
   outcome, plus a separate Recorded execution context summary
-- path-aligned provider skill and reference reads in a verdict-neutral
+- path-aligned execution-log skill and reference reads in a verdict-neutral
   consistency column
 - synthetic fixture, matching, ambiguity, schema, and privacy regression tests
 
@@ -65,7 +75,7 @@ The Codex adapter implements:
 - bounded static extraction of literal `tools.*` calls from Codex
   `custom_tool_call: exec` programs, without executing or retaining JavaScript
 - normalized `apply_patch` target paths as context-only file-edit operations
-- an allowlisted provider execution configuration from `session_meta` and the
+- an allowlisted recorded agent configuration from `session_meta` and the
   first in-window `turn_context`, with changed setting names when later turns
   differ
 - extraction method, confidence, recognized, partial, unsupported, and
@@ -110,14 +120,14 @@ The Gemini CLI adapter implements:
 - incremental-record extraction only; `$set.messages` snapshots are ignored,
   and tool-call IDs provide a second deduplication guard
 - `stable_at_stop` completeness because no general terminal marker or
-  client-version field is present in the selected history format
+  client-version field is present in the selected log format
 
 The current implementation does not yet include shell search and general
-shell-edit operations or any provider-driven change to run verdicts. Provider
-history remains observational.
+shell-edit operations or any execution-log-driven change to run verdicts. The
+execution-log event stream remains observational.
 
-Provider history is useful because it can reveal structured operations that
-the passive operating-system probe cannot understand. For example:
+Agent execution logs are useful because they can reveal structured operations
+that the passive operating-system probe cannot understand. For example:
 
 - Claude Code records a `Read` tool call with an exact `file_path`.
 - Gemini CLI records `activate_skill` and `read_file` calls with structured
@@ -128,12 +138,12 @@ the passive operating-system probe cannot understand. For example:
 This evidence is not a replacement for passive observation. It is another
 view of the same agent work, with different strengths and failure modes.
 
-Provider history also contains a useful mechanical middle between skill
+Agent execution logs also contain a useful mechanical middle between skill
 consultation and final reflection: searches, reads, edits, verification
 commands, tool outcomes, affected paths, and terminal state. SkillTrace should
 preserve a compact normalized form of those facts. Positive skill and reference
 reads participate only as advisory path alignment; operations and outcomes
-remain execution context, and no provider fact affects the verdict. Future
+remain execution context, and no execution-log fact affects the verdict. Future
 versions can then reinterpret past runs without retaining transcripts or raw
 tool data. Raw reasoning remains excluded even when it appears informative;
 future decision-level analysis should prefer explicit semantic declarations
@@ -145,7 +155,8 @@ The cross-source retention and reasoning policy is defined in
 ## Origin Of The Idea
 
 The [`ctxrs/ctx`](https://github.com/ctxrs/ctx) project demonstrated a useful
-general approach: discover provider-owned local history, parse each provider
+general approach: discover client-owned local execution logs, parse each client
+format
 through a dedicated adapter, and normalize the result for retrieval.
 
 SkillTrace does not need to integrate with `ctx`, import its database, or copy
@@ -157,7 +168,7 @@ execution context relevant to a single SkillTrace run.
 
 A follow-up source review on 2026-07-23 examined how `ctx` handles Codex format
 variation. Its Codex adapter does not select behavior from model names. It reads
-provider JSON as loose values, recognizes a bounded family of response-item
+Codex JSON as loose values, recognizes a bounded family of response-item
 shapes, correlates calls and results by `call_id`, and accepts several equivalent
 fields such as `arguments`, `input`, `action`, and `execution`.
 
@@ -165,7 +176,7 @@ The adapter explicitly treats `function_call` and `custom_tool_call` as tool-cal
 envelopes. Unknown parsed response-item subtypes fall back to a notice, while a
 fast line filter and the default import policy omit records outside the useful
 search projection. Successful tool output is normally skipped, failed output is
-retained only as a bounded diagnostic preview, and the original provider file is
+retained only as a bounded diagnostic preview, and the original agent log file is
 referenced rather than copied into the normalized store.
 
 This provides useful tolerance for the newer Codex shape observed below: a
@@ -176,7 +187,7 @@ search system better than it fits SkillTrace's evidence reconstruction goals.
 
 The comparison refines the intended SkillTrace adapter design:
 
-- select adapters by provider source format, never by model name
+- select adapters by agent execution-log format, never by model name
 - parse harmless additive fields and known field aliases without rejecting the
   record
 - recognize an ordered family of envelope shapes rather than one exact schema
@@ -186,7 +197,7 @@ The comparison refines the intended SkillTrace adapter design:
 - distinguish collected, recognized, partially extracted, unsupported, and
   intentionally ignored records in collection diagnostics
 - retain a loss-visible unknown fallback instead of silently equating an
-  extraction gap with an empty provider session
+  extraction gap with an empty agent log session
 
 The relevant `ctx` implementation is in its
 [`events.rs`](https://github.com/ctxrs/ctx/blob/main/crates/ctx-history-capture/src/provider/codex/events.rs),
@@ -206,47 +217,47 @@ were not used in the analysis.
 | -------------------------------------------------------------------------- | -------------------------------------------------- |
 | Finished runs in the development database                                  | 21                                                 |
 | Trace modes                                                                | 19 full, 1 passive plus reflection, 1 passive only |
-| Runs associated with local provider sessions                               | 17                                                 |
+| Runs associated with local agent log sessions                               | 17                                                 |
 | Associated Codex sessions                                                  | 9                                                  |
 | Associated Claude Code sessions                                            | 4                                                  |
 | Associated Gemini CLI sessions                                             | 4                                                  |
 | Associations containing a SkillTrace run ID                                | 15                                                 |
 | Associations recovered from time and working directory without a run ID    | 2                                                  |
-| Runs without a matching record in the inspected provider stores            | 4                                                  |
+| Runs without a matching record in the inspected agent log stores            | 4                                                  |
 | Per-run passive skill-path observations in associated sessions             | 32                                                 |
-| Passive path observations also found in non-SkillTrace provider tool input | 32                                                 |
+| Passive path observations also found in non-SkillTrace agent tool input    | 32                                                 |
 
-For all 17 associated runs, the provider's last persisted timestamp preceded
-the SkillTrace finish timestamp. The median margin was about 14 seconds. Sixteen
-were within 41 seconds; one run remained open in SkillTrace for about seven
-minutes after provider activity ended.
+For all 17 associated runs, the agent log's last persisted timestamp preceded
+the SkillTrace finish timestamp. The median margin was about 14 seconds.
+Sixteen were within 41 seconds; one run remained open in SkillTrace for about
+seven minutes after agent activity ended.
 
 The passive-only run is an important case. Its Codex history contained no
 SkillTrace run ID and no SkillTrace MCP call. Exact working-directory and time
-matching selected one provider session, and its shell calls read the same
+matching selected one agent log session, and its shell calls read the same
 `SKILL.md` and reference file observed by the passive probe.
 
 ### Limits Of The Evidence
 
 These results come from one machine, a small number of versions, and three
-providers. They support a prototype; they do not establish a provider API or a
-cross-platform guarantee.
+agent clients. They support a prototype; they do not establish a client API or
+a cross-platform guarantee.
 
-Provider history may be disabled, moved, truncated, delayed, changed by a new
+Agent execution logs may be disabled, moved, truncated, delayed, changed by a new
 client release, or absent for API and hosted-agent runtimes. The four unmatched
 runs show that `unavailable` is a normal outcome, not an exceptional failure.
 
 ## Goals
 
-- Add provider history as a fourth, independently displayed evidence source.
-- Corroborate skill and reference reads with provider-native tool records.
+- Add agent execution logs as a fourth, independently displayed evidence source.
+- Corroborate skill and reference reads with client-native tool records.
 - Preserve normalized operation, verification, and outcome facts for future
   SkillTrace analysis.
-- Let future versions reinterpret stored facts without retaining provider
+- Let future versions reinterpret stored facts without retaining agent
   transcripts.
 - Work for passive-only runs without requiring agent cooperation.
 - Collect at the natural `skilltrace stop` boundary.
-- Keep provider-specific parsing outside the common trace model.
+- Keep client-specific parsing outside the common trace model.
 - Retain only normalized evidence, execution facts, and minimal provenance.
 - Make missing or ambiguous history visible without blocking normal use.
 - Preserve the distinction between observation, declaration, and reflection.
@@ -257,12 +268,12 @@ runs show that `unavailable` is a normal outcome, not an exceptional failure.
 - Index prompts, responses, reasoning, or attachments.
 - Reproduce `ctx` as a general session search system.
 - Depend on `ctx` or its SQLite database at runtime.
-- Treat provider history as an official or stable provider API.
+- Treat agent execution logs as an official or stable client API.
 - Infer model intent from prose.
 - Build a complete forensic record of every process and file operation.
 - Claim that operations following a skill read were caused by that skill.
 - Replace the passive probe, semantic MCP logger, or final reflection.
-- Make provider history mandatory for a passing run initially.
+- Make agent execution logs mandatory for a passing run initially.
 - Parse browser profiles, telemetry, credentials, or unrelated application
   state.
 
@@ -275,17 +286,16 @@ SkillTrace currently compares evidence with different origins:
 | Passive file access | Operating-system probe                    | Independent mechanical observation      | Weak intent and operation semantics        |
 | Semantic MCP events | Agent declaration during work             | Explicit skill lifecycle and intent     | Cooperative self-report                    |
 | Final reflection    | Agent declaration after work              | Attribution, omissions, and uncertainty | Retrospective self-report                  |
-| Provider history    | Agent client's persisted operation record | Structured tool and outcome details     | Provider-owned, local, and format-unstable |
+| Agent execution logs | Agent client's persisted operation record  | Structured tool and outcome details     | Client-owned, local, and format-unstable |
 
-Provider history is independent of SkillTrace instrumentation when it records
-an ordinary provider tool such as `Read`, `read_file`, or `exec_command`.
-However, the same provider history also records calls to SkillTrace's own MCP
-tools. Those calls are circular and must not be treated as independent
-corroboration.
+Agent execution logs are independent of SkillTrace instrumentation when they
+record an ordinary agent tool such as `Read`, `read_file`, or `exec_command`.
+However, the same logs also record calls to SkillTrace's own MCP tools. Those
+calls are circular and must not be treated as independent corroboration.
 
-Provider history should be described as client-recorded evidence, not ground
-truth. A provider can omit events, buffer writes, redact data, or change its
-serialization. Local files can also be edited after the fact.
+Agent execution logs should be described as client-recorded evidence, not
+ground truth. An agent client can omit events, buffer writes, redact data, or
+change its serialization. Local files can also be edited after the fact.
 
 ## Semantic Coverage And Retention Principle
 
@@ -318,21 +328,22 @@ future analysis derives a new postmortem from the original normalized sequence.
 
 ## Normalized Event Model
 
-Provider history produces two related projections:
+The execution-log event stream produces two related projections:
 
 1. consistency-oriented skill and reference evidence
 2. normalized execution-context facts that do not initially affect verdicts
 
-Both keep provider provenance. Neither stores conversational content. The event
-envelope and Codex payload below are implemented. Provider-specific literals
-and formats will be generalized when another adapter is added.
+Both keep source provenance. Neither stores conversational content. The event
+envelope and Codex payload below are implemented. Client-specific literals and
+formats will be generalized when another adapter is added.
 
 ### Observation, Evidence Status, And Interpretation
 
 SkillTrace must keep three concepts separate:
 
-1. **Observation** records what the provider mechanically persisted and what the
-   adapter safely normalized, including provenance and extraction uncertainty.
+1. **Observation** records what the agent client mechanically persisted and
+   what the adapter safely normalized, including provenance and extraction
+   uncertainty.
 2. **Evidence status** records whether that observation currently qualifies for
    consistency checking, is context-only, is circular, or could not be
    sufficiently classified.
@@ -344,8 +355,8 @@ over observations. Interpretation is derived, revisable, and should cite the
 observations and uncertainty that support it. An operation following a skill read
 may be relevant to a postmortem without becoming proof that the skill caused it.
 
-Provider events therefore retain enough safe provenance to support later
-reclassification: provider and session identity, event order, outer and nested
+Execution-log events therefore retain enough safe provenance to support later
+reclassification: agent and session identity, event order, outer and nested
 call relationships, extraction method, confidence, and adapter format version.
 Generated postmortem prose must not replace those underlying facts.
 
@@ -380,13 +391,13 @@ Evidence events use the existing trace envelope with a new `source`:
 
 ### Evidence Event Types
 
-The provider adapters reuse path-oriented event types where their meaning is
+The client adapters reuse path-oriented event types where their meaning is
 already understood:
 
 - `skill_file_read`
 - `skill_reference_read`
 
-The `source` distinguishes provider evidence from passive evidence. Reusing
+The `source` distinguishes execution-log evidence from passive evidence. Reusing
 the event type lets the current consistency matrix align matching paths without
 pretending the evidence was captured by the passive harness.
 
@@ -395,12 +406,12 @@ when the structured skill name resolves to exactly one configured `SKILL.md`.
 Its `evidence_kind: direct_skill_activation` distinguishes model-visible skill
 activation from an ordinary `direct_file_read`.
 
-Provider operations that only list, glob, or discover a path should not become
+Execution-log operations that only list, glob, or discover a path should not become
 read events. They may still become neutral execution-context operations.
 
 ### Execution-Context Event Type
 
-Provider operations that help explain how the run proceeded use:
+Execution-log operations that help explain how the run proceeded use:
 
 ```text
 execution_operation_observed
@@ -435,7 +446,7 @@ An implemented normalized Codex event is:
 }
 ```
 
-The implemented cross-provider operation kinds remain deliberately small:
+The implemented cross-client operation kinds remain deliberately small:
 
 - `file_read`
 - `file_edit`
@@ -449,7 +460,7 @@ An operation that reads a skill file can create a `skill_file_read` or
 correlated. If the target is recoverable but the outcome is failed or unknown,
 the adapter instead creates a context-only `execution_operation_observed` with
 `operation_kind: file_read` and the target in `artifact_refs`. It does not
-promote an attempted or uncertain read into positive skill evidence. Provider
+promote an attempted or uncertain read into positive skill evidence. Agent-log
 session and tool-call IDs place either projection in the operation sequence.
 
 Program-like custom calls should first produce safe outer-call provenance. When
@@ -530,7 +541,7 @@ Allowed collection statuses are:
 - `failed`
 
 This summary event belongs to `skilltrace_session`, not `provider_history`,
-because it describes the collector rather than provider evidence.
+because it describes the collector rather than execution-log evidence.
 
 ## Evidence Classification
 
@@ -547,7 +558,7 @@ path mention into a file-read event.
 | Test, typecheck, lint, or build command     | Recognized command family and correlated exit     | No direct consistency evidence                     | Verification operation and outcome                 |
 | Artifact-producing operation                | Recognized output path and successful result      | No direct consistency evidence                     | Artifact operation and safe references             |
 | Prompt or assistant prose mentioning a path | No mechanical operation                           | No evidence                                        | No operation                                       |
-| SkillTrace MCP call                         | Circular instrumentation record                   | No provider evidence                               | Excluded from agent-operation context              |
+| SkillTrace MCP call                         | Circular instrumentation record                   | No execution-log evidence                               | Excluded from agent-operation context              |
 | Failed or cancelled tool call               | Correlated failure or cancellation                | No positive read evidence                          | Failed or aborted operation when safely classified |
 
 For shell commands, the normalized payload should retain a classifier such as
@@ -556,7 +567,7 @@ text may contain secrets, user data, or unrelated paths.
 
 ## Circularity Rules
 
-The provider adapters must recognize SkillTrace tool names, including observed
+The client adapters must recognize SkillTrace tool names, including observed
 forms such as:
 
 ```text
@@ -580,15 +591,15 @@ association hint. It is not evidence that the referenced skill was read.
 
 ## Session Matching
 
-The collector must match a SkillTrace run to no more than one provider session.
+The collector must match a SkillTrace run to no more than one agent log session.
 It must not choose a convenient-looking session when multiple candidates remain.
 
-### Cross-Provider Selection
+### Cross-Client Selection
 
-Agent-declared client or model identity is not used to choose a provider
-adapter. During `skilltrace stop`, the dispatcher runs the Codex, Claude Code,
-and Gemini CLI adapters against their respective local stores. Each adapter
-independently returns its best provider-specific match and confidence.
+Agent-declared client or model identity is not used to choose an adapter. During
+`skilltrace stop`, the dispatcher runs the Codex, Claude Code, and Gemini CLI
+adapters against their respective local stores. Each adapter independently
+returns its best client-specific match and confidence.
 
 The dispatcher then selects across those results:
 
@@ -603,20 +614,20 @@ The dispatcher then selects across those results:
 6. If every adapter reports `unavailable`, report `unavailable`.
 
 Here, usable means `collected` or `possibly_incomplete`. An ambiguous
-cross-provider result imports no provider events. Provider identity shown later
-in the UI comes from the selected provider session; it is an output of matching,
-not an input to it.
+cross-client result imports no execution-log events. Recorded agent identity
+shown later in the UI comes from the selected agent log session; it is an
+output of matching, not an input to it.
 
 ### Candidate Signals
 
 Signals are ordered from strongest to weakest:
 
-1. A native provider session ID already associated with the run.
+1. A native agent log session ID already associated with the run.
 2. A SkillTrace run ID found in the candidate session.
 3. Exact normalized working-directory match.
-4. Provider session timestamps overlapping the SkillTrace run interval.
+4. Agent log session timestamps overlapping the SkillTrace run interval.
 5. Candidate file creation or modification during the run.
-6. Provider-specific project mapping, such as Gemini's `.project_root`.
+6. Client-specific project mapping, such as Gemini's `.project_root`.
 
 The SkillTrace run ID is strong for association but usually comes from
 SkillTrace MCP activity. It must not be required because passive-only runs do
@@ -639,8 +650,8 @@ Codex session had the exact working directory and began inside each run window.
 
 The first implementation can discover candidates entirely at stop. If
 concurrent same-directory sessions make matching ambiguous, `skilltrace start`
-may record a lightweight baseline of provider session filenames, sizes, and
-modification times. It must not parse transcripts or copy provider data at
+may record a lightweight baseline of agent log session filenames, sizes, and
+modification times. It must not parse transcripts or copy agent log data at
 start.
 
 This baseline is intentionally deferred until real ambiguity demonstrates the
@@ -648,19 +659,19 @@ need for it.
 
 ## Stop-Time Collection Lifecycle
 
-Collection belongs in the CLI process because provider history is local to the
-machine running the agent. A SkillTrace server may eventually be remote and
-must not be expected to read the user's provider directories.
+Collection belongs in the CLI process because agent execution logs are local to
+the machine running the agent. A SkillTrace server may eventually be remote and
+must not be expected to read the user's agent log directories.
 
 For a normal `skilltrace stop`:
 
 1. Fetch the active SkillTrace session.
 2. Capture `stop_requested_at` before waiting or parsing.
-3. Discover provider-session candidates using run start, target root, and
-   provider-specific indexes or directories.
+3. Discover agent-log session candidates using run start, target root, and
+   client-specific indexes or directories.
 4. Resolve one candidate or record `unavailable` or `ambiguous`.
 5. Wait briefly for the candidate to become stable.
-6. Parse a bounded snapshot through the provider adapter.
+6. Parse a bounded snapshot through the client adapter.
 7. Consider only records inside the run interval, with a small documented
    timestamp tolerance for session startup.
 8. Filter circular and unsupported records, then classify recognized
@@ -672,17 +683,18 @@ For a normal `skilltrace stop`:
 11. Clean up injected instructions.
 12. Call `/api/sessions/end` and finish the run.
 
-The precise relationship between provider collection and instruction cleanup
-may change during implementation, but provider evidence must be posted before
-the run is closed.
+The precise relationship between execution-log collection and instruction
+cleanup may change during implementation, but execution-log evidence must be
+posted before the run is closed.
 
-For `skilltrace stop --discard`, provider history should not be collected. The
-run is about to be removed, and parsing private local history has no benefit.
+For `skilltrace stop --discard`, agent execution logs should not be collected.
+The run is about to be removed, and parsing private local execution logs has no
+benefit.
 
 ## Flush And Completeness Policy
 
-Provider processes may buffer their final write. Historical timing is
-encouraging, but file flushing is not a documented cross-provider contract.
+Agent client processes may buffer their final write. Historical timing is
+encouraging, but file flushing is not a documented cross-client contract.
 
 The collector should:
 
@@ -697,8 +709,8 @@ Expected completeness values are:
 
 | Value                 | Meaning                                                |
 | --------------------- | ------------------------------------------------------ |
-| `explicit_complete`   | Provider recorded a positive terminal event            |
-| `explicit_aborted`    | Provider recorded an abort or cancellation event       |
+| `explicit_complete`   | Agent client recorded a positive terminal event            |
+| `explicit_aborted`    | Agent client recorded an abort or cancellation event       |
 | `stable_at_stop`      | No terminal event exists, but the source became stable |
 | `possibly_incomplete` | Source remained active or changed through the timeout  |
 | `unknown`             | Adapter cannot assess completion                       |
@@ -707,9 +719,9 @@ Codex can expose explicit `task_complete` and `turn_aborted` records. The
 observed Claude Code and Gemini CLI files did not expose a general terminal
 session record, so stability is the expected completion signal for them.
 
-A provider session can be resumed later. SkillTrace should import only the
+An agent log session can be resumed later. SkillTrace should import only the
 records within the current run's cutoff and should never claim that the entire
-provider session is permanently complete.
+agent log session is permanently complete.
 
 ## Privacy Boundary
 
@@ -718,16 +730,16 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 
 ### Retained
 
-- provider name and format identifier
-- provider-native session and tool-call IDs
-- provider client version when available
-- provider model ID when available and safe
-- normalized provider execution configuration such as client surface, approval
+- agent name and log-format identifier
+- client-native session and tool-call IDs
+- agent client version when available
+- client-recorded model ID when available and safe
+- normalized recorded agent configuration such as client surface, approval
   policy, sandbox kind, network availability, reasoning effort, collaboration
   mode, timezone, and target-workspace relationship
-- provider-confirmed working directory only when it exactly matches the known
-  SkillTrace target root
-- names of allowlisted provider settings that changed during the run
+- working directory recorded in the agent log, only when it exactly matches the
+  known SkillTrace target root
+- names of allowlisted agent-client settings that changed during the run
 - normalized event timestamp
 - normalized skill or reference path
 - normalized operation kind and repository-relative affected paths
@@ -748,9 +760,9 @@ privacy guarantee depends on minimizing the data that leaves the parser.
   build, or artifact operation
 - program-like custom-tool input needed for bounded nested-call extraction
 - tool-result metadata needed to determine success
-- provider working directories outside the confirmed target, inspected only for
-  association and path normalization
-- provider timestamps and file metadata needed for matching and stability
+- agent-log working directories outside the confirmed target, inspected only
+  for association and path normalization
+- agent-log timestamps and file metadata needed for matching and stability
 - complete workspace-root arrays and nested permission-policy structures needed
   only to derive bounded scope and access labels
 
@@ -761,14 +773,14 @@ privacy guarantee depends on minimizing the data that leaves the parser.
 - reasoning, thinking, summaries, or hidden model content
 - raw tool output
 - complete shell commands
-- JavaScript or other provider program wrappers
+- JavaScript or other agent-client program wrappers
 - file contents
 - patch bodies, edited content, or file snapshots
 - attachments or images
 - token counts and billing data
 - credentials, authentication state, cookies, or account data
 - telemetry and unrelated application logs
-- provider-generated titles or conversation previews
+- agent-client-generated titles or conversation previews
 - base instructions, embedded developer instructions, turn summaries, and world
   state snapshots
 
@@ -778,13 +790,13 @@ continuing to exclude thinking blocks, reasoning summaries, encrypted
 reasoning, and reasoning-token content.
 
 The detailed field-by-field disposition is maintained in
-[Provider History Formats](./provider-history-formats.md). The shared lifecycle,
+[Agent Execution Log Formats](./provider-history-formats.md). The shared lifecycle,
 future decision-signal strategy, and research-mode gate are maintained in
 [Data And Evidence Management](./data-and-evidence-management.md).
 
 ## Path Handling
 
-Provider records may use absolute paths while passive events use paths relative
+Agent log records may use absolute paths while passive events use paths relative
 to the run target root. The collector should:
 
 1. resolve lexical `.` and `..` segments without requiring the file to remain
@@ -796,11 +808,11 @@ to the run target root. The collector should:
 6. retain the original path only transiently
 
 Symlink resolution should follow the existing SkillTrace skill-location policy.
-The provider adapter should not invent a second path policy.
+The client adapter should not invent a second path policy.
 
 ## Deduplication And Provenance
 
-Provider-history events must not be deduplicated against passive evidence.
+Execution-log events must not be deduplicated against passive evidence.
 The fact that two independent sources observed the same path is the point.
 
 Deduplication occurs only within `provider_history`. The implemented adapter
@@ -814,9 +826,10 @@ provider_session_id
 + normalized classifier or target paths
 ```
 
-When a provider repeats the same logical tool call in a snapshot and an
-incremental record, the adapter must collapse it using the provider tool-call
-ID. Gemini's observed `$set.messages` snapshots make this especially important.
+When an agent client repeats the same logical tool call in a snapshot and an
+incremental record, the adapter must collapse it using the client-native
+tool-call ID. Gemini's observed `$set.messages` snapshots make this especially
+important.
 
 The source record index is retained separately as provenance. The fingerprint
 does not hash or persist prompt, response, command, patch, or tool-output content
@@ -829,7 +842,7 @@ allowing SkillTrace's interpretation to evolve later.
 
 Useful facts include:
 
-- provider, model, client, session, and completion metadata
+- agent, model, client, session, and completion metadata
 - operation categories, ordering, and outer or nested call relationships
 - normalized repository-relative input and output paths
 - successful, failed, and aborted tool outcomes, including retries and recovery
@@ -846,7 +859,7 @@ interpretation cannot later be revised.
 
 ### Future Postmortems And Skill Improvement
 
-Provider history is one input to future automatic postmortems and
+Agent execution logs are one input to future automatic postmortems and
 skill-improvement candidates. The analysis must combine normalized observations
 with source health, skill and instruction provenance, passive evidence, semantic
 declarations, reflection, and repository outcomes without claiming causation
@@ -869,45 +882,45 @@ skill or reference read
 ```
 
 This is temporal association, not proof of causation. Confidence can increase
-when passive observation, semantic declaration, provider operations, and
+when passive observation, semantic declaration, execution-log operations, and
 reflection agree. The UI and exports must not say that a skill caused an
 operation or outcome merely because the operation followed a skill read.
 
 ### Outcome Levels
 
-Provider history can contribute to several outcome levels:
+Agent execution logs can contribute to several outcome levels:
 
-| Level        | Example                                             | Provider-history contribution                     |
+| Level        | Example                                             | Execution-log contribution                     |
 | ------------ | --------------------------------------------------- | ------------------------------------------------- |
 | Operation    | A tool succeeded, failed, or was interrupted        | Strong when result status is structured           |
 | Verification | Test, typecheck, lint, or build exited successfully | Strong when command family and exit are validated |
 | Repository   | Files were edited or artifacts produced             | Moderate; paths are known but quality is not      |
-| Task         | Session completed, aborted, or remained incomplete  | Provider-dependent                                |
-| Evaluated    | Result was correct, useful, or accepted             | Not established by history alone                  |
+| Task         | Session completed, aborted, or remained incomplete  | Client-dependent                                  |
+| Evaluated    | Result was correct, useful, or accepted             | Not established by execution logs alone           |
 
 Agent reflection and human judgment remain necessary for evaluated outcomes.
 
 ## Run Interpretation And Consistency UI
 
-Provider records are not blended into reflection as though the agent reported
+Agent log records are not blended into reflection as though the agent reported
 them. The current run-details view preserves source through three complementary
 surfaces:
 
 ```text
 Timeline
-  Provider operations in event order: tool, operation kind, targets, outcome
+  Execution-log operations in event order: tool, operation kind, targets, outcome
 
 Run context
-  Declared context with matched provider model/client identity preferred
-  Collapsed provider execution configuration and SkillTrace environment
+  Declared context with matched execution-log model/client identity preferred
+  Collapsed recorded agent configuration and SkillTrace environment
 
 Recorded execution context
-  Provider identity, collection quality, and confirmed skill/reference reads
+  Recorded agent identity, collection quality, and confirmed skill/reference reads
 ```
 
-Agent reflection remains separate. Provider operations are not repeated in the
-Recorded execution context card because the timeline now carries their order
-and richer per-event context.
+Agent reflection remains separate. Execution-log operations are not repeated
+in the Recorded execution context card because the timeline now carries their
+order and richer per-event context.
 
 For an `execution_operation_observed` event, the compact timeline presents these
 optional values in order:
@@ -923,65 +936,67 @@ header. Expanded event data retains confidence, extraction, exit-code, duration,
 and provenance fields.
 
 The runs list and primary Run context rows prefer model and client identity from
-a matched provider session. Agent-declared identity remains the fallback when
-provider history is unavailable, ambiguous, or lacks the corresponding value.
+a matched agent log session. Agent-declared identity remains the fallback when
+agent execution logs are unavailable, ambiguous, or lack the corresponding
+value.
 
-The current consistency view aligns provider paths with passive, semantic, and
-reflection paths while preserving source boundaries. Confidence and extraction
-details remain available in expanded event data rather than being collapsed
-into the row verdict.
+The current consistency view aligns execution-log paths with passive, semantic,
+and reflection paths while preserving source boundaries. Confidence and
+extraction details remain available in expanded event data rather than being
+collapsed into the row verdict.
 
 ### Consistency Policy
 
-Provider history remains observational:
+The execution-log event stream remains observational:
 
 - show it in the run timeline
 - show a recorded execution-context summary beside agent reflection
 - show collection status and confidence
-- align positive skill and reference reads in an advisory Provider column
-- show provider-only paths as neutral `not evaluated` rows
-- do not require provider history for `pass`
+- align positive skill and reference reads in an advisory Agent log column
+- show execution-log-only paths as neutral `not evaluated` rows
+- do not require agent execution logs for `pass`
 - do not let `unavailable`, `ambiguous`, or unsupported history turn a run into
   a warning
-- do not let provider evidence silently substitute for expected passive or
+- do not let execution-log evidence silently substitute for expected passive or
   semantic evidence
 
-The consistency column uses an amber dot for a positive provider observation, a
-amber outline when a context-only file-read operation targeted the same
-already-keyed path, a gray outline when a completed collection found no matching
-record, and a dash when collection was unavailable, ambiguous, unsupported,
-failed, possibly incomplete, or absent. Context-only operations never create
-matrix rows, and their targets are not promoted to positive evidence. These
-display states never affect consistency status, issue count, run result, or
-mode comparison.
+The consistency column uses an amber dot for a positive execution-log
+observation, an amber outline when a context-only file-read operation targeted
+the same already-keyed path, a gray outline when a completed collection found
+no matching record, and a dash when collection was unavailable, ambiguous,
+unsupported, failed, possibly incomplete, or absent. Context-only operations
+never create matrix rows, and their targets are not promoted to positive
+evidence. These display states never affect consistency status, issue count,
+run result, or mode comparison.
 
 Useful early discrepancies include:
 
-- provider read plus passive read: independent corroboration
-- provider read without passive read: possible passive-probe attribution gap
-- passive read without provider read: unsupported provider operation, parser
-  gap, or non-agent process access
-- semantic declaration without provider or passive read: declaration lacks
+- execution-log read plus passive read: independent corroboration
+- execution-log read without passive read: possible passive-probe attribution gap
+- passive read without execution-log read: unsupported execution-log operation,
+  parser gap, or non-agent process access
+- semantic declaration without execution-log or passive read: declaration lacks
   mechanical corroboration
-- provider read omitted from reflection: possible attribution gap
+- execution-log read omitted from reflection: possible attribution gap
 
-After enough runs accumulate, SkillTrace can decide whether provider evidence
-should influence verdicts. That policy should be a separate architecture
-decision backed by measured false-positive and false-negative rates.
+After enough runs accumulate, SkillTrace can decide whether execution-log
+evidence should influence verdicts. That policy should be a separate
+architecture decision backed by measured false-positive and false-negative
+rates.
 
 ## Failure Policy
 
-Provider collection is an enrichment step, not part of run durability.
+Execution-log collection is an enrichment step, not part of run durability.
 
 - `skilltrace stop` succeeds even when collection fails.
-- Parsing one provider must not scan unrelated provider data as a fallback.
+- Parsing one client must not scan unrelated agent log data as a fallback.
 - Unknown formats fail closed: no evidence or execution context is emitted.
-- Ambiguous matching emits no provider events.
+- Ambiguous matching emits no execution-log events.
 - Partial parsing emits only records that were fully validated and marks the
   collection `possibly_incomplete`.
 - Errors shown to the user use safe codes and paths with the home directory
   abbreviated.
-- Diagnostics may report provider availability, adapter version, candidate
+- Diagnostics may report agent-log availability, adapter version, candidate
   count, and the last collection status.
 - Diagnostics must not print prompts, responses, commands, or tool output.
 
@@ -992,40 +1007,39 @@ but the responsibilities should remain separate:
 
 | Component            | Responsibility                                                             |
 | -------------------- | -------------------------------------------------------------------------- |
-| Source discovery     | Find supported provider stores and candidate sessions                      |
-| Session matcher      | Resolve one provider session for one SkillTrace run                        |
+| Source discovery     | Find supported agent log stores and candidate sessions                     |
+| Session matcher      | Resolve one agent log session for one SkillTrace run                       |
 | Stability reader     | Select a bounded, stable source snapshot                                   |
-| Provider adapter     | Parse provider records into a private intermediate form                    |
+| Client adapter       | Parse agent log records into a private intermediate form                   |
 | Circularity filter   | Remove SkillTrace instrumentation records                                  |
 | Evidence classifier  | Recognize successful skill-file operations                                 |
 | Operation classifier | Project safe execution and outcome facts                                   |
-| Path normalizer      | Align provider paths with SkillTrace paths                                 |
+| Path normalizer      | Align execution-log paths with SkillTrace paths                            |
 | Privacy projector    | Produce the minimal normalized event payload                               |
 | Batch sender         | Post evidence, execution context, and collection summary before run finish |
 
-Provider adapters should be pure where practical: bytes or parsed records in,
+Client adapters should be pure where practical: bytes or parsed records in,
 normalized private records out. Discovery, filesystem access, matching, and HTTP
 submission should remain outside the parser.
 
-## Cross-Provider Implementation Phases
+## Cross-Client Implementation Phases
 
-Phases 0 through 2 and the current timeline/context portion of Phase 3 are
-implemented for Codex, Claude Code, and Gemini CLI. The consistency-view work
-in Phase 3 remains deferred. Each additional provider should pass through the
-same phases rather than being added directly to stop-time collection.
+Phases 0 through 3 are implemented for Codex, Claude Code, and Gemini CLI. Each
+additional client should pass through the same phases rather than being added
+directly to stop-time collection.
 
 ### Phase 0: Fixtures And Contracts
 
-- Create synthetic, sanitized fixtures for the observed provider shapes.
+- Create synthetic, sanitized fixtures for the observed client shapes.
 - Define private adapter output, operation taxonomy, and public normalized event
   schemas.
 - Add tests that fail if prompt, response, reasoning, command, or output fields
   escape the privacy projector.
-- Record observed provider client versions with the fixtures.
+- Record observed agent client versions with the fixtures.
 
 ### Phase 1: Read-Only Collector
 
-- Implement discovery and a dedicated adapter for each provider. Codex, Claude
+- Implement discovery and a dedicated adapter for each client. Codex, Claude
   Code, and Gemini CLI are implemented.
 - Run against fixtures and explicitly selected local files.
 - Produce a local diagnostic report without changing SkillTrace runs.
@@ -1035,7 +1049,7 @@ same phases rather than being added directly to stop-time collection.
 ### Phase 2: Stop Integration
 
 - Invoke collection from `skilltrace stop` before `/api/sessions/end`.
-- Add a batch endpoint for normalized provider events.
+- Add a batch endpoint for normalized execution-log events.
 - Store normalized execution-context operations alongside skill evidence.
 - Store collection status for unavailable and unsupported cases.
 - Keep current run verdicts unchanged.
@@ -1044,11 +1058,11 @@ same phases rather than being added directly to stop-time collection.
 
 Implemented for Codex, Claude Code, and Gemini CLI:
 
-- Display provider-history events and collection status.
-- Prefer matched provider identity and show the provider execution
+- Display execution-log events and collection status.
+- Prefer matched recorded agent identity and show the Recorded agent
   configuration.
 - Keep Recorded execution context distinct from Agent reflection.
-- Align provider skill and reference reads in a verdict-neutral consistency
+- Align execution-log skill and reference reads in a verdict-neutral consistency
   column.
 
 Remaining:
@@ -1059,11 +1073,11 @@ Remaining:
 
 ### Phase 4: Reliability Review
 
-- Compare provider evidence with passive events over real runs.
+- Compare execution-log evidence with passive events over real runs.
 - Review whether normalized operations illuminate skill influence and outcome
   without implying causation.
 - Review missed, extra, ambiguous, and incomplete records.
-- Decide whether any provider evidence should affect verdicts.
+- Decide whether any execution-log evidence should affect verdicts.
 - Consider an explicit reconciliation command only if stop-time incompleteness is
   common enough to justify it.
 
@@ -1093,7 +1107,7 @@ Remaining:
 - exact directory and interval select a passive-only candidate
 - conflicting strong signals produce ambiguity
 - concurrent same-directory candidates produce ambiguity
-- no provider files produce unavailable
+- no agent log files produce unavailable
 - resumed sessions are sliced at the run cutoff
 
 ### Privacy Tests
@@ -1102,24 +1116,25 @@ Remaining:
 - normalized events contain no reasoning or thinking content
 - normalized events contain no raw tool output
 - normalized events contain no complete shell command
-- normalized events contain no JavaScript or provider program wrapper
+- normalized events contain no JavaScript or agent-client program wrapper
 - execution-context events contain no patch or edited content
 - repository paths are normalized and home-directory paths are redacted
 - warnings redact the home directory
-- logs do not serialize raw provider records
+- logs do not serialize raw agent log records
 
 ### Stop Lifecycle Tests
 
 - stable file is collected before session finish
 - changing file reaches the timeout without blocking stop
 - adapter error still finishes the run
-- server error during provider submission still finishes the run with a warning
-- discard skips provider discovery and parsing
-- repeated stop does not duplicate provider evidence or execution context
+- server error during execution-log submission still finishes the run with a
+  warning
+- discard skips agent-log discovery and parsing
+- repeated stop does not duplicate execution-log evidence or execution context
 
 ## Acceptance Criteria For The First Integrated Release
 
-- Supported provider sessions can be matched without relying on SkillTrace MCP
+- Supported agent log sessions can be matched without relying on SkillTrace MCP
   calls.
 - Direct and statically recoverable nested successful skill and reference reads
   become normalized `provider_history` events.
@@ -1129,16 +1144,17 @@ Remaining:
   future analysis even when the current UI summarizes them.
 - Run details can derive Recorded execution context separately from Agent
   reflection.
-- Circular SkillTrace calls never become provider evidence.
+- Circular SkillTrace calls never become execution-log evidence.
 - No prompt, response, reasoning, raw output, full command, or file content is
   stored in SkillTrace.
-- Missing, ambiguous, unsupported, and incomplete history are visible but
+- Missing, ambiguous, unsupported, and incomplete logs are visible but
   nonfatal.
-- Provider-only consistency rows remain neutral and do not enter mode
+- Execution-log-only consistency rows remain neutral and do not enter mode
   comparison.
-- Existing run verdicts do not change merely because provider history is absent.
+- Existing run verdicts do not change merely because agent execution logs are
+  absent.
 - `skilltrace stop` remains bounded and responsive.
-- Provider-specific fixtures and privacy regression tests cover every adapter.
+- Client-specific fixtures and privacy regression tests cover every adapter.
 
 ## Future Interpretation Phase
 
@@ -1150,7 +1166,7 @@ for the dedicated roadmap.
 
 ## Open Questions
 
-- Can a native session ID be captured cheaply for each provider, or should
+- Can a native session ID be captured cheaply for each agent client, or should
   matching remain entirely file based?
 - Is a start-time filename and size baseline necessary in real concurrent use?
 - Should collection status be represented only as a trace event, or also in the
@@ -1163,13 +1179,13 @@ for the dedicated roadmap.
   distracting?
 - Should repeated low-level operations be stored individually or summarized
   after preserving verification and failure transitions?
-- How should provider evidence for global skills outside the target root be
+- How should execution-log evidence for global skills outside the target root be
   displayed without exposing the user's home path?
 - Should low-confidence shell evidence be stored as diagnostic evidence or
   omitted entirely?
 - Is later reconciliation useful enough to justify another command and state
   transition?
-- Which provider and parser version details are safe and useful to expose in
+- Which client and parser version details are safe and useful to expose in
   exported traces?
 
 ## Documentation Boundary
@@ -1179,6 +1195,6 @@ behavior plus the remaining roadmap. Current behavior is limited to the items
 in Current Implementation. Later-phase language describes intended behavior,
 not a supported feature.
 
-In particular, the consistency matrix includes provider history only as an
-advisory column. Existing verdicts do not change when provider history is
-present, missing, ambiguous, incomplete, or unsupported.
+In particular, the consistency matrix includes execution-log observations only
+as an advisory column. Existing verdicts do not change when agent execution
+logs are present, missing, ambiguous, incomplete, or unsupported.

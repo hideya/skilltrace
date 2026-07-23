@@ -4,12 +4,13 @@ Status: future design direction; automatic generation is not implemented
 
 This document describes how SkillTrace may later turn retained run observations
 into automatic postmortems and skill-improvement candidates. The capture
-requirements begin now because discarded provider facts cannot be recovered
-reliably after local histories rotate or formats change.
+requirements begin now because discarded execution-log facts cannot be
+recovered reliably after local agent logs rotate or formats change.
 
-The provider-history collection design is documented in
-[Provider History Event Source](./provider-history-event-source.md). The broader
-project motivation is documented in [Project Draft](./project-draft.md).
+The execution-log collection design is documented in
+[Agent Execution Log Event Source](./provider-history-event-source.md). The
+broader project motivation is documented in
+[Project Draft](./project-draft.md).
 
 ## Core Principle
 
@@ -64,7 +65,7 @@ which it was produced.
 | Run Git and instruction snapshot | Skill version and authored context seen by the run          | May rely on Git provenance for unchanged files     |
 | Passive file access              | Independent mechanical reads                                | Weak operation semantics and intent                |
 | Semantic MCP events              | Declared skill lifecycle, applicability, and deviations     | Cooperative agent self-report                      |
-| Provider history                 | Tool operations, ordering, outcomes, paths, and terminal state | Provider-owned and format-unstable               |
+| Agent execution logs             | Tool operations, ordering, outcomes, paths, and terminal state | Client-owned and format-unstable                  |
 | Final reflection                 | Agent attribution, uncertainty, and outcome assessment      | Retrospective self-report                          |
 | Structured decision observations | Plan revisions, uncertainty, conflicts, and changed hypotheses | Future bounded categories, not raw reasoning     |
 | Repository outcome               | Changed files, artifacts, and later regression results      | Does not establish why a change happened           |
@@ -85,8 +86,8 @@ The retained run record should preserve, when structurally available:
 - success, failure, abort, timeout, and cancellation outcomes
 - failed attempt, correction, retry, and recovery transitions
 - exit codes and durations
-- provider, model, client version, source format, and adapter version
-- normalized provider execution constraints and operating mode, including
+- agent, model, client version, source format, and adapter version
+- normalized recorded execution constraints and operating mode, including
   sandbox, network, approval, reasoning effort, and changed setting names
 - source record position and non-content deduplication fingerprint
 - extraction method, confidence, completeness, and partial status
@@ -98,30 +99,31 @@ verification transitions, and other facts whose sequence affects interpretation.
 
 ## Retention Boundary
 
-The collector may inspect private provider fields transiently to classify a
+The collector may inspect private agent-log fields transiently to classify a
 record, but it must not retain or send:
 
-- prompts, responses, provider-generated conversation or reasoning summaries,
+- prompts, responses, agent-client-generated conversation or reasoning summaries,
   or reasoning content
 - raw tool output or error streams
 - complete shell commands
-- JavaScript or other provider program wrappers
-- raw arguments or arbitrary provider payloads
-- complete provider policy objects, workspace-root lists, base instructions, or
-  embedded developer instructions
+- JavaScript or other agent-client program wrappers
+- raw arguments or arbitrary agent-log payloads
+- complete agent-client policy objects, workspace-root lists, base
+  instructions, or embedded developer instructions
 - patches, diffs, edited content, or unrelated file contents
 - arbitrary absolute paths outside the existing path policy
 - credentials, account data, telemetry, attachments, or billing data
 
 The retained schema should be an allowlist. An opaque extension bag is not a
-future-proofing mechanism because it silently recreates the provider transcript
+future-proofing mechanism because it silently recreates the agent transcript
 inside SkillTrace.
 
 ## Reasoning And Decision Signals
 
 Raw reasoning may expose planning, uncertainty, alternatives, instruction
 conflicts, or changing failure hypotheses. It is still a poor durable analysis
-input because it can contain sensitive unrelated content, varies by provider,
+input because it can contain sensitive unrelated content, varies by agent
+client,
 is difficult to redact, and is not guaranteed to be a faithful causal account.
 Normal SkillTrace collection therefore does not mine or retain it.
 
@@ -135,11 +137,11 @@ Decision signals are context for interpretation, not automatic consistency
 evidence. They must carry source, extraction method, confidence, and supporting
 observation references without retaining prose excerpts.
 
-Any future evaluation of provider-exposed reasoning must remain a separately
-approved, off-by-default research mode. It requires local-only processing,
-explicit per-run consent, separate encrypted storage, short retention,
-exclusion from normal exports and diagnostics, and evidence that structured
-declarations cannot answer the same question.
+Any future evaluation of reasoning exposed in agent logs must remain a
+separately approved, off-by-default research mode. It requires local-only
+processing, explicit per-run consent, separate encrypted storage, short
+retention, exclusion from normal exports and diagnostics, and evidence that
+structured declarations cannot answer the same question.
 
 ## Postmortem Construction
 
@@ -167,7 +169,7 @@ An LLM-assisted postmortem may then describe:
 - candidate follow-up and regression scenarios
 
 The generated result should cite stable run event IDs or observation IDs. It
-should never cite raw provider lines that SkillTrace intentionally did not
+should never cite raw agent-log lines that SkillTrace intentionally did not
 retain.
 
 ## Skill-Improvement Candidates
@@ -192,10 +194,10 @@ claim that the skill caused either the failure or the recovery.
 ## Causation And Confidence Rules
 
 - Temporal order establishes sequence, not causation.
-- Provider history establishes what the client recorded, not model intent.
+- Agent execution logs establish what the client recorded, not model intent.
 - Reflection establishes what the agent reported, not objective correctness.
 - Agreement across independent sources can increase confidence.
-- Missing provider evidence may indicate collection or extraction gaps.
+- Missing execution-log evidence may indicate collection or extraction gaps.
 - A successful command establishes an operation outcome, not task quality.
 - Evaluated success requires an external check, human judgment, or another
   explicitly identified evaluator.

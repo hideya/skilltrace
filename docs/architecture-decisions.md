@@ -254,11 +254,12 @@ diagnosis from the file-oriented consistency matrix. If a run never recorded
 `trace_session_finished` and any newer `trace_session_started` event exists
 globally, the older run's Status is shown as `Interrupted`.
 
-The final consistency diagnosis ignores neutral `discovered` and provider-only
-rows. A discovered row means SkillTrace observed a passive `SKILL.md`
+The final consistency diagnosis ignores neutral `discovered` and
+execution-log-only rows. A discovered row means SkillTrace observed a passive
+`SKILL.md`
 entrypoint read, but saw no semantic lifecycle, reflection entry, or same-skill
-reference read that would make it material evidence of skill use. A
-provider-only row is shown as `not evaluated`. Both remain visible in run
+reference read that would make it material evidence of skill use. An
+execution-log-only row is shown as `not evaluated`. Both remain visible in run
 details, but neither makes the Result column say `Warning`.
 
 This is intentionally global, not repo-scoped. With the current
@@ -534,7 +535,7 @@ context for quick inspection.
 If the target is not in Git, SkillTrace records that Git provenance was
 unavailable and continues the run normally.
 
-## Provider History Is Observational
+## Agent Execution Logs Are Observational
 
 A normal `skilltrace stop` now inspects the matching Codex CLI rollout, Claude
 Code project-session file, or Gemini CLI chat-session file and projects a
@@ -542,44 +543,44 @@ strict, privacy-filtered subset into `provider_history` events. The adapters
 retain successful skill and reference reads, Gemini's explicit successful
 skill activation, context-only reads with recoverable targets, structured or
 patch-derived edit targets, and recognized test, typecheck, lint, and build
-outcomes. They also retain an allowlisted provider execution configuration.
+outcomes. They also retain an allowlisted recorded agent configuration.
 They never persist prompts, responses, reasoning, raw output, full commands,
 file contents, or patch bodies.
 
-Provider history is stored and displayed independently from the passive probe,
-semantic MCP declarations, and agent reflection. It does not participate in the
-consistency verdict yet, and missing, ambiguous, unsupported, or changing
-history never blocks the run from stopping.
+The normalized execution-log event stream is stored and displayed independently
+from the passive probe, semantic MCP declarations, and agent reflection. It
+does not participate in the consistency verdict yet, and missing, ambiguous,
+unsupported, or changing logs never block the run from stopping.
 
-The consistency matrix aligns positive provider skill and reference reads in an
-advisory column. Provider-only paths are shown as neutral `not evaluated` rows.
-When a context-only provider file-read operation targets an already-keyed row,
-the matrix shows an amber outline rather than treating the operation as
-positive evidence. Context-only operations never create matrix rows. A gray
-outline represents completed collection without a matching record; a dash
-represents collection that was unavailable, ambiguous, unsupported, failed,
-possibly incomplete, or absent. The column does not affect issue counts, run
-results, or mode comparison, and it does not substitute for an expected
-passive, semantic, or reflection signal.
+The consistency matrix aligns positive execution-log skill and reference reads
+in an advisory column. Execution-log-only paths are shown as neutral
+`not evaluated` rows. When a context-only execution-log file-read operation
+targets an already-keyed row, the matrix shows an amber outline rather than
+treating the operation as positive evidence. Context-only operations never
+create matrix rows. A gray outline represents completed collection without a
+matching record; a dash represents collection that was unavailable, ambiguous,
+unsupported, failed, possibly incomplete, or absent. The column does not affect
+issue counts, run results, or mode comparison, and it does not substitute for
+an expected passive, semantic, or reflection signal.
 
-When a matched provider session supplies model or client identity, the runs list
-and primary Run context rows prefer those recorded values over agent-declared
-ones. Declared values remain the fallback when provider history is unavailable
-or ambiguous.
+When a matched agent log session supplies model or client identity, the runs
+list and primary Run context rows prefer those recorded values over
+agent-declared ones. Declared values remain the fallback when agent execution
+logs are unavailable or ambiguous.
 
-The timeline is the primary representation of normalized provider operations.
-It presents the tool, operation kind, `artifact_refs` targets, and known outcome
-in event order. An artifact target records what an operation addressed; it does
-not prove semantic skill use or causal influence. Unknown outcomes remain in
-the stored event but are not promoted into the compact header. The Recorded
-execution context card therefore summarizes provider identity, collection
-quality, and provider-confirmed skill or reference reads without duplicating
-the operation sequence.
+The timeline is the primary representation of normalized execution-log
+operations. It presents the tool, operation kind, `artifact_refs` targets, and
+known outcome in event order. An artifact target records what an operation
+addressed; it does not prove semantic skill use or causal influence. Unknown
+outcomes remain in the stored event but are not promoted into the compact
+header. The Recorded execution context card therefore summarizes recorded
+agent identity, collection quality, and skill or reference reads recorded in
+agent execution logs without duplicating the operation sequence.
 
 Reasons:
 
-- provider-owned history adds operation and outcome detail unavailable to the
-  operating-system probe
+- client-owned execution logs add operation and outcome detail unavailable to
+  the operating-system probe
 - keeping the source observational avoids turning a version-unstable local
   format into an implicit requirement for successful runs
 - a strict server-side payload allowlist provides a second privacy boundary
@@ -587,7 +588,7 @@ Reasons:
 - per-run source fingerprints make repeated batch submission idempotent without
   a schema migration
 
-Provider-history retention follows this principle:
+Execution-log retention follows this principle:
 
 > Be aggressive about semantic coverage, but conservative about retained
 > content.
@@ -596,11 +597,11 @@ SkillTrace should preserve privacy-safe operation order, nesting, failures,
 retries, recovery, verification transitions, affected paths, and extraction
 health even when those facts do not affect today's verdict or are only compactly
 summarized in the UI. It must continue to exclude prompts, responses, reasoning,
-raw output, complete commands, provider program wrappers, patches, and file
+raw output, complete commands, agent-client program wrappers, patches, and file
 contents.
 
 This exclusion applies to reasoning content, including thinking blocks and
-provider-generated reasoning summaries. An allowlisted scalar setting such as
+agent-client-generated reasoning summaries. An allowlisted scalar setting such as
 `reasoning_effort` is execution metadata and may be retained without retaining
 the reasoning itself. Although reasoning text may contain useful planning or
 uncertainty clues, normal collection should prefer explicit semantic
@@ -609,7 +610,7 @@ retains reasoning requires a separate opt-in research boundary.
 
 The durable model separates:
 
-1. **Observation:** what the provider recorded, represented by a safely
+1. **Observation:** what the agent client recorded, represented by a safely
    normalized mechanical fact.
 2. **Evidence status:** the current policy decision about consistency use.
 3. **Interpretation:** a revisable postmortem or skill-improvement conclusion.
@@ -625,8 +626,8 @@ documented in
 
 The format observations, lifecycle, privacy policy, and remaining roadmap are
 documented in
-[provider-history-event-source.md](provider-history-event-source.md) and
-[provider-history-formats.md](provider-history-formats.md).
+[Agent Execution Log Event Source](provider-history-event-source.md) and
+[Agent Execution Log Formats](provider-history-formats.md).
 
 ## Demo Working Copy
 

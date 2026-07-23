@@ -18,11 +18,11 @@ Use three verdict-bearing evidence channels:
 3. final run reflection
 
 Then compare them across runs that use different levels of intervention.
-Supported command-line workflows also add provider history as a fourth,
+Supported command-line workflows also add agent execution logs as a fourth,
 observational channel. It is collected after the agent work, aligned in the
 consistency matrix, and kept rigorously verdict-neutral.
 
-The mode sections below list verdict-bearing evidence. Provider history may
+The mode sections below list verdict-bearing evidence. Agent execution logs may
 annotate a supported run in any mode without changing that mode's expectations.
 
 If a skill behaves consistently when moving from full instrumentation to
@@ -157,9 +157,9 @@ Within one run:
 - Did live semantic declarations match reflection file lists?
 - Did reflection omit files that passive probing observed?
 - Did reflection mention files that passive probing missed?
-- Did provider history mechanically corroborate any skill or reference paths?
-- Do provider-only or provider-missing paths suggest an adapter, matching, or
-  passive-probe gap worth investigating?
+- Did agent execution logs mechanically corroborate any skill or reference paths?
+- Do execution-log-only or execution-log-missing paths suggest an adapter,
+  matching, or passive-probe gap worth investigating?
 
 Across modes:
 
@@ -190,11 +190,11 @@ Current implementation note:
 - Passive-only `SKILL.md` entrypoint reads with no later semantic, reflection,
   or same-skill reference evidence are classified as `discovered`. They remain
   visible but do not make the run result `Warning`.
-- Positive provider reads appear as filled amber dots in an advisory Provider
-  column. Matching context-only file-read targets appear as amber outlines on
-  already-keyed rows but never create rows. Provider-only positive paths are
-  `not evaluated`; provider observations never replace expected passive,
-  semantic, or reflection evidence.
+- Positive execution-log reads appear as filled amber dots in an advisory
+  **Agent log** column. Matching context-only file-read targets appear as amber
+  outlines on already-keyed rows but never create rows. Execution-log-only
+  positive paths are `not evaluated`; execution-log observations never replace
+  expected passive, semantic, or reflection evidence.
 
 - runs record lightweight trace mode metadata without a database migration
 - current default `skilltrace start` records `full`
@@ -211,8 +211,8 @@ Current implementation note:
 - the runs page offers `Compare Modes` when a run group has at least two
   successful modes; it preselects the latest successful run per mode, allows
   one selected run per mode, and compares the selected runs by normalized
-  skill/reference files while omitting neutral `discovered` and provider-only
-  rows
+  skill/reference files while omitting neutral `discovered` and
+  execution-log-only rows
 
 Possible result labels:
 
@@ -233,7 +233,7 @@ Implemented foundations:
   influencing-file fields
 - reflected file lists appear as first-class Run Reflection sections
 - successful modes can be compared across runs
-- provider-history reads align with matrix rows as advisory evidence
+- execution-log reads align with matrix rows as advisory evidence
 
 Remaining refinements:
 
@@ -241,20 +241,20 @@ Remaining refinements:
   comparisons as real repositories expose edge cases
 - add UI mode selection for full, passive-plus-reflection, and passive-only
   checking
-- accumulate enough provider format drift and mismatch experience to decide
+- accumulate enough agent log format drift and mismatch experience to decide
   whether its evidence policy should ever change
 
 ## Non-Goals
 
 - do not try to recover hidden chain-of-thought
-- do not mine reasoning prose during normal provider collection; prefer explicit
-  semantic declarations and bounded decision categories
+- do not mine reasoning prose during normal execution-log collection; prefer
+  explicit semantic declarations and bounded decision categories
 - do not treat reflection as objective truth
 - do not make passive-only checks claim semantic intent
 - do not require all real-repo runs to use full semantic lifecycle logging
 
-Any future experiment with provider-exposed reasoning requires the separate
-research-mode gate in
+Any future experiment with reasoning exposed in agent logs requires the
+separate research-mode gate in
 [Data And Evidence Management](./data-and-evidence-management.md).
 
 ## Product Rationale

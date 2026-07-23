@@ -382,7 +382,7 @@ SkillTrace local daemon
   │    ├─ active session lifecycle
   │    ├─ passive event receiver
   │    ├─ semantic event receiver
-  │    └─ provider-history event receiver
+  │    └─ execution-log event receiver
   │
   ├─ MCP server command
   │    └─ skill_trace_context / skill_log_event / skill_trace_reflection
@@ -390,11 +390,11 @@ SkillTrace local daemon
   ├─ Trace store
   │    ├─ mechanical events
   │    ├─ semantic events
-  │    ├─ provider-history events
+  │    ├─ execution-log events
   │    └─ artifacts / snapshots
   │
   ├─ Consistency checker
-  │    └─ compares three expected sources and aligns provider observations
+  │    └─ compares three expected sources and aligns execution-log observations
 ```
 
 The initial design avoids introducing a heavy skill runner or remote service.
@@ -420,10 +420,10 @@ top metrics, back button, and refresh polling stay in
 - `run-instruction-surfaces-panel.tsx` shows detected instruction files,
   skill roots, symlink aliases, and profile-selection warnings.
 - `run-consistency-panel.tsx` shows the file-oriented passive / semantic /
-  reflection evidence matrix with verdict-neutral provider observations.
+  reflection evidence matrix with verdict-neutral execution-log observations.
 - `run-timeline-panel.tsx` shows compact expandable events.
-- `run-provider-history-panel.tsx` summarizes provider identity, collection
-  quality, and provider-confirmed skill or reference reads.
+- `run-provider-history-panel.tsx` summarizes recorded agent identity, collection
+  quality, and skill or reference reads recorded in agent execution logs.
 - `run-reflection-panel.tsx` shows pretty and raw run reflection data.
 
 Shared small presentation primitives live in `run-detail-ui.tsx`. Keep new
@@ -486,7 +486,7 @@ evidence with semantic self-report:
 SkillTrace does not attempt to capture hidden chain-of-thought. It asks the
 model to emit explicit, inspectable declarations that can be compared with
 passive traces. Raw reasoning may contain useful planning or uncertainty clues,
-but it is sensitive, provider-dependent, difficult to redact, and not
+but it is sensitive, client-dependent, difficult to redact, and not
 authoritative evidence. Future decision-level analysis should prefer bounded
 structured signals over reasoning excerpts. If instrumentation is unavailable,
 the agent should continue the task normally and report which tracing calls
@@ -557,13 +557,13 @@ The matrix displays four evidence sources:
 - passive file observation
 - semantic lifecycle or reference-read declarations
 - final reflection attribution
-- normalized provider-history reads
+- normalized execution-log reads
 
 Only the first three are verdict-bearing. Expected sources depend on the trace
 mode: `full` expects passive, semantic, and reflection evidence;
 `passive_reflection` expects passive and reflection evidence; and
-`passive_only` expects passive evidence only. Provider history is always
-advisory and never becomes an expected source.
+`passive_only` expects passive evidence only. The execution-log event stream is
+always advisory and never becomes an expected source.
 
 A skill's semantic evidence is complete only when both `skill_use_started` and
 `skill_use_finished` were logged. A semantic `skill_reference_read` completes
@@ -571,20 +571,21 @@ the semantic column for a reference row.
 
 Rows are reported as `pass`, `warning`, or `error` according to the number of
 missing expected sources. An entrypoint-only `SKILL.md` scan with no later
-evidence is neutral `discovered` evidence. Provider-only rows are excluded from
+evidence is neutral `discovered` evidence. Execution-log-only rows are excluded from
 diagnosis. A run passes when every verdict-bearing row is either `pass` or
 `discovered`; otherwise its consistency result is `warning`. A matrix containing
-only provider-only rows remains `unknown`.
+only execution-log-only rows remains `unknown`.
 
-A positive provider read adds an amber advisory observation to the matching
-row. A matching context-only provider file-read operation adds an amber outline
-only when another evidence stream or positive provider event already keyed the
-row; it never creates a skill/reference row by itself. A completed collection
-with no matching record uses a gray outline, while unavailable, ambiguous,
-unsupported, failed, incomplete, or absent collection uses a dash. A
-provider-only positive path is shown as neutral `not evaluated`. Provider
-observations and context markers do not change issue counts, row verdicts, run
-results, canonical row paths, or mode comparison.
+A positive execution-log read adds an amber advisory observation to the
+matching row. A matching context-only execution-log file-read operation adds an
+amber outline only when another evidence stream or positive execution-log event
+already keyed the row; it never creates a skill/reference row by itself. A
+completed collection with no matching record uses a gray outline, while
+unavailable, ambiguous, unsupported, failed, incomplete, or absent collection
+uses a dash. An execution-log-only positive path is shown as neutral
+`not evaluated`. Execution-log observations and context markers do not change
+issue counts, row verdicts, run results, canonical row paths, or mode
+comparison.
 
 ---
 

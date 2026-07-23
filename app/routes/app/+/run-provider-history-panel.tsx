@@ -18,7 +18,7 @@ export function ProviderHistoryPanel({
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
         <SummaryRow label="Status" value={displayValue(summary.status)} />
-        <SummaryRow label="Provider" value={displayValue(summary.provider)} />
+        <SummaryRow label="Agent" value={displayValue(summary.provider)} />
         <SummaryRow
           label="Model"
           value={displayValue(summary.provider_model)}
@@ -40,7 +40,7 @@ export function ProviderHistoryPanel({
       {reads.length > 0 ? (
         <section className="mt-5 border-t border-base-300 pt-4">
           <h3 className="mb-2 text-sm font-semibold text-base-content/70">
-            Provider-recorded reads
+            Execution-log reads
           </h3>
           <ul className="space-y-2">
             {reads.map((event) => (

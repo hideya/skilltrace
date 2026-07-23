@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest'
 import { RunContextPanel } from './run-context-panel'
 
 describe('RunContextPanel', () => {
-  test('shows provider identity from an existing collection summary', () => {
+  test('shows recorded agent identity from an existing collection summary', () => {
     let markup = renderToStaticMarkup(
       createElement(RunContextPanel, {
         context: {
@@ -20,14 +20,14 @@ describe('RunContextPanel', () => {
       }),
     )
 
-    expect(markup).toContain('Provider execution configuration')
+    expect(markup).toContain('Recorded agent configuration')
     expect(markup).toContain('Codex 0.143.0 / gpt-5.6-sol')
     expect(markup).toContain('Client version')
     expect(markup).not.toContain('GPT-5 (uncertain)')
     expect(markup).not.toContain('Codex (uncertain)')
   })
 
-  test('keeps declared identity when no provider session was matched', () => {
+  test('keeps declared identity when no agent log session was matched', () => {
     let markup = renderToStaticMarkup(
       createElement(RunContextPanel, {
         context: {
@@ -43,10 +43,10 @@ describe('RunContextPanel', () => {
 
     expect(markup).toContain('Declared model')
     expect(markup).toContain('Declared client')
-    expect(markup).not.toContain('Provider execution configuration')
+    expect(markup).not.toContain('Recorded agent configuration')
   })
 
-  test('shows normalized provider policy without raw configuration', () => {
+  test('shows normalized agent policy without raw configuration', () => {
     let markup = renderToStaticMarkup(
       createElement(RunContextPanel, {
         providerHistory: {

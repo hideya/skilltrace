@@ -106,9 +106,9 @@ judgmental language:
 Skill entrypoint was read passively. No later evidence showed material use.
 ```
 
-Provider history may add an advisory observation to a discovered row, but it
-does not upgrade the row or affect its verdict. A path observed only in provider
-history is a separate neutral `not evaluated` case.
+The execution-log event stream may add an advisory observation to a discovered
+row, but it does not upgrade the row or affect its verdict. A path observed only
+in agent execution logs is a separate neutral `not evaluated` case.
 
 Reference rows should keep their current stronger treatment. A passive
 reference read without expected semantic or reflection support can still be a
@@ -193,7 +193,7 @@ classification in the consistency layer:
 - exclude neutral discovery rows from `summarizeConsistencyMatrix`
 - exclude neutral discovery rows from mode comparison rows
 - keep reference rows and semantic/reflection mismatches warning-capable
-- allow provider history to annotate the row without changing its discovery
+- allow agent execution logs to annotate the row without changing its discovery
   classification
 
 This avoids hiding data while making the run verdict better match what users

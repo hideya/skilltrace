@@ -31,7 +31,7 @@ export function RunContextPanel({
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
       <SectionSummaryHeader
         className="mb-4"
-        summary="Agent-declared, provider-recorded, and SkillTrace-collected metadata"
+        summary="Metadata from agent declarations, agent execution logs, and SkillTrace"
         title="Run context"
       />
 
@@ -49,7 +49,7 @@ export function RunContextPanel({
                 <CompactDisclosureHeader
                   subsection
                   summary={providerEnvironmentSummary(providerHistory)}
-                  title="Provider execution configuration"
+                  title="Recorded agent configuration"
                 />
               }
               headerClassName="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
@@ -155,7 +155,7 @@ function providerEnvironmentRows(
     .join(' / ')
 
   return [
-    ['Provider', environment.provider || history.provider],
+    ['Agent', environment.provider || history.provider],
     ['Model', environment.model || history.provider_model],
     ['Client', environment.client],
     [

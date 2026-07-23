@@ -31,9 +31,9 @@ export function ConsistencyPanel({
                 <th className="text-center">Reflection</th>
                 <th className="text-center">
                   <span className="inline-flex items-center gap-1">
-                    Provider
+                    Agent log
                     <span
-                      aria-label="Advisory provider evidence"
+                      aria-label="Advisory execution-log evidence"
                       className="tooltip tooltip-bottom tooltip-end inline-flex cursor-help items-center font-normal outline-none before:w-48 before:whitespace-normal focus-visible:ring-2 focus-visible:ring-primary"
                       data-tip="Advisory only. Does not affect consistency status."
                       role="note"
@@ -190,9 +190,9 @@ function ProviderConsistencyDot({
   if (active) {
     return (
       <span
-        aria-label="Observed in provider history"
+        aria-label="Observed in agent execution logs"
         className="inline-block size-3 rounded-full bg-amber-400"
-        title="Observed in provider history; advisory only"
+        title="Observed in agent execution logs; advisory only"
       />
     )
   }
@@ -200,9 +200,9 @@ function ProviderConsistencyDot({
   if (context) {
     return (
       <span
-        aria-label="Matching context-only provider operation"
+        aria-label="Matching context-only execution-log operation"
         className="inline-block size-3 rounded-full border-2 border-amber-400"
-        title="Matching provider file-read target; context only, not positive evidence"
+        title="Matching execution-log file-read target; context only, not positive evidence"
       />
     )
   }
@@ -210,9 +210,9 @@ function ProviderConsistencyDot({
   if (summary?.status === 'collected') {
     return (
       <span
-        aria-label="Not observed in provider history"
+        aria-label="Not observed in agent execution logs"
         className="inline-block size-3 rounded-full border border-base-content/30"
-        title="Not observed in collected provider history; advisory only"
+        title="Not observed in collected agent execution logs; advisory only"
       />
     )
   }
@@ -232,15 +232,17 @@ function ProviderConsistencyDot({
 
 function providerUnavailableLabel(status?: string) {
   if (status === 'possibly_incomplete') {
-    return 'Not established; provider collection may be incomplete'
+    return 'Not established; execution-log collection may be incomplete'
   }
-  if (status === 'unavailable') return 'Provider history unavailable'
-  if (status === 'ambiguous') return 'Provider history match was ambiguous'
+  if (status === 'unavailable') return 'Agent execution logs unavailable'
+  if (status === 'ambiguous') {
+    return 'Agent execution log match was ambiguous'
+  }
   if (status === 'unsupported_format') {
-    return 'Provider history format was unsupported'
+    return 'Agent execution log format was unsupported'
   }
-  if (status === 'failed') return 'Provider history collection failed'
-  return 'Provider history was not collected'
+  if (status === 'failed') return 'Agent execution log collection failed'
+  return 'Agent execution logs were not collected'
 }
 
 function consistencyDescription(mode?: string) {

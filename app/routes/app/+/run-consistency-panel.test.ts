@@ -4,22 +4,23 @@ import { describe, expect, test } from 'vitest'
 import { ConsistencyPanel } from './run-consistency-panel'
 
 describe('ConsistencyPanel', () => {
-  test('labels provider observations as advisory', () => {
+  test('labels execution-log observations as advisory', () => {
     let markup = renderPanel({
       provider: true,
       status: 'pass',
     })
 
     expect(markup).toContain('Advisory only')
+    expect(markup).toContain('Agent log')
     expect(markup).toContain('tooltip tooltip-bottom tooltip-end')
     expect(markup).toContain('font-normal')
     expect(markup).toContain('before:w-48')
     expect(markup).toContain('tabindex="0"')
-    expect(markup).toContain('Observed in provider history')
+    expect(markup).toContain('Observed in agent execution logs')
     expect(markup).toContain('bg-amber-400')
   })
 
-  test('distinguishes an absent observation from unavailable history', () => {
+  test('distinguishes an absent observation from unavailable execution logs', () => {
     let collected = renderPanel(
       { provider: false, status: 'pass' },
       'collected',
@@ -29,8 +30,8 @@ describe('ConsistencyPanel', () => {
       'unavailable',
     )
 
-    expect(collected).toContain('Not observed in provider history')
-    expect(unavailable).toContain('Provider history unavailable')
+    expect(collected).toContain('Not observed in agent execution logs')
+    expect(unavailable).toContain('Agent execution logs unavailable')
   })
 
   test('distinguishes matching context-only operations from positive evidence', () => {
@@ -45,14 +46,14 @@ describe('ConsistencyPanel', () => {
       status: 'pass',
     })
 
-    expect(context).toContain('Matching context-only provider operation')
+    expect(context).toContain('Matching context-only execution-log operation')
     expect(context).toContain('border-2 border-amber-400')
-    expect(context).not.toContain('Observed in provider history')
-    expect(positive).toContain('Observed in provider history')
+    expect(context).not.toContain('Observed in agent execution logs')
+    expect(positive).toContain('Observed in agent execution logs')
     expect(positive).toContain('bg-amber-400')
   })
 
-  test('shows provider-only rows as not evaluated', () => {
+  test('shows execution-log-only rows as not evaluated', () => {
     let markup = renderPanel({
       provider: true,
       passive: false,

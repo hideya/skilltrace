@@ -83,7 +83,7 @@ export default function Page({ loaderData }: PageProps) {
         <Metric label="Events" value={timeline.events.length} />
         <Metric label="Passive" value={timeline.passive_events.length} />
         <Metric label="Semantic" value={timeline.semantic_events.length} />
-        <Metric label="Provider" value={timeline.provider_events.length} />
+        <Metric label="Agent log" value={timeline.provider_events.length} />
       </section>
 
       <RunContextPanel

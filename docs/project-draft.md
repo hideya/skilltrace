@@ -146,7 +146,7 @@ This trace answers the question:
 
 This is not meant to capture the model's hidden chain of thought. The goal is
 not to log private reasoning. Raw reasoning may contain useful clues, but it is
-sensitive, provider-dependent, difficult to redact, and not authoritative
+sensitive, client-dependent, difficult to redact, and not authoritative
 evidence. The safer goal is to obtain explicit, structured, inspectable
 declarations that help reconstruct failures and improve skills. The retention
 and future decision-signal policy is defined in

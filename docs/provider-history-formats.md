@@ -1,15 +1,20 @@
-# Provider History Formats
+# Agent Execution Log Formats
 
 Status: observed field guide for the implemented Codex, Claude Code, and Gemini
-CLI adapters; not a provider contract
+CLI adapters; not a stable client API contract
 
-This document records the local provider-history formats inspected while
+This document records the local agent execution-log formats inspected while
 designing and implementing SkillTrace's `provider_history` event source. It
 describes what can be retrieved, how SkillTrace may use it, what the parser may
 inspect transiently, and what SkillTrace should intentionally ignore.
 
+In user-facing prose, **agent execution logs** refers to the source files and
+**execution-log event stream** to their normalized SkillTrace projection.
+Raw schema fields and stable internal identifiers retain names such as
+`provider`, `provider_session_id`, and `provider_history`.
+
 The architectural proposal is in
-[Provider History Event Source](./provider-history-event-source.md).
+[Agent Execution Log Event Source](./provider-history-event-source.md).
 The cross-source retention, evidence, reasoning, and future research policy is
 in [Data And Evidence Management](./data-and-evidence-management.md).
 Concrete client, version, model, and validation combinations are tracked
@@ -22,10 +27,10 @@ The initial observations were made on one macOS machine on 2026-07-21. The
 matching SkillTrace runs occurred between 2026-06-28 and 2026-07-09. A follow-up
 inspection on 2026-07-23 examined a newer Codex run, the current `ctx` Codex
 adapter, two native Claude Code validation runs, and two native Gemini CLI
-provider-history validation runs without broadening the machine or platform
+execution-log validation runs without broadening the machine or platform
 sample.
 
-Observed provider versions included:
+Observed client versions included:
 
 - Codex CLI `0.143.0`
 - Codex Desktop CLI `0.145.0-alpha.18`
@@ -34,8 +39,8 @@ Observed provider versions included:
   client-version field
 
 The paths, schemas, record names, and field names in this document are owned by
-their providers. They can change without notice. Adapters must treat this as
-format reconnaissance, not as a stable API specification.
+their agent clients. They can change without notice. Adapters must treat this
+as format reconnaissance, not as a stable API specification.
 
 ## Privacy Method Used For This Investigation
 
@@ -43,7 +48,7 @@ The investigation selected known test runs and examined:
 
 - filenames and project mappings
 - record types and object keys
-- session IDs, timestamps, working directories, and provider versions
+- session IDs, timestamps, working directories, and client versions
 - tool names, tool-call IDs, file-path arguments, result status, and terminal
   markers
 - whether non-SkillTrace tool calls contained the same skill paths captured by
@@ -54,7 +59,7 @@ or raw tool output to reach the design conclusions.
 
 The same boundary should apply to the implementation. A parser may encounter
 private fields while decoding a record, but those fields must not leave the
-provider adapter.
+client adapter.
 
 ## Data Disposition Vocabulary
 
@@ -74,27 +79,27 @@ snapshots, and test failures must follow the same retention boundary.
 
 | Raw category | Typical examples | Disposition | SkillTrace use |
 | --- | --- | --- | --- |
-| Provider session ID | thread ID, session UUID | Retain | Association and provenance |
+| Agent log session ID | thread ID, session UUID | Retain | Association and provenance |
 | Record and tool-call ID | call UUID, message UUID | Retain selectively | In-source deduplication and provenance |
 | Event timestamp | record or tool timestamp | Retain | Timeline placement and run slicing |
 | Working directory | absolute `cwd`, project-root mapping | Inspect only | Session association and path normalization |
-| Provider and client version | provider name, CLI version | Retain | Adapter diagnostics and format drift analysis |
-| Model ID | provider model name | Retain when structurally available | Recorded execution context and provider comparison |
+| Agent and client version | agent name, CLI version | Retain | Adapter diagnostics and format drift analysis |
+| Model ID | client-recorded model name | Retain when structurally available | Recorded execution context and cross-agent comparison |
 | Tool name | `Read`, `read_file`, `exec_command` | Retain | Evidence and operation classification |
 | Tool arguments | path or command object | Inspect only | Extract safe paths and classify operations |
 | Tool status | success, error, interrupted, exit status | Retain as normalized outcome | Evidence validation and execution outcome |
 | Tool output | command stdout, file contents, result text | Inspect structured or wrapper status and exit metadata only | Never retain content |
 | Prompt text | user messages, last prompt | Ignore | Not required for evidence |
 | Assistant response | model messages and summaries | Ignore | Not required for evidence |
-| Reasoning | thinking, encrypted reasoning, summaries | Ignore | Sensitive, provider-dependent, and not authoritative evidence; see the future decision-signal policy |
+| Reasoning | thinking, encrypted reasoning, summaries | Ignore | Sensitive, client-dependent, and not authoritative evidence; see the future decision-signal policy |
 | Token usage | input, output, cached, reasoning tokens | Ignore | Unrelated to skill evidence |
-| Git metadata | branch, commit, origin | Inspect only | Cross-check the SkillTrace run snapshot; do not duplicate provider values initially |
+| Git metadata | branch, commit, origin | Inspect only | Cross-check the SkillTrace run snapshot; do not duplicate agent-log values initially |
 | Structured edit target | `file_path`, replace target, patch target | Retain normalized path and outcome | Recorded execution context, not proof of prior influence |
 | Patch or snapshot content | backups, structured patches, old and new strings | Ignore | Private content is unnecessary once safe target paths are projected |
 | Attachments | images, pasted text, attachment metadata | Ignore | Private and unrelated |
 | Conversation title | thread name, generated title, preview | Ignore | Often derived from prompt text |
 | Permissions and sandbox state | approval policy, permission mode | Ignore initially | Potential future execution context, but not yet normalized consistently |
-| Telemetry and application logs | diagnostics, failed telemetry events | Never read | Not provider-session evidence |
+| Telemetry and application logs | diagnostics, failed telemetry events | Never read | Not agent-session evidence |
 | Authentication and account state | tokens, cookies, account files | Never read | Sensitive and unnecessary |
 
 ## Common Evidence Rules
@@ -113,7 +118,7 @@ normalized project-relative or policy-approved display path.
 A structured direct-read operation can produce evidence when all of these are
 true:
 
-- the tool is recognized by the provider adapter
+- the tool is recognized by the client adapter
 - an exact file path can be extracted from structured input
 - the path identifies a skill entrypoint or reference file
 - the operation completed successfully
@@ -142,7 +147,7 @@ content, such as:
 
 Content-search commands such as `rg` or `grep` need command-aware checks. For
 example, `rg pattern path/to/SKILL.md` reads the file, while `rg --files` only
-discovers names. Listings such as `ls`, `find`, and provider `glob` tools do not
+discovers names. Listings such as `ls`, `find`, and client `glob` tools do not
 prove that guidance content was read.
 
 Compound commands must be parsed into operations. SkillTrace should classify
@@ -152,7 +157,7 @@ command line.
 ### Result Correlation
 
 A tool invocation and its result may appear in separate records. The adapter
-must correlate them through the provider call ID where available.
+must correlate them through the client-native call ID where available.
 
 Positive evidence requires a successful result. Failed, cancelled,
 interrupted, or missing results should not produce a successful file-read
@@ -161,9 +166,9 @@ failed or aborted outcome.
 
 ### Circular SkillTrace Calls
 
-All three inspected providers persisted SkillTrace MCP calls alongside normal
-tools. The adapter must identify them by provider-specific tool name and remove
-them before evidence classification.
+All three inspected agent clients persisted SkillTrace MCP calls alongside
+normal tools. The adapter must identify them by client-specific tool name and
+remove them before evidence classification.
 
 Their arguments can contain:
 
@@ -174,16 +179,16 @@ Their arguments can contain:
 - context and reflection data
 
 These values are copies of SkillTrace instrumentation. They may help associate
-a provider session with a run, but they do not independently prove a read.
+an agent log session with a run, but they do not independently prove a read.
 
 ## Common Execution-Context Projection
 
-The adapter should project recognized provider operations into a small shared
-taxonomy in addition to extracting consistency evidence.
+The adapter should project recognized execution-log operations into a small
+shared taxonomy in addition to extracting consistency evidence.
 
 | Operation kind | Typical raw operations | Safe retained facts |
 | --- | --- | --- |
-| `file_read` | `Read`, `read_file`, content-reading shell command | Timestamp, normalized path, outcome, provider IDs |
+| `file_read` | `Read`, `read_file`, content-reading shell command | Timestamp, normalized path, outcome, client-native IDs |
 | `file_search` | content search, glob, directory search | Timestamp, safe search scope or returned paths, outcome |
 | `file_edit` | edit, write, replace, apply-patch target | Timestamp, normalized target paths, outcome |
 | `test` | recognized test runner command | Timestamp, outcome, exit code, duration |
@@ -212,15 +217,15 @@ may retain:
 - success, failure, or aborted outcome
 - numeric exit code when structurally available
 - safe repository-relative paths or artifact references
-- provider session and tool-call provenance
+- agent log session and tool-call provenance
 - classification confidence
 
 It must not retain the command line, test names derived only from output,
-stdout, stderr, stack traces, or provider-generated verification summaries.
+stdout, stderr, stack traces, or agent-client-generated verification summaries.
 
 ### Influence And Outcome Limits
 
-An edit after a skill read is part of the execution sequence, but history alone
+An edit after a skill read is part of the execution sequence, but the log alone
 does not prove the skill caused that edit. A successful test proves only that
 the recorded verification command succeeded, not that the user's task was
 correctly solved.
@@ -228,9 +233,9 @@ correctly solved.
 These facts support later analysis when combined with passive observation,
 semantic declarations, reflection, Git state, and human judgment.
 
-## Provider Summary
+## Agent Log Summary
 
-| Provider | Primary observed history | Project/session locator | Strongest file evidence | Completion signal |
+| Agent | Primary observed log | Project/session locator | Strongest file evidence | Completion signal |
 | --- | --- | --- | --- | --- |
 | Codex | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | Session metadata and optional local index | Parsed successful shell content-read command | `task_complete` or `turn_aborted` when present |
 | Claude Code | `~/.claude/projects/<encoded-project>/<session-id>.jsonl` | Encoded project directory plus `sessionId` and `cwd` | Structured `Read` tool use and result | File stability; no general terminal record observed |
@@ -255,7 +260,7 @@ Additional observed indexes and stores:
 ~/.codex/logs_2.sqlite
 ```
 
-The numeric SQLite suffix is provider-owned and must not be assumed stable.
+The numeric SQLite suffix is client-owned and must not be assumed stable.
 
 ### Source Selection
 
@@ -333,14 +338,14 @@ timestamp
 
 | Field | Disposition | Use |
 | --- | --- | --- |
-| `id`, `session_id` | Retain one normalized ID | Provider-session association |
+| `id`, `session_id` | Retain one normalized ID | Agent-log session association |
 | `timestamp` | Retain | Session timing |
 | `cwd` | Inspect only | Match target root and normalize paths |
 | `cli_version` | Retain | Adapter diagnostics |
-| `source`, `originator`, `thread_source`, `model_provider` | Retain selectively | Provider-runtime execution context |
+| `source`, `originator`, `thread_source`, `model_provider` | Retain selectively | Agent-runtime execution context |
 | `git` | Ignore | SkillTrace already captures run Git state |
 | `base_instructions` | Ignore | Large, private, and irrelevant to file evidence |
-| `context_window`, `history_mode` | Ignore | Provider operation metadata, not evidence |
+| `context_window`, `history_mode` | Ignore | Execution-log operation metadata, not evidence |
 
 ### `turn_context`
 
@@ -355,7 +360,7 @@ personality, collaboration mode, and summary data.
 | model | Retain when structurally available | Recorded execution context |
 | approval and sandbox policy | Retain normalized scalar values | Effective execution constraints |
 | permission profile | Inspect and retain only policy labels | Filesystem and network constraints without roots or raw configuration |
-| effort, personality, collaboration, and multi-agent mode | Retain selectively | Provider-recorded operating mode for later run interpretation |
+| effort, personality, collaboration, and multi-agent mode | Retain selectively | Execution-log-recorded operating mode for later run interpretation |
 | current date and timezone | Retain normalized values | Effective temporal context presented to the agent |
 | workspace roots | Inspect only | Derive whether the target is the sole root, included among roots, or outside scope |
 | summary and embedded instructions | Ignore | Private model or developer content |
@@ -366,7 +371,7 @@ normalized field name in `changed_fields`; it does not retain alternate raw
 policy objects or unrelated workspace paths.
 
 The adapter must not treat a resumed turn as a new session automatically. It
-should slice the selected provider session by the SkillTrace run interval.
+should slice the selected agent log session by the SkillTrace run interval.
 
 ### `response_item`
 
@@ -412,12 +417,12 @@ recorded agent operations as direct `function_call` items such as
 nested `tools.*` functions. A direct `function_call` for `wait` was also present.
 
 This is evidence of envelope variation associated with the model change, not
-proof that the model alone caused it. A simultaneous provider-side tool-protocol
+proof that the model alone caused it. A simultaneous client-side tool-protocol
 change remains possible.
 
 Before shape-aware extraction was added, the Codex first cut matched the later
-session successfully but emitted no normalized provider events for its nested
-operations. It reported eight unsupported calls. Static inspection of the
+session successfully but emitted no normalized execution-log events for its
+nested operations. It reported eight unsupported calls. Static inspection of the
 program-like inputs recovered the following operations without reading prompt,
 response, reasoning, or tool-output content:
 
@@ -437,13 +442,14 @@ failure.
 
 This result separates two health questions that must remain visible:
 
-- **Collection health:** the correct provider session and records were found.
+- **Collection health:** the correct agent log session and records were found.
 - **Extraction health:** the adapter understood enough of those records to emit
   normalized facts.
 
 Collection succeeded in the original import; extraction coverage did not. The
-other SkillTrace streams continued to describe the run, so the missing provider
-projection did not invalidate the trace. The shape-aware replay now restores
+other SkillTrace streams continued to describe the run, so the missing
+execution-log projection did not invalidate the trace. The shape-aware replay
+now restores
 the recoverable operation and outcome detail while keeping uncorrelated read
 outcomes explicit.
 
@@ -480,7 +486,7 @@ Observed event payload types included:
 
 A single rollout can contain multiple turns and more than one terminal-looking
 event. Completion applies to the imported run slice, not permanently to the
-whole provider session.
+whole agent log session.
 
 ### Codex-Specific Risks
 
@@ -489,7 +495,7 @@ whole provider session.
 - Commands can be compound, quoted, redirected, or invoke another interpreter.
 - Tool output may contain the entire skill file and must never be retained.
 - A session can be resumed after SkillTrace stops.
-- Provider indexes and SQLite schema suffixes can change independently of the
+- Agent log indexes and SQLite schema suffixes can change independently of the
   rollout format.
 - Newer records may include encrypted or summarized reasoning. SkillTrace does
   not inspect it in normal collection; possible semantic value does not justify
@@ -623,7 +629,7 @@ Relevant observed operations included:
 | SkillTrace MCP tools | Circular; association hint only |
 
 Every passive skill path in the four associated Claude Code runs also appeared
-in a structured `Read` invocation in the provider history.
+in a structured `Read` invocation in the agent execution logs.
 
 ### Top-Level Result Metadata
 
@@ -647,7 +653,7 @@ matches.
 | `mode`, `permission-mode` records | Ignore | Standalone mode records are not skill evidence |
 
 The safe top-level `permissionMode` value on in-window message records is
-retained separately as provider execution configuration. The records' other
+retained separately as recorded agent configuration. The records' other
 content is not retained.
 
 ### Sidechains And Parent Links
@@ -669,7 +675,7 @@ untimed metadata or snapshot records.
 
 Therefore Claude Code completeness should normally be `stable_at_stop`. Message
 `stop_reason` is a model-message stop condition and must not be promoted to a
-guarantee that the provider session file will never receive another turn.
+guarantee that the agent log session file will never receive another turn.
 
 ### Implementation Validation
 
@@ -680,11 +686,11 @@ The exploratory run exposed two useful gaps:
 
 - the demo's logical `.claude/skills` root is a symlink to `.agents/skills`,
   while Claude recorded the resolved `.agents/skills/...` paths
-- unclassified `Bash` records made the provider stream lose the typecheck
+- unclassified `Bash` records made the execution-log stream lose the typecheck
   failure and recovery sequence
 
 SkillTrace now supplies both logical and resolved skill roots to the shared
-passive probe, compares provider paths through the same realpath-aware alias
+passive probe, compares execution-log paths through the same realpath-aware alias
 policy, and sends Claude `Bash` commands through the shared conservative shell
 reader and verification classifier.
 
@@ -693,13 +699,13 @@ The refined validation run produced 22 events across all four streams:
 | Observation | Refined result |
 | --- | --- |
 | Passive evidence | One skill read and one reference read |
-| Provider evidence | The same skill and reference reads |
-| Provider operations | Three typechecks, one ordinary file read, and three file edits |
+| Execution-log evidence | The same skill and reference reads |
+| Execution-log operations | Three typechecks, one ordinary file read, and three file edits |
 | Typecheck outcomes | `failed`, `failed`, `success` |
 | Semantic stream | Run context, skill start, reference read, skill finish, and reflection |
 | Session stream | Start, injection/probe state, collection summary, cleanup, and finish |
-| Provider match | One candidate, `high` confidence, stable source |
-| Provider identity | `claude-sonnet-5`, Claude Code `2.1.218`, `sdk-cli`, `acceptEdits` |
+| Agent log match | One candidate, `high` confidence, stable source |
+| Recorded agent identity | `claude-sonnet-5`, Claude Code `2.1.218`, `sdk-cli`, `acceptEdits` |
 | Completeness | `stable_at_stop` |
 | Unclassified calls | One `Bash` call counted as unsupported and not retained |
 
@@ -707,7 +713,7 @@ Claude used both evidence forms across the two runs: structured `Read` in one
 and successful `Bash` content-read commands in the other. This supports keeping
 both paths while assigning stronger classification confidence to direct reads.
 
-The retained projection contained only provider/session and tool-call
+The retained projection contained only agent/session and tool-call
 provenance, normalized paths, operation kinds, outcomes, durations, confidence,
 client version, model, entrypoint, working directory, and permission mode. It
 did not retain prompts, responses, reasoning, commands, file contents, command
@@ -817,7 +823,7 @@ call provides a structured exact path and status. `content`, `thoughts`,
 
 | Field | Disposition | Use |
 | --- | --- | --- |
-| `sessionId` | Retain | Provider-session association and provenance |
+| `sessionId` | Retain | Agent-log session association and provenance |
 | `startTime` | Retain | Candidate matching and timeline bounds |
 | `lastUpdated` | Inspect and retain normalized completeness time | Stability and run slicing |
 | `projectHash` | Inspect only | Confirm project mapping if needed |
@@ -887,7 +893,7 @@ This is why the adapter recognizes envelope semantics rather than assuming that
 skill access always appears under one tool name.
 
 The final validation run matched one session at high confidence, reached
-`stable_at_stop`, and retained three provider evidence events: successful
+`stable_at_stop`, and retained three execution-log evidence events: successful
 activation, a separate direct `SKILL.md` read, and a checklist read. It also
 retained ten context-only read, edit, and typecheck operations with no
 unsupported calls or privacy warnings.
@@ -931,7 +937,7 @@ successful final tool call is not itself proof that the session has ended.
 
 ## Normalization Mapping
 
-| Provider raw record | Required validation | Consistency event | Execution-context event |
+| Agent log raw record | Required validation | Consistency event | Execution-context event |
 | --- | --- | --- | --- |
 | Codex `exec_command` with `cat` or printing `sed`, exact path, successful result | Parse command operation and correlate output status | `skill_file_read` or `skill_reference_read` when path qualifies | Read sequence represented by the evidence event |
 | Codex `rg` or `grep` with an exact file operand | Prove content-search form, reject `--files` and listing forms | Matching read event when a skill file qualifies | `file_search` for other safe scopes |
@@ -944,10 +950,10 @@ successful final tool call is not itself proof that the session has ended.
 | Gemini `read_file` with `file_path` and `status: success` | Deduplicate by tool ID | Matching read event when path qualifies | Read sequence represented by the evidence event |
 | Gemini `run_shell_command` classified command | Apply shared shell classifier and status check | Matching read event when applicable | Classified search, verification, build, or artifact operation |
 | Gemini `replace` | Extract structured target path and status | None | `file_edit` operation |
-| Provider listing, glob, or find | Recognize operation and safe scope | No read event | `file_search` when useful and safely bounded |
+| Agent log listing, glob, or find | Recognize operation and safe scope | No read event | `file_search` when useful and safely bounded |
 | Failed classified operation | Correlate failure, abort, or interruption | No positive read event | Same operation kind with failed or aborted outcome |
 | Arbitrary path mention | No mechanical operation | No event | No event |
-| Any SkillTrace MCP tool | Circular instrumentation | No provider evidence | No execution operation |
+| Any SkillTrace MCP tool | Circular instrumentation | No execution-log evidence | No execution operation |
 
 ## Data Explicitly Not Used In Version 1
 
@@ -960,13 +966,13 @@ outside the first implementation:
 - assistant claims about which skill it used
 - response quality or correctness
 - reasoning traces and hidden thoughts
-- provider-generated summaries or titles
+- agent-client-generated summaries or titles
 
 SkillTrace already has explicit semantic and reflection channels. Mining prose
-would add privacy risk and weak, provider-dependent inference. Some reasoning
+would add privacy risk and weak, client-dependent inference. Some reasoning
 content may contain useful planning or uncertainty clues, but the normal path
 should capture those through explicit declarations and bounded decision
-categories instead. Any provider-text experiment belongs behind the separate
+categories instead. Any agent-log-text experiment belongs behind the separate
 research-mode gate in
 [Data And Evidence Management](./data-and-evidence-management.md).
 
@@ -981,7 +987,7 @@ research-mode gate in
 
 Structured edit target paths and outcomes may be retained as normalized
 execution context. The underlying change content remains excluded. A write does
-not prove that a file influenced the agent before it was changed, and provider
+not prove that a file influenced the agent before it was changed, and agent-log
 snapshots should not duplicate SkillTrace's Git evidence.
 
 ### Tool Output And File Contents
@@ -1003,10 +1009,10 @@ goal.
 - cache usage
 - context windows
 - model stop sequences
-- per-message generation latency and provider-internal timing
+- per-message generation latency and client-internal timing
 - telemetry, internal logs, and crash data
 
-These values are not yet normalized consistently across providers. They can be
+These values are not yet normalized consistently across clients. They can be
 added later through a separately justified efficiency or cost-analysis feature.
 Operation duration and final activity time remain eligible execution-context
 facts when they are structurally reliable.
@@ -1016,17 +1022,17 @@ facts when they are structurally reliable.
 - authentication tokens
 - cookies
 - account identifiers
-- provider configuration containing secrets
+- agent-client configuration containing secrets
 - browser profiles
 - shell snapshots
 
-Provider discovery must use an allowlist of known session locations. It must
-never recursively crawl an entire provider home and then decide what looked
+Agent log discovery must use an allowlist of known session locations. It must
+never recursively crawl an entire agent-client home and then decide what looked
 interesting.
 
 ## Safe Adapter Intermediate Form
 
-Provider parsers should project raw records immediately into a private type
+Agent log parsers should project raw records immediately into a private type
 similar to:
 
 ```ts
@@ -1068,17 +1074,17 @@ streaming records and projecting only recognized operation envelopes.
 
 ## Format Drift Policy
 
-Provider formats will change. Adapters should be strict about evidence and
+Agent log formats will change. Adapters should be strict about evidence and
 liberal only about harmless unknown fields.
 
 - Ignore unknown record and object keys.
 - Require known minimal shapes before emitting evidence.
 - Do not search arbitrary JSON text for filenames as a fallback.
 - Do not infer a successful read when result correlation changes unexpectedly.
-- Version the SkillTrace adapter format independently of the provider version.
+- Version the SkillTrace adapter format independently of the client version.
 - Record safe unsupported-shape counters for diagnostics.
 - Fail closed with `unsupported_format` when required structure disappears.
-- Keep provider fixtures small, synthetic, and free of real conversation text.
+- Keep client fixtures small, synthetic, and free of real conversation text.
 
 An adapter update should include:
 
@@ -1090,7 +1096,7 @@ An adapter update should include:
   clear decision that the old format is no longer supported
 
 Backward compatibility should be driven by formats still observed in supported
-provider installations, not by speculative parsers for every historical shape.
+client installations, not by speculative parsers for every historical shape.
 
 ## Fixture Guidance
 
@@ -1106,26 +1112,27 @@ Fixtures should contain only the minimum records needed to test:
 - one successful and one failed verification command
 - one circular SkillTrace MCP call
 - one terminal or final-update signal
-- one duplicate snapshot copy where the provider format can produce it
+- one duplicate snapshot copy where the agent log format can produce it
 
 Use invented project names, IDs, timestamps, and file contents. Tool results
 should use placeholders rather than copied source or guidance text.
 
 ## Questions For Future Field Work
 
-- Do newer or older provider versions retain the same call and result IDs?
+- Do newer or older client versions retain the same call and result IDs?
 - Can native session IDs be obtained without reading conversational data?
-- How do providers serialize subagents, parallel tools, and resumed sessions?
+- How do agent clients serialize subagents, parallel tools, and resumed
+  sessions?
 - What happens when history persistence is disabled or redacted?
-- Are writes atomic, append-only, or rewritten for each provider version?
+- Are writes atomic, append-only, or rewritten for each client version?
 - How do Windows and Linux installations map project roots and separators?
 - Do global skills appear with canonical, symlinked, or copied paths?
 - Which unsupported shell readers appear often enough to justify safe
   classifiers?
-- Can provider files be rotated or compacted between agent exit and
+- Can agent log files be rotated or compacted between agent exit and
   `skilltrace stop`?
 
 Answers should update this field guide as observations. Changes to the durable
 SkillTrace behavior belong in
-[Provider History Event Source](./provider-history-event-source.md) or a later
+[Agent Execution Log Event Source](./provider-history-event-source.md) or a later
 architecture decision.

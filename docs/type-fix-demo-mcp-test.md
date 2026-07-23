@@ -489,7 +489,7 @@ and `.agents/skills/type-fix/references/checklist.md`.
 
 After `skilltrace-dev stop` or `skilltrace stop`, a uniquely matching Codex,
 Claude Code, or Gemini CLI session should add `provider_history` events and a
-`provider_history_collection_finished` summary. Provider operations appear in
+`provider_history_collection_finished` summary. Execution-log operations appear in
 the timeline in this order when values are available:
 
 ```text
@@ -503,30 +503,31 @@ the failed and successful typecheck sequence. Gemini CLI 0.46.0 may record
 `activate_skill` for the skill entrypoint, a separate `read_file`, or both. A
 successful activation that resolves to the configured skill root is retained
 as `direct_skill_activation` evidence. A read with an `unknown` outcome remains
-a context-only operation rather than positive provider skill evidence; the
+a context-only operation rather than positive execution-log skill evidence; the
 compact row omits `unknown`, while the expanded event data retains it.
 
-The runs list should prefer the matched provider model and client over uncertain
-agent-declared values. The Run context card should show the same preferred
-identity and keep the fuller Provider execution configuration collapsed by
-default. Recorded execution context should summarize provider identity,
-collection quality, and any provider-confirmed skill/reference reads. The
-operation sequence belongs in the timeline and is not duplicated in that card.
+The runs list should prefer the model and client recorded in the matched agent
+execution log over uncertain agent-declared values. The Run context card should
+show the same preferred identity and keep the fuller Recorded agent
+configuration collapsed by default. Recorded execution context should
+summarize recorded agent identity, collection quality, and any
+skill/reference reads recorded in agent execution logs. The operation sequence
+belongs in the timeline and is not duplicated in that card.
 
-If no unique provider session can be matched, provider collection should report an
-unavailable, ambiguous, unsupported, or possibly incomplete status without
-changing the run verdict or preventing stop from completing.
+If no unique agent log session can be matched, execution-log collection should
+report an unavailable, ambiguous, unsupported, or possibly incomplete status
+without changing the run verdict or preventing stop from completing.
 
 The consistency table should show aligned rows for
 `.agents/skills/type-fix/SKILL.md` and
-`.agents/skills/type-fix/references/checklist.md`. Its Provider column should
-show filled amber observations for matching positive provider reads. A matching
-context-only file-read target uses an amber outline on an existing row without
-becoming positive evidence or creating a row by itself. A path found only in
-positive provider history should appear as **not evaluated**, without changing
-the run verdict. A completed collection with no matching record uses a gray
-outline; unavailable, ambiguous, unsupported, failed, possibly incomplete, and
-absent collections use a dash instead.
+`.agents/skills/type-fix/references/checklist.md`. Its Agent log column should
+show filled amber observations for matching positive execution-log reads. A
+matching context-only file-read target uses an amber outline on an existing row
+without becoming positive evidence or creating a row by itself. A path found
+only in positive agent execution logs should appear as **not evaluated**,
+without changing the run verdict. A completed collection with no matching
+record uses a gray outline; unavailable, ambiguous, unsupported, failed,
+possibly incomplete, and absent collections use a dash instead.
 
 If the demo working copy has local changes to `AGENTS.md`, `.agents/skills/**`,
 `.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a
@@ -541,7 +542,7 @@ page should show `Compare Modes` on that run group. It preselects the latest
 successful run for each mode; change the selected runs if needed, then click
 `Compare Selected`. The comparison report should show whether the same
 skill/reference files were captured across the selected mode runs. Neutral
-`discovered` skill-entrypoint rows and provider-only rows are omitted from
+`discovered` skill-entrypoint rows and execution-log-only rows are omitted from
 comparison so startup skill catalog scans and advisory observations do not
 obscure material skill or reference use.
 
@@ -571,7 +572,7 @@ This test verifies:
 - The active session ID correlates passive probe events and MCP semantic events.
 - `skilltrace stop` can match and privacy-filter the corresponding Codex,
   Claude Code, or Gemini CLI session.
-- Provider operations retain normalized kinds, targets, outcomes, and
+- Execution-log operations retain normalized kinds, targets, outcomes, and
   extraction provenance without retaining commands or tool output.
 - The SkillTrace UI can display the resulting run timeline.
 

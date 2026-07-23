@@ -147,7 +147,7 @@ healthy again.
 
 ## Passive-Only Runs Should Not Say Pass
 
-A passive-only run has one verdict-bearing evidence stream. Provider history
+A passive-only run has one verdict-bearing evidence stream. Agent execution logs
 may still add advisory observations after the agent work, but neither source
 can prove semantic agreement. SkillTrace labels successful passive-only runs as
 `Captured`, not `Pass`.
@@ -219,7 +219,7 @@ particular run followed the semantic reporting schema exactly."
 
 Gemini CLI 0.46.0 introduced a structured `activate_skill` call. Its local
 implementation resolves the named skill, marks it active, and sends the skill
-body plus available resources to the model. In a July 23 provider-history run,
+body plus available resources to the model. In a July 23 execution-log run,
 Gemini used this call without separately reading `SKILL.md`; in the next run it
 recorded both activation and a direct read.
 
@@ -234,20 +234,20 @@ This finding also reinforces the format-drift rule: classify structured
 envelope semantics instead of branching on model names or expecting one fixed
 tool sequence.
 
-## Provider History Works Best As Shadow Evidence For Now
+## Agent Execution Logs Work Best As Shadow Evidence For Now
 
-After successful Codex, Claude Code, and Gemini CLI trials, provider skill and
-reference reads are useful enough to align beside passive, semantic, and
+After successful Codex, Claude Code, and Gemini CLI trials, execution-log skill
+and reference reads are useful enough to align beside passive, semantic, and
 reflection evidence. They can corroborate a path or expose a discrepancy with
 minimal influence on the agent's task-time judgment.
 
-The provider-owned formats remain too unstable to make them verdict-bearing.
-SkillTrace therefore shows a verdict-neutral Provider column, labels
-provider-only paths `not evaluated`, distinguishes a completed collection with
-no observation from unavailable or incomplete collection, and excludes the
-source from issue counts, run results, and mode comparison.
+The client-owned formats remain too unstable to make them verdict-bearing.
+SkillTrace therefore shows a verdict-neutral **Agent log** column, labels
+execution-log-only paths `not evaluated`, distinguishes a completed collection
+with no observation from unavailable or incomplete collection, and excludes
+the source from issue counts, run results, and mode comparison.
 
-Early adapter runs exposed a useful intermediate state. Some provider records
+Early adapter runs exposed a useful intermediate state. Some agent log records
 identify a matching `SKILL.md` or reference path as the target of a file-read
 operation, but lack the correlated successful result required for positive
 evidence. The matrix now shows those existing rows with an amber outline. This
@@ -257,17 +257,17 @@ as source files remain in the timeline only.
 
 ## Raw Reasoning Has High Apparent Value But Poor Durable Fit
 
-Provider histories may expose reasoning or summaries that appear useful for
-understanding planning, uncertainty, alternatives, and why verification changed
-an action. Retaining that text would also turn SkillTrace toward a sensitive,
-provider-dependent transcript store. Reasoning can reproduce unrelated private
-context, is difficult to redact, and is not guaranteed to be a faithful causal
-record.
+Agent execution logs may expose reasoning or summaries that appear useful for
+understanding planning, uncertainty, alternatives, and why verification
+changed an action. Retaining that text would also turn SkillTrace toward a
+sensitive, client-dependent transcript store. Reasoning can reproduce unrelated
+private context, is difficult to redact, and is not guaranteed to be a faithful
+causal record.
 
 The safer direction is to retain explicit semantic declarations and, in a
 future version, bounded decision categories with provenance and confidence.
 Those signals remain interpretation context rather than automatic consistency
-evidence. Any experiment that inspects or retains provider-exposed reasoning
+evidence. Any experiment that inspects or retains reasoning exposed in agent logs
 must be an off-by-default research mode with a separate privacy and storage
 boundary.
 
