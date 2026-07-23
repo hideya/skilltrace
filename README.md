@@ -45,10 +45,9 @@ SkillTrace records four evidence streams from the same run:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
-- **Provider history**: privacy-filtered skill reads, tool operations, and
-  verification outcomes mechanically recorded by Codex CLI, Claude Code, or
-  Gemini CLI. The consistency matrix correlates positive reads in an advisory
-  column, but this source does not affect verdicts.
+- **Provider history**: local execution logs maintained by the agent client
+  (Codex CLI, Claude Code, or Gemini CLI), including skill reads, tool
+  operations, and verification outcomes (privacy-filtered).
 - **Semantic traces**: instructed MCP invocations such as skill start,
   reference read, and skill finish.
 - **Reflection**: structured post-run attribution by the agent, including which
@@ -381,10 +380,12 @@ skilltrace start --mode passive_only
 - `passive_reflection`: passive file access plus final reflection, without live
   skill lifecycle declarations. This should interfere less with the agent's
   normal task flow.
-- `passive_only`: passive file access as the only expected consistency source,
-  with no instruction injection. This should minimally interfere with the
-  agent, though passive probing may still have platform-specific overhead or
-  blind spots.
+- `passive_only`: passive file access as the only verdict-bearing consistency
+  source, with no instruction injection or required reflection.
+  Best-effort provider history (local execution logs maintained by the agent
+  client) may still be collected after the run as advisory evidence.
+  This mode should minimally interfere with the agent, though passive probing
+  may still have platform-specific overhead or blind spots.
 
 The default is `full`.
 
@@ -428,16 +429,16 @@ locations remain distinguishable.
 
 The run detail page checks consistency among the captured evidence.
 
-Provider-history operations appear in the timeline as a compact sequence of
-tool name, operation kind, normalized target paths, and known outcome. Target
-paths are operation context, not proof that a skill influenced the operation.
-An `unknown` outcome remains stored with the event but is omitted from the
-compact timeline header.
+Provider-history (local execution logs maintained by the agent client)
+operations appear in the timeline as a compact sequence of tool name, operation
+kind, normalized target paths, and known outcome. Note that these events are
+operation context, not proof that a skill influenced the operation.
 
 It shows a consistency table across passive, semantic, and reflection evidence,
-and compares whether there is consistent evidence of skill usage. A Provider
-column aligns normalized provider-history records as advisory observations. A
-filled amber dot means positive provider evidence, while an amber outline means
+and compares whether there is consistent evidence of skill usage.
+
+A Provider column aligns normalized provider-history records as advisory observations.
+A filled amber dot means positive provider evidence, while an amber outline means
 that a context-only file-read operation targeted the same path without becoming
 positive evidence. A gray outline means completed collection found no matching
 record, and a dash means collection could not establish one. Provider history
