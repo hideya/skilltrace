@@ -12,6 +12,9 @@ live in [Provider History Formats](./provider-history-formats.md). Those
 observations are deliberately separate because provider-owned formats can
 change independently of this design.
 
+Dated workflow and provider-recorded model coverage lives in
+[Tested Clients And Models](./tested-clients-and-models.md).
+
 ## Summary
 
 Agent clients already persist session metadata, messages, tool calls, tool

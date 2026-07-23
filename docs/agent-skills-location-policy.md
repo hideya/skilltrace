@@ -31,6 +31,9 @@ client-native layouts.
 | Gemini CLI  | `.agents/skills/` or `.gemini/skills/` | `~/.agents/skills/` or `~/.gemini/skills/` | `agents` when using `.agents/skills/` |
 | Claude Code | `.claude/skills/`                      | `~/.claude/skills/`                        | `claude_code`                         |
 
+Concrete client, version, model, and workflow validation is tracked separately
+in [Tested Clients And Models](./tested-clients-and-models.md).
+
 Codex documents repository skills under `.agents/skills/` and user skills under
 `$HOME/.agents/skills/`. Gemini CLI documents `.agents/skills/` as an
 interoperability alias, and notes that the alias takes precedence over

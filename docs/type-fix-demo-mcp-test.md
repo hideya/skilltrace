@@ -4,6 +4,9 @@ This runbook explains how to test SkillTrace with a real command-line agent
 session using the local MCP server. The main path uses Codex CLI; Claude Code
 and Gemini CLI checks are included where they differ.
 
+Completed client/version/model combinations are recorded in
+[Tested Clients And Models](./tested-clients-and-models.md).
+
 The goal is to verify that an agent working in a disposable demo repository can:
 
 1. load a local skill-like instruction file

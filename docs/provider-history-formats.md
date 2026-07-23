@@ -10,6 +10,9 @@ inspect transiently, and what SkillTrace should intentionally ignore.
 
 The architectural proposal is in
 [Provider History Event Source](./provider-history-event-source.md).
+Concrete client, version, model, and validation combinations are tracked
+separately in
+[Tested Clients And Models](./tested-clients-and-models.md).
 
 ## Scope And Date
 
