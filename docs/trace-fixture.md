@@ -68,6 +68,8 @@ Expected result:
 - the compact timeline rows expand to show event payload details
 - Consistency shows passing Skill and Reference rows with passive, semantic,
   and reflection evidence
+- the advisory Provider column shows that provider history was not collected
+  for this API-driven fixture and does not change the result
 
 The warning run posts:
 
@@ -79,6 +81,7 @@ Expected result:
 - the Timeline shows passive file events
 - Consistency shows missing semantic and reflection evidence, and the run result
   is `warning`
+- the advisory Provider column does not change the warning
 
 This warning case includes a reference read, so SkillTrace treats it as material
 evidence that should have semantic or reflection support in full mode. A bare

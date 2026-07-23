@@ -5,7 +5,8 @@
 > 歴史的な設計ドラフト。現在のセットアップ、パッケージング、MCP
 > tools、dogfooding 手順については、`README.md`、`README_DEV.md`、
 > `docs/architecture-decisions.md`、`docs/mcp-semantic-logger.md`、
-> `docs/type-fix-demo-mcp-test.md` を優先する。
+> `docs/provider-history-event-source.md` を優先する。反復可能な demo
+> 手順については `docs/type-fix-demo-mcp-test.md` を参照する。
 
 ## 1. 背景
 

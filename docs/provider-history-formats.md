@@ -985,7 +985,7 @@ snapshots should not duplicate SkillTrace's Git evidence.
 - patch bodies
 
 The safe path, operation category, and normalized outcome are enough for the
-proposed evidence and execution context. Retaining content would make
+implemented evidence and execution context. Retaining content would make
 SkillTrace a transcript and source-code archive, which is explicitly not the
 goal.
 

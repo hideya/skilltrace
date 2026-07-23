@@ -46,6 +46,8 @@ The shared collection path implements:
 - provider-recorded model/client precedence on the runs list and in Run context
 - timeline display of tool, operation kind, normalized targets, and known
   outcome, plus a separate Recorded execution context summary
+- path-aligned provider skill and reference reads in a verdict-neutral
+  consistency column
 - synthetic fixture, matching, ambiguity, schema, and privacy regression tests
 
 The Codex adapter implements:
@@ -111,8 +113,8 @@ The Gemini CLI adapter implements:
   client-version field is present in the selected history format
 
 The current implementation does not yet include shell search and general
-shell-edit operations, provider columns in the consistency matrix, or any
-change to run verdicts. Provider history remains observational.
+shell-edit operations or any provider-driven change to run verdicts. Provider
+history remains observational.
 
 Provider history is useful because it can reveal structured operations that
 the passive operating-system probe cannot understand. For example:
@@ -129,9 +131,11 @@ view of the same agent work, with different strengths and failure modes.
 Provider history also contains a useful mechanical middle between skill
 consultation and final reflection: searches, reads, edits, verification
 commands, tool outcomes, affected paths, and terminal state. SkillTrace should
-preserve a compact normalized form of those facts even when they do not
-participate in consistency checking yet. Future versions can then reinterpret
-past runs without retaining transcripts or raw tool data.
+preserve a compact normalized form of those facts. Positive skill and reference
+reads participate only as advisory path alignment; operations and outcomes
+remain execution context, and no provider fact affects the verdict. Future
+versions can then reinterpret past runs without retaining transcripts or raw
+tool data.
 
 ## Origin Of The Idea
 
@@ -378,7 +382,7 @@ already understood:
 - `skill_reference_read`
 
 The `source` distinguishes provider evidence from passive evidence. Reusing
-the event type also preserves a path for future consistency alignment without
+the event type lets the current consistency matrix align matching paths without
 pretending the evidence was captured by the passive harness.
 
 Gemini's successful `activate_skill` is represented as `skill_file_read` only
@@ -886,9 +890,10 @@ The runs list and primary Run context rows prefer model and client identity from
 a matched provider session. Agent-declared identity remains the fallback when
 provider history is unavailable, ambiguous, or lacks the corresponding value.
 
-A future evidence-comparison view may align provider paths with passive,
-semantic, and reflection paths. It must preserve the same source and confidence
-boundaries.
+The current consistency view aligns provider paths with passive, semantic, and
+reflection paths while preserving source boundaries. Confidence and extraction
+details remain available in expanded event data rather than being collapsed
+into the row verdict.
 
 ### Consistency Policy
 

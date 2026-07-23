@@ -41,18 +41,16 @@ SkillTrace is aimed at people developing and debugging agent skills.
 
 ## What It Captures
 
-At a high level, SkillTrace records four kinds of evidence from the same run.
-
-SkillTrace helps you understand and debug agent skills by combining four
-evidence streams:
+SkillTrace records four evidence streams from the same run:
 
 - **Passive traces**: observed file access, such as `SKILL.md` or reference
   file reads.
+- **Provider history**: privacy-filtered skill reads, tool operations, and
+  verification outcomes mechanically recorded by Codex CLI, Claude Code, or
+  Gemini CLI. The consistency matrix correlates positive reads in an advisory
+  column, but this source does not affect verdicts.
 - **Semantic traces**: instructed MCP invocations such as skill start,
   reference read, and skill finish.
-- **Provider history**: privacy-filtered skill reads and verification outcomes
-  mechanically recorded by Codex CLI. This source is observational and does not
-  affect consistency verdicts yet.
 - **Reflection**: structured post-run attribution by the agent, including which
   skills, references, files, steps, uncertainties, and recommended skill changes
   it believes were relevant to the run.
@@ -383,11 +381,17 @@ skilltrace start --mode passive_only
 - `passive_reflection`: passive file access plus final reflection, without live
   skill lifecycle declarations. This should interfere less with the agent's
   normal task flow.
-- `passive_only`: passive file access only, with no instruction injection.
-  This should minimally interfere with the agent, though passive probing may
-  still have platform-specific overhead or blind spots.
+- `passive_only`: passive file access as the only expected consistency source,
+  with no instruction injection. This should minimally interfere with the
+  agent, though passive probing may still have platform-specific overhead or
+  blind spots.
 
 The default is `full`.
+
+These modes control instruction injection and the verdict-bearing evidence
+expected by the consistency checker. Best-effort provider-history collection
+can annotate a supported run in any mode, but it never becomes an expected
+source.
 
 Passive traces are evidence of file access, not proof of skill use. Some agent
 clients scan multiple `SKILL.md` entrypoints while building a catalog of
@@ -422,7 +426,7 @@ from the absolute target directory path, so repeated runs from the same copied
 repo group together, while repos with the same folder name in different
 locations remain distinguishable.
 
-The run detail page checks consistency among the captured probing results.
+The run detail page checks consistency among the captured evidence.
 
 Provider-history operations appear in the timeline as a compact sequence of
 tool name, operation kind, normalized target paths, and known outcome. Target
@@ -442,7 +446,7 @@ run result into **Warning** or make mode comparison look different by
 themselves.
 
 Passive-only runs are labeled as **Captured** rather than **Pass**, because
-there is no second evidence stream to compare.
+there is no second verdict-bearing evidence stream to compare.
 
 <table>
   <tr>
@@ -601,12 +605,14 @@ SkillTrace focuses on a narrower question:
 It does this by recording four evidence streams:
 
 - passive file-access traces
-- privacy-filtered local provider history from Codex CLI or Claude Code
+- privacy-filtered local provider history from Codex CLI, Claude Code, or
+  Gemini CLI
 - MCP semantic declarations
 - structured post-run reflection
 
-Provider history is shown separately as recorded execution context and does not
-participate in the consistency verdict in the first implementation.
+Provider history appears both as recorded execution context and as an advisory
+column aligned with the other file-oriented evidence. It does not participate
+in the consistency verdict.
 
 SkillTrace is not a replacement for LangSmith, Langfuse, Phoenix, Braintrust,
 Weave, or OpenTelemetry-based tracing. It is a complementary local probe for
@@ -676,15 +682,16 @@ Depending on the trace mode and repository state, captured data may include:
 - bounded plain-text contents for changed instruction-relevant files
 - agent-declared summaries, uncertainties, and file attribution
 - MCP semantic logging events
-- normalized Codex provider-history facts such as skill paths, operation target
+- normalized provider-history facts such as skill paths, operation target
   paths, verification categories and outcomes, provider session/client/model
   identifiers, and collection status
 - SkillTrace version and local runtime metadata such as OS platform, CPU
   architecture, Node.js version, and probe backend
 
-During a normal `skilltrace stop`, SkillTrace inspects the matching local Codex
-rollout file transiently. It does not store or send prompts, responses,
-reasoning, raw tool output, full shell commands, file contents, or patch bodies.
+During a normal `skilltrace stop`, SkillTrace transiently inspects the matching
+local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
+session. It does not store or send prompts, responses, reasoning, raw tool
+output, full shell commands, file contents, or patch bodies.
 `skilltrace stop --discard` skips provider-history collection.
 
 Do not run SkillTrace on sensitive repositories unless you understand what is

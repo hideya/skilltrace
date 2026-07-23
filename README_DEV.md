@@ -381,7 +381,8 @@ SkillTrace local daemon
   ├─ Local HTTP API
   │    ├─ active session lifecycle
   │    ├─ passive event receiver
-  │    └─ semantic event receiver
+  │    ├─ semantic event receiver
+  │    └─ provider-history event receiver
   │
   ├─ MCP server command
   │    └─ skill_trace_context / skill_log_event / skill_trace_reflection
@@ -389,10 +390,11 @@ SkillTrace local daemon
   ├─ Trace store
   │    ├─ mechanical events
   │    ├─ semantic events
+  │    ├─ provider-history events
   │    └─ artifacts / snapshots
   │
   ├─ Consistency checker
-  │    └─ compares passive activation and declared use
+  │    └─ compares three expected sources and aligns provider observations
 ```
 
 The initial design avoids introducing a heavy skill runner or remote service.
@@ -418,8 +420,10 @@ top metrics, back button, and refresh polling stay in
 - `run-instruction-surfaces-panel.tsx` shows detected instruction files,
   skill roots, symlink aliases, and profile-selection warnings.
 - `run-consistency-panel.tsx` shows the file-oriented passive / semantic /
-  reflection evidence matrix.
+  reflection evidence matrix with verdict-neutral provider observations.
 - `run-timeline-panel.tsx` shows compact expandable events.
+- `run-provider-history-panel.tsx` summarizes provider identity, collection
+  quality, and provider-confirmed skill or reference reads.
 - `run-reflection-panel.tsx` shows pretty and raw run reflection data.
 
 Shared small presentation primitives live in `run-detail-ui.tsx`. Keep new
@@ -540,15 +544,18 @@ standalone skill lifecycle events:
 ## Consistency matrix
 
 SkillTrace presents one row per observed or declared skill and reference file.
-The matrix compares three evidence sources:
+The matrix displays four evidence sources:
 
 - passive file observation
 - semantic lifecycle or reference-read declarations
 - final reflection attribution
+- normalized provider-history reads
 
-Expected sources depend on the trace mode. `full` expects all three,
-`passive_reflection` expects passive and reflection evidence, and `passive_only`
-expects passive evidence only.
+Only the first three are verdict-bearing. Expected sources depend on the trace
+mode: `full` expects passive, semantic, and reflection evidence;
+`passive_reflection` expects passive and reflection evidence; and
+`passive_only` expects passive evidence only. Provider history is always
+advisory and never becomes an expected source.
 
 A skill's semantic evidence is complete only when both `skill_use_started` and
 `skill_use_finished` were logged. A semantic `skill_reference_read` completes
@@ -556,8 +563,15 @@ the semantic column for a reference row.
 
 Rows are reported as `pass`, `warning`, or `error` according to the number of
 missing expected sources. An entrypoint-only `SKILL.md` scan with no later
-evidence is neutral `discovered` evidence. A run passes when every row is either
-`pass` or `discovered`; otherwise its consistency result is `warning`.
+evidence is neutral `discovered` evidence. Provider-only rows are excluded from
+diagnosis. A run passes when every verdict-bearing row is either `pass` or
+`discovered`; otherwise its consistency result is `warning`. A matrix containing
+only provider-only rows remains `unknown`.
+
+A positive provider read adds an amber advisory observation to the matching
+row. A provider-only path is shown as neutral `not evaluated`. Provider
+observations do not change issue counts, row verdicts, run results, canonical
+row paths, or mode comparison.
 
 ---
 

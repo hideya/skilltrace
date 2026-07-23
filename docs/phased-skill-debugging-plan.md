@@ -11,13 +11,19 @@ the instrumentation itself is changing the agent's behavior.
 
 ## Core Idea
 
-Use three evidence channels:
+Use three verdict-bearing evidence channels:
 
 1. passive file observations
 2. live semantic MCP declarations
 3. final run reflection
 
 Then compare them across runs that use different levels of intervention.
+Supported command-line workflows also add provider history as a fourth,
+observational channel. It is collected after the agent work, aligned in the
+consistency matrix, and kept rigorously verdict-neutral.
+
+The mode sections below list verdict-bearing evidence. Provider history may
+annotate a supported run in any mode without changing that mode's expectations.
 
 If a skill behaves consistently when moving from full instrumentation to
 reflection-only tracing and then to passive-only tracing, we gain confidence
@@ -151,6 +157,9 @@ Within one run:
 - Did live semantic declarations match reflection file lists?
 - Did reflection omit files that passive probing observed?
 - Did reflection mention files that passive probing missed?
+- Did provider history mechanically corroborate any skill or reference paths?
+- Do provider-only or provider-missing paths suggest an adapter, matching, or
+  passive-probe gap worth investigating?
 
 Across modes:
 
@@ -181,6 +190,9 @@ Current implementation note:
 - Passive-only `SKILL.md` entrypoint reads with no later semantic, reflection,
   or same-skill reference evidence are classified as `discovered`. They remain
   visible but do not make the run result `Warning`.
+- Positive provider reads appear in an advisory Provider column. Provider-only
+  paths are `not evaluated`; provider observations never replace expected
+  passive, semantic, or reflection evidence.
 
 - runs record lightweight trace mode metadata without a database migration
 - current default `skilltrace start` records `full`
@@ -197,13 +209,15 @@ Current implementation note:
 - the runs page offers `Compare Modes` when a run group has at least two
   successful modes; it preselects the latest successful run per mode, allows
   one selected run per mode, and compares the selected runs by normalized
-  skill/reference files while omitting neutral `discovered` rows
+  skill/reference files while omitting neutral `discovered` and provider-only
+  rows
 
 Possible result labels:
 
 - `aligned`
 - `partially aligned`
 - `discovered`
+- `not evaluated`
 - `captured`
 - `reflection mismatch`
 - `semantic mismatch`
@@ -211,24 +225,22 @@ Possible result labels:
 
 ## Implementation Notes
 
-Near-term changes:
+Implemented foundations:
 
-- extend `.skilltrace/instrumentation.md` reflection guidance with concrete
-  file-list fields
-- extend `skill_trace_reflection` examples with `skills_read`,
-  `references_read`, and `files_believed_to_influence_work`
-- show reflected file lists as first-class sections in the Run Reflection panel
+- reflection guidance and examples include concrete skill, reference, and
+  influencing-file fields
+- reflected file lists appear as first-class Run Reflection sections
+- successful modes can be compared across runs
+- provider-history reads align with matrix rows as advisory evidence
 
-Later changes:
+Remaining refinements:
 
 - continue refining path normalization for passive, semantic, and reflected file
   comparisons as real repositories expose edge cases
-- expand consistency checks that compare passive observations with reflection
-  file lists
 - add UI mode selection for full, passive-plus-reflection, and passive-only
   checking
-- add run comparison support so multiple attempts from the same repo stem can be
-  compared across intervention levels
+- accumulate enough provider format drift and mismatch experience to decide
+  whether its evidence policy should ever change
 
 ## Non-Goals
 

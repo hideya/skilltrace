@@ -254,11 +254,12 @@ diagnosis from the file-oriented consistency matrix. If a run never recorded
 `trace_session_finished` and any newer `trace_session_started` event exists
 globally, the older run's Status is shown as `Interrupted`.
 
-The final consistency diagnosis ignores neutral `discovered` rows. A discovered
-row means SkillTrace observed a passive `SKILL.md` entrypoint read, but saw no
-semantic lifecycle, reflection entry, or same-skill reference read that would
-make it material evidence of skill use. The row remains visible in run details,
-but it does not make the Result column say `Warning`.
+The final consistency diagnosis ignores neutral `discovered` and provider-only
+rows. A discovered row means SkillTrace observed a passive `SKILL.md`
+entrypoint read, but saw no semantic lifecycle, reflection entry, or same-skill
+reference read that would make it material evidence of skill use. A
+provider-only row is shown as `not evaluated`. Both remain visible in run
+details, but neither makes the Result column say `Warning`.
 
 This is intentionally global, not repo-scoped. With the current
 single-active-session and manifest-backed injection model, missing `stop` can

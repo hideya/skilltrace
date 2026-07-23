@@ -135,9 +135,9 @@ happened.
 
 ### Normalize Evidence By Resolved Paths
 
-Passive probe events, semantic declarations, reflection file lists, Git
-provenance, and cross-run comparison should normalize by resolved path where
-possible.
+Passive probe events, semantic declarations, reflection file lists, provider
+history, Git provenance, and cross-run comparison should normalize by resolved
+path where possible.
 
 The UI may still show the logical path most relevant to the selected
 instruction profile, but consistency checks should not treat these as unrelated

@@ -5,7 +5,8 @@
 > Historical design draft. For current setup, packaging, MCP tools, and
 > dogfooding instructions, prefer `README.md`, `README_DEV.md`,
 > `docs/architecture-decisions.md`, `docs/mcp-semantic-logger.md`, and
-> `docs/type-fix-demo-mcp-test.md`.
+> `docs/provider-history-event-source.md`. For the repeatable demo procedure,
+> see `docs/type-fix-demo-mcp-test.md`.
 
 ## 1. Background
 
