@@ -234,8 +234,8 @@ function ModeCell({ cell, mode }: ModeCellProps) {
 function EvidenceDot({ active, label, tone }: EvidenceDotProps) {
   let className = active
     ? tone === 'semantic'
-      ? 'bg-teal-500'
-      : 'bg-indigo-500'
+      ? 'bg-indigo-500'
+      : 'bg-teal-500'
     : 'bg-base-300'
 
   return (
