@@ -1,7 +1,7 @@
 # Provider History Formats
 
-Status: observed field guide for the implemented Codex first cut and planned
-provider expansion; not a provider contract
+Status: observed field guide for the implemented Codex and Claude Code adapters
+and planned Gemini CLI expansion; not a provider contract
 
 This document records the local provider-history formats inspected while
 designing and implementing SkillTrace's `provider_history` event source. It
@@ -15,13 +15,15 @@ The architectural proposal is in
 
 The initial observations were made on one macOS machine on 2026-07-21. The
 matching SkillTrace runs occurred between 2026-06-28 and 2026-07-09. A follow-up
-inspection on 2026-07-23 examined a newer Codex run and the current `ctx` Codex
-adapter without broadening the machine or platform sample.
+inspection on 2026-07-23 examined a newer Codex run, the current `ctx` Codex
+adapter, and two native Claude Code validation runs without broadening the
+machine or platform sample.
 
 Observed provider versions included:
 
 - Codex CLI `0.143.0`
-- Claude Code `2.1.198`
+- Codex Desktop CLI `0.145.0-alpha.18`
+- Claude Code `2.1.198` and `2.1.218`
 - Gemini CLI history that did not include an obvious client-version field in
   the selected chat records
 
@@ -497,6 +499,10 @@ whole provider session.
 The project directory name encodes the working directory. Records also carry
 `sessionId` and, for message records, `cwd`.
 
+The implemented adapter derives exactly one encoded project directory from the
+SkillTrace target root; it does not crawl unrelated Claude projects or read the
+global prompt history.
+
 Additional observed files included `~/.claude/history.jsonl`, settings, stats,
 telemetry, cache, and backup data. They are not part of session evidence.
 
@@ -547,8 +553,10 @@ Observed record types included:
 {"type":"user","sessionId":"<session-id>","cwd":"<repo>","timestamp":"<time>","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"<call-id>","is_error":false,"content":"<private file content omitted>"}]}}
 ```
 
-The `Read` input provides direct high-confidence path evidence. The result
-confirms success. Its `content` is the file content and is not retained.
+The `Read` input provides direct high-confidence path evidence. A correlated
+`tool_result` confirms completion: observed successful results sometimes omit
+`is_error`, while failed results use `is_error: true`. Its `content` is the file
+content and is not retained.
 
 ### Message Records
 
@@ -579,7 +587,7 @@ Content blocks included:
 | `tool_use.name` | Retain | Evidence and circularity classification |
 | `tool_use.input` | Inspect only | Extract path or parse command |
 | `tool_result.tool_use_id` | Retain | Match result to invocation |
-| `tool_result.is_error` | Retain as normalized outcome | Reject failed reads |
+| `tool_result.is_error` | Retain as normalized outcome | `true` is failed; a correlated result without `true` is successful |
 | `tool_result.content` | Ignore | May contain full file or command output |
 | `text`, `thinking` | Ignore | Conversation and reasoning content |
 | model | Retain when structurally available | Recorded execution context |
@@ -610,6 +618,16 @@ Relevant observed operations included:
 Every passive skill path in the four associated Claude Code runs also appeared
 in a structured `Read` invocation in the provider history.
 
+In the 2026-07-23 validation runs, Claude Code used both forms allowed by the
+adapter: one run read skill files through structured `Read`, while another used
+successful `Bash` content-read commands. The latter also recorded three
+typechecks whose normalized outcomes were failed, failed, then successful.
+
+The demo exposes `.claude/skills` as a symlink to `.agents/skills`. Claude Code
+recorded the resolved `.agents/skills/...` targets, so SkillTrace now supplies
+both the logical and real skill roots to the shared passive probe and compares
+provider paths through the same realpath-aware alias policy.
+
 ### Top-Level Result Metadata
 
 Some records included `toolUseResult` with fields such as stdout, stderr,
@@ -629,7 +647,11 @@ matches.
 | `file-history-snapshot` | Ignore | Contains tracked file backups and is not proof of skill influence |
 | `attachment` | Ignore | May contain private content and tool inventory metadata |
 | `ai-title`, `last-prompt` | Ignore | Prompt-derived conversational content |
-| `mode`, `permission-mode` | Ignore | Provider operation context, not skill evidence |
+| `mode`, `permission-mode` records | Ignore | Standalone mode records are not skill evidence |
+
+The safe top-level `permissionMode` value on in-window message records is
+retained separately as provider execution configuration. The records' other
+content is not retained.
 
 ### Sidechains And Parent Links
 
@@ -651,6 +673,12 @@ untimed metadata or snapshot records.
 Therefore Claude Code completeness should normally be `stable_at_stop`. Message
 `stop_reason` is a model-message stop condition and must not be promoted to a
 guarantee that the provider session file will never receive another turn.
+
+The implemented 2.1.218 validation retained only provider/session and tool-call
+provenance, normalized paths, operation kinds, outcome, duration, confidence,
+client version, model, entrypoint, working directory, and permission mode. It
+did not retain prompts, responses, reasoning, commands, file contents, command
+output, edit strings, patches, snapshots, or generated metadata.
 
 ### Claude-Specific Risks
 

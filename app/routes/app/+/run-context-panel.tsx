@@ -166,6 +166,7 @@ function providerEnvironmentRows(
     ['Source', environment.source],
     ['Working directory', environment.working_directory],
     ['Approval policy', environment.approval_policy],
+    ['Permission mode', environment.permission_mode],
     ['Sandbox', environment.sandbox],
     ['Permission profile', environment.permission_profile],
     ['Filesystem policy', environment.file_system_policy],

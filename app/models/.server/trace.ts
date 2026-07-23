@@ -77,7 +77,7 @@ export const providerHistoryEventSchema = z
     artifact_refs: z.array(z.string().trim().min(1).max(4096)).optional(),
     payload: z
       .object({
-        provider: z.literal('codex'),
+        provider: z.enum(['codex', 'claude_code']),
         provider_session_id: z
           .string()
           .trim()
@@ -87,7 +87,9 @@ export const providerHistoryEventSchema = z
         tool_call_id: z.string().trim().min(1).max(256),
         parent_tool_call_id: z.string().trim().min(1).max(256).optional(),
         outcome: z.enum(['success', 'failed', 'unknown']),
-        evidence_kind: z.literal('shell_content_read').optional(),
+        evidence_kind: z
+          .enum(['shell_content_read', 'direct_file_read'])
+          .optional(),
         operation_kind: z
           .enum([
             'file_read',
@@ -104,8 +106,12 @@ export const providerHistoryEventSchema = z
         extraction_method: z.enum(['direct_envelope', 'static_js']),
         extraction_confidence: z.enum(['high', 'medium', 'low']),
         evidence_status: z.literal('context_only').optional(),
+        sidechain: z.boolean().optional(),
         match_confidence: z.enum(['high', 'medium', 'unknown']),
-        format: z.literal('codex_rollout_jsonl_v1'),
+        format: z.enum([
+          'codex_rollout_jsonl_v1',
+          'claude_code_session_jsonl_v1',
+        ]),
         exit_code: z.number().int().optional(),
         duration_ms: z.number().int().nonnegative().optional(),
         source_record_index: z.number().int().nonnegative(),

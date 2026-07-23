@@ -484,8 +484,8 @@ The timeline should show the semantic started, reference-read, and finished
 events. It should also show passive file access for `.agents/skills/type-fix/SKILL.md`
 and `.agents/skills/type-fix/references/checklist.md`.
 
-After `skilltrace-dev stop` or `skilltrace stop`, a matching Codex rollout
-should add `provider_history` events and a
+After `skilltrace-dev stop` or `skilltrace stop`, a uniquely matching Codex or
+Claude Code session should add `provider_history` events and a
 `provider_history_collection_finished` summary. Provider operations appear in
 the timeline in this order when values are available:
 
@@ -507,7 +507,7 @@ default. Recorded execution context should summarize provider identity,
 collection quality, and any provider-confirmed skill/reference reads. The
 operation sequence belongs in the timeline and is not duplicated in that card.
 
-If no unique Codex session can be matched, provider collection should report an
+If no unique provider session can be matched, provider collection should report an
 unavailable, ambiguous, unsupported, or possibly incomplete status without
 changing the run verdict or preventing stop from completing.
 
@@ -554,7 +554,8 @@ This test verifies:
 - Semantic skill-use declarations can reach `/api/skill-log-events`.
 - Passive file read observations can reach `/api/passive-events`.
 - The active session ID correlates passive probe events and MCP semantic events.
-- `skilltrace stop` can match and privacy-filter the corresponding Codex rollout.
+- `skilltrace stop` can match and privacy-filter the corresponding Codex or
+  Claude Code session.
 - Provider operations retain normalized kinds, targets, outcomes, and
   extraction provenance without retaining commands or tool output.
 - The SkillTrace UI can display the resulting run timeline.
@@ -562,7 +563,7 @@ This test verifies:
 This test does not yet verify:
 
 - general compliance across many skills
-- Claude Code or Gemini CLI provider-history adapters
+- Gemini CLI provider-history adapter
 - instrumentation overlay behavior in large real repositories
 - remote HTTP MCP transport
 - Windows passive probing

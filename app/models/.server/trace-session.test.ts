@@ -71,6 +71,19 @@ describe('trace session helpers', () => {
     expect(config.skillRoots).toEqual([path.join(root, '.claude/skills')])
   })
 
+  test('includes the resolved skill root behind a profile alias', () => {
+    let root = tempRoot()
+    fs.mkdirSync(path.join(root, '.agents/skills'), { recursive: true })
+    fs.symlinkSync('.agents', path.join(root, '.claude'))
+
+    let config = loadTargetConfig(root, 'claude_code')
+
+    expect(config.skillRoots).toEqual([
+      path.join(root, '.claude/skills'),
+      fs.realpathSync(path.join(root, '.agents/skills')),
+    ])
+  })
+
   test('normalizes trace mode values', () => {
     expect(normalizeTraceMode('full')).toBe('full')
     expect(normalizeTraceMode('passive_reflection')).toBe(

@@ -74,4 +74,25 @@ describe('RunContextPanel', () => {
     expect(markup).toContain('reasoning effort')
     expect(markup).not.toContain('PRIVATE_PROVIDER_CONFIGURATION_CANARY')
   })
+
+  test('shows Claude Code permission mode', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        providerHistory: {
+          provider: 'claude_code',
+          provider_session_id: 'session-1',
+          provider_environment: {
+            provider: 'claude_code',
+            client: 'Claude Code',
+            client_version: '2.1.218',
+            model: 'claude-sonnet-5',
+            permission_mode: 'acceptEdits',
+          },
+        },
+      }),
+    )
+
+    expect(markup).toContain('Permission mode')
+    expect(markup).toContain('acceptEdits')
+  })
 })

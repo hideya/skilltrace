@@ -597,7 +597,7 @@ SkillTrace focuses on a narrower question:
 It does this by recording four evidence streams:
 
 - passive file-access traces
-- privacy-filtered Codex CLI provider history
+- privacy-filtered local provider history from Codex CLI or Claude Code
 - MCP semantic declarations
 - structured post-run reflection
 
@@ -645,8 +645,8 @@ Known limitations include:
 - Instrumentation may change model behavior, especially in `full` mode.
 - Passive-only mode can show that files were accessed, but not whether they were
   actually used.
-- Provider-history collection currently supports Codex CLI rollout files only.
-  Claude Code and Gemini CLI adapters remain planned.
+- Provider-history collection currently supports Codex CLI rollout files and
+  Claude Code project-session files. Gemini CLI remains planned.
 - Provider history is a local, provider-owned, version-unstable format. Missing,
   ambiguous, or changing history is nonfatal and may yield no events.
 - Passive `SKILL.md` access may be startup discovery rather than task-specific
@@ -723,6 +723,6 @@ decisions, see:
 - [docs/agent-profile-architecture.md](https://github.com/hideya/skilltrace/blob/main/docs/agent-profile-architecture.md)
 - [docs/passive-skill-discovery.md](https://github.com/hideya/skilltrace/blob/main/docs/passive-skill-discovery.md)
 - [docs/mcp-semantic-logger.md](https://github.com/hideya/skilltrace/blob/main/docs/mcp-semantic-logger.md)
-- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (Codex first cut and roadmap)
+- [docs/provider-history-event-source.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-event-source.md) (Codex/Claude implementation and roadmap)
 - [docs/provider-history-formats.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-formats.md) (observed format field guide)
 - [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skilltrace/blob/main/docs/type-fix-demo-mcp-test.md)

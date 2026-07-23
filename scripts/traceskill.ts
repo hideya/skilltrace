@@ -20,7 +20,7 @@ import {
   type InstructionProfile,
   type InstructionSurfaceReport,
 } from './lib/instruction-profile'
-import { collectCodexProviderHistory } from './lib/provider-history/codex'
+import { collectProviderHistory } from './lib/provider-history'
 import {
   assertNoArgs,
   parseDaemonLogsArgs,
@@ -653,7 +653,7 @@ async function collectActiveProviderHistory(server: string, session: any) {
   let collection
 
   try {
-    collection = await collectCodexProviderHistory({
+    collection = await collectProviderHistory({
       runId: session.run_id,
       targetRoot: session.target_root,
       skillRoots: session.skill_roots ?? [],
@@ -664,7 +664,7 @@ async function collectActiveProviderHistory(server: string, session: any) {
     await recordProviderCollectionFailure(server, session.run_id, [
       'collector_failed',
     ])
-    console.warn('Warning: Codex provider history collection failed; stopping normally.')
+    console.warn('Warning: provider history collection failed; stopping normally.')
     return
   }
 
@@ -679,7 +679,7 @@ async function collectActiveProviderHistory(server: string, session: any) {
         ...summaryWarnings(collection.summary),
         'provider_event_submission_failed',
       ])
-      console.warn('Warning: Codex provider events could not be stored; stopping normally.')
+      console.warn('Warning: provider events could not be stored; stopping normally.')
       return
     }
   }
@@ -700,7 +700,7 @@ async function recordProviderCollectionFailure(
 ) {
   await postSessionEvent(server, runId, 'provider_history_collection_finished', {
     status: 'failed',
-    provider: 'codex',
+    provider: 'unknown',
     evidence_event_count: 0,
     execution_operation_count: 0,
     ignored_circular_call_count: 0,
@@ -717,13 +717,13 @@ function summaryWarnings(summary: Record<string, unknown>) {
 
 function printProviderCollectionWarning(status: string) {
   if (status === 'ambiguous') {
-    console.warn('Warning: Codex provider history was ambiguous; no events were imported.')
+    console.warn('Warning: provider history was ambiguous; no events were imported.')
   } else if (status === 'unsupported_format') {
-    console.warn('Warning: Codex provider history format is unsupported; no events were imported.')
+    console.warn('Warning: provider history format is unsupported; no events were imported.')
   } else if (status === 'possibly_incomplete') {
-    console.warn('Warning: Codex provider history may be incomplete.')
+    console.warn('Warning: provider history may be incomplete.')
   } else if (status === 'failed') {
-    console.warn('Warning: Codex provider history collection failed; stopping normally.')
+    console.warn('Warning: provider history collection failed; stopping normally.')
   }
 }
 

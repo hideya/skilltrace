@@ -193,10 +193,24 @@ export function loadTargetConfig(
 
   return {
     targetRoot,
-    skillRoots: skillRoots.map((skillRoot) =>
-      path.resolve(targetRoot, skillRoot),
-    ),
+    skillRoots: resolvedSkillRoots(targetRoot, skillRoots),
   }
+}
+
+function resolvedSkillRoots(targetRoot: string, roots: string[]) {
+  let values: string[] = []
+
+  for (let root of roots) {
+    let absolutePath = path.resolve(targetRoot, root)
+    values.push(absolutePath)
+
+    try {
+      let resolvedPath = fs.realpathSync(absolutePath)
+      if (!values.includes(resolvedPath)) values.push(resolvedPath)
+    } catch {}
+  }
+
+  return values
 }
 
 function selectedInstructionProfile(
