@@ -553,8 +553,14 @@ history never blocks the run from stopping.
 
 The consistency matrix aligns positive provider skill and reference reads in an
 advisory column. Provider-only paths are shown as neutral `not evaluated` rows.
-The column does not affect issue counts, run results, or mode comparison, and it
-does not substitute for an expected passive, semantic, or reflection signal.
+When a context-only provider file-read operation targets an already-keyed row,
+the matrix shows an amber outline rather than treating the operation as
+positive evidence. Context-only operations never create matrix rows. A gray
+outline represents completed collection without a matching record; a dash
+represents collection that was unavailable, ambiguous, unsupported, failed,
+possibly incomplete, or absent. The column does not affect issue counts, run
+results, or mode comparison, and it does not substitute for an expected
+passive, semantic, or reflection signal.
 
 When a matched provider session supplies model or client identity, the runs list
 and primary Run context rows prefer those recorded values over agent-declared

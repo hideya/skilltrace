@@ -33,6 +33,25 @@ describe('ConsistencyPanel', () => {
     expect(unavailable).toContain('Provider history unavailable')
   })
 
+  test('distinguishes matching context-only operations from positive evidence', () => {
+    let context = renderPanel({
+      provider: false,
+      provider_context: true,
+      status: 'pass',
+    })
+    let positive = renderPanel({
+      provider: true,
+      provider_context: true,
+      status: 'pass',
+    })
+
+    expect(context).toContain('Matching context-only provider operation')
+    expect(context).toContain('border-2 border-amber-400')
+    expect(context).not.toContain('Observed in provider history')
+    expect(positive).toContain('Observed in provider history')
+    expect(positive).toContain('bg-amber-400')
+  })
+
   test('shows provider-only rows as not evaluated', () => {
     let markup = renderPanel({
       provider: true,
@@ -67,6 +86,7 @@ function renderPanel(
           semantic_state: 'complete',
           reflection: true,
           provider: false,
+          provider_context: false,
           passive_expected: true,
           semantic_expected: true,
           reflection_expected: true,

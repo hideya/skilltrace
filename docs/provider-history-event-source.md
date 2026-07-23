@@ -911,10 +911,13 @@ Provider history remains observational:
   semantic evidence
 
 The consistency column uses an amber dot for a positive provider observation, a
-neutral hollow dot when a completed collection did not observe the row, and a
-dash when collection was unavailable, ambiguous, unsupported, failed, or
-possibly incomplete. These display states never affect consistency status,
-issue count, run result, or mode comparison.
+amber outline when a context-only file-read operation targeted the same
+already-keyed path, a gray outline when a completed collection found no matching
+record, and a dash when collection was unavailable, ambiguous, unsupported,
+failed, possibly incomplete, or absent. Context-only operations never create
+matrix rows, and their targets are not promoted to positive evidence. These
+display states never affect consistency status, issue count, run result, or
+mode comparison.
 
 Useful early discrepancies include:
 

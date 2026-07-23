@@ -247,6 +247,14 @@ provider-only paths `not evaluated`, distinguishes a completed collection with
 no observation from unavailable or incomplete collection, and excludes the
 source from issue counts, run results, and mode comparison.
 
+Early adapter runs exposed a useful intermediate state. Some provider records
+identify a matching `SKILL.md` or reference path as the target of a file-read
+operation, but lack the correlated successful result required for positive
+evidence. The matrix now shows those existing rows with an amber outline. This
+preserves the mechanical clue without upgrading it into a yes/no claim.
+Context-only operations never create rows, and ordinary operation targets such
+as source files remain in the timeline only.
+
 ## Instruction Profiles Are Separate From Agent Clients
 
 An instruction profile describes repository surfaces such as:

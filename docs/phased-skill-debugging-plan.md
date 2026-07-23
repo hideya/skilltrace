@@ -190,9 +190,11 @@ Current implementation note:
 - Passive-only `SKILL.md` entrypoint reads with no later semantic, reflection,
   or same-skill reference evidence are classified as `discovered`. They remain
   visible but do not make the run result `Warning`.
-- Positive provider reads appear in an advisory Provider column. Provider-only
-  paths are `not evaluated`; provider observations never replace expected
-  passive, semantic, or reflection evidence.
+- Positive provider reads appear as filled amber dots in an advisory Provider
+  column. Matching context-only file-read targets appear as amber outlines on
+  already-keyed rows but never create rows. Provider-only positive paths are
+  `not evaluated`; provider observations never replace expected passive,
+  semantic, or reflection evidence.
 
 - runs record lightweight trace mode metadata without a database migration
 - current default `skilltrace start` records `full`

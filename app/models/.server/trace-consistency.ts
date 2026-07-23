@@ -9,6 +9,7 @@ export function traceConsistencyMatrix(
   let expected = expectedSources(traceMode)
   let reflection = latestReflection(events)
   let rows: ConsistencyMatrixDraftRow[] = []
+  let providerContextPaths: string[] = []
 
   for (let event of events) {
     if (event.source === 'passive_file_harness') {
@@ -49,6 +50,8 @@ export function traceConsistencyMatrix(
         upsertMatrixRow(rows, 'Skill', observedPath(event), 'provider')
       } else if (event.event_type === 'skill_reference_read') {
         upsertMatrixRow(rows, 'Reference', observedPath(event), 'provider')
+      } else if (isProviderContextRead(event)) {
+        providerContextPaths.push(...stringList(event.artifact_refs))
       }
     }
   }
@@ -59,6 +62,10 @@ export function traceConsistencyMatrix(
 
   for (let file of stringList(reflection?.references_read)) {
     upsertMatrixRow(rows, 'Reference', file, 'reflection')
+  }
+
+  for (let file of providerContextPaths) {
+    markProviderContext(rows, file)
   }
 
   return rows
@@ -168,6 +175,7 @@ function upsertMatrixRow(
       semantic_finished: false,
       reflection: false,
       provider: false,
+      provider_context: false,
     }
     rows.push(row)
   }
@@ -179,6 +187,27 @@ function upsertMatrixRow(
     row.semantic_finished = true
   } else {
     row[source] = true
+  }
+}
+
+function isProviderContextRead(event: TraceEventLike) {
+  return (
+    event.event_type === 'execution_operation_observed' &&
+    event.payload?.operation_kind === 'file_read' &&
+    event.payload?.evidence_status === 'context_only'
+  )
+}
+
+function markProviderContext(
+  rows: ConsistencyMatrixDraftRow[],
+  file: string,
+) {
+  let normalizedFile = normalizePath(file)
+
+  for (let row of rows) {
+    if (pathsMatch(normalizePath(row.file), normalizedFile)) {
+      row.provider_context = true
+    }
   }
 }
 
@@ -324,6 +353,7 @@ type ConsistencyMatrixDraftRow = {
   semantic_finished: boolean
   reflection: boolean
   provider: boolean
+  provider_context: boolean
 }
 
 type ConsistencyFileKind = 'Skill' | 'Reference'
@@ -351,5 +381,6 @@ export type TraceEventLike = {
   timestamp?: Date | string
   skill_name?: string | null
   skill_path?: string | null
+  artifact_refs?: string[] | null
   payload?: Record<string, any> | null
 }

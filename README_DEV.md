@@ -569,9 +569,14 @@ diagnosis. A run passes when every verdict-bearing row is either `pass` or
 only provider-only rows remains `unknown`.
 
 A positive provider read adds an amber advisory observation to the matching
-row. A provider-only path is shown as neutral `not evaluated`. Provider
-observations do not change issue counts, row verdicts, run results, canonical
-row paths, or mode comparison.
+row. A matching context-only provider file-read operation adds an amber outline
+only when another evidence stream or positive provider event already keyed the
+row; it never creates a skill/reference row by itself. A completed collection
+with no matching record uses a gray outline, while unavailable, ambiguous,
+unsupported, failed, incomplete, or absent collection uses a dash. A
+provider-only positive path is shown as neutral `not evaluated`. Provider
+observations and context markers do not change issue counts, row verdicts, run
+results, canonical row paths, or mode comparison.
 
 ---
 

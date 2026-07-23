@@ -97,6 +97,7 @@ export function ConsistencyPanel({
                   <td className="text-center">
                     <ProviderConsistencyDot
                       active={row.provider}
+                      context={row.provider_context}
                       summary={providerHistory}
                     />
                   </td>
@@ -183,6 +184,7 @@ function ConsistencyDot({
 
 function ProviderConsistencyDot({
   active,
+  context,
   summary,
 }: ProviderConsistencyDotProps) {
   if (active) {
@@ -191,6 +193,16 @@ function ProviderConsistencyDot({
         aria-label="Observed in provider history"
         className="inline-block size-3 rounded-full bg-amber-400"
         title="Observed in provider history; advisory only"
+      />
+    )
+  }
+
+  if (context) {
+    return (
+      <span
+        aria-label="Matching context-only provider operation"
+        className="inline-block size-3 rounded-full border-2 border-amber-400"
+        title="Matching provider file-read target; context only, not positive evidence"
       />
     )
   }
@@ -267,6 +279,7 @@ type ConsistencyDotProps = {
 
 type ProviderConsistencyDotProps = {
   active: boolean
+  context: boolean
   summary?: Record<string, any> | null
 }
 

@@ -520,11 +520,13 @@ changing the run verdict or preventing stop from completing.
 The consistency table should show aligned rows for
 `.agents/skills/type-fix/SKILL.md` and
 `.agents/skills/type-fix/references/checklist.md`. Its Provider column should
-show amber observations for matching normalized provider reads. A path found
-only in provider history should appear as **not evaluated**, without changing
-the run verdict. A completed collection with no matching read uses a neutral
-hollow dot; unavailable, ambiguous, unsupported, failed, and possibly
-incomplete collections use a dash instead.
+show filled amber observations for matching positive provider reads. A matching
+context-only file-read target uses an amber outline on an existing row without
+becoming positive evidence or creating a row by itself. A path found only in
+positive provider history should appear as **not evaluated**, without changing
+the run verdict. A completed collection with no matching record uses a gray
+outline; unavailable, ambiguous, unsupported, failed, possibly incomplete, and
+absent collections use a dash instead.
 
 If the demo working copy has local changes to `AGENTS.md`, `.agents/skills/**`,
 `.skilltrace.json`, or `.skilltrace/**`, the run detail page should also show a

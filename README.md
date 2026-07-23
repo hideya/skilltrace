@@ -436,9 +436,13 @@ compact timeline header.
 
 It shows a consistency table across passive, semantic, and reflection evidence,
 and compares whether there is consistent evidence of skill usage. A Provider
-column aligns normalized provider-history reads as advisory observations.
-Provider history does not affect the consistency status, issue count, or run
-result. Provider-only paths remain visible as neutral **not evaluated** rows.
+column aligns normalized provider-history records as advisory observations. A
+filled amber dot means positive provider evidence, while an amber outline means
+that a context-only file-read operation targeted the same path without becoming
+positive evidence. A gray outline means completed collection found no matching
+record, and a dash means collection could not establish one. Provider history
+does not affect the consistency status, issue count, or run result.
+Provider-only positive paths remain visible as neutral **not evaluated** rows.
 
 Passive `SKILL.md` reads that only look like startup skill discovery appear as
 `discovered` rows. They remain visible in run details, but they do not turn the

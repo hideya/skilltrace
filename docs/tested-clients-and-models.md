@@ -39,9 +39,9 @@ as Linux validation rows.
 | Date | Client | Client version | Provider-recorded model | Profile | Level | Representative run | Result and notable coverage |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-07-23 | Codex CLI | `0.143.0` | `gpt-5.6-sol` | `agents` | Provider-history | `type-fix-demo-ks2l3r-2026-07-23-06-00-21` | High-confidence match; seven normalized operations recovered from the newer nested `custom_tool_call: exec` envelope |
-| 2026-07-23 | Codex Desktop | `0.145.0-alpha.18` | `gpt-5.6-sol` | `agents` | Provider-history | `type-fix-demo-U44e2p-2026-07-23-11-36-52` | High-confidence match; provider execution configuration and five normalized operations reached the UI |
+| 2026-07-23 | Codex Desktop | `0.145.0-alpha.18` | `gpt-5.6-sol` | `agents` | Provider-history | `type-fix-demo-U44e2p-2026-07-23-11-36-52` | High-confidence match; five context-only operations reached the UI, including explicit skill/reference file-read targets without correlated successful outcomes |
 | 2026-07-23 | Claude Code | `2.1.218` | `claude-sonnet-5` | `claude_code` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-07-05` | Four evidence streams; two provider skill/reference events, seven operations, stable source, and high-confidence match |
-| 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-47-54` | High-confidence stable match; exposed structured `activate_skill` without a separate `SKILL.md` read |
+| 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-47-54` | High-confidence stable match; the first-pass adapter exposed structured `activate_skill` but did not yet promote it, leaving the skill entrypoint without positive provider evidence |
 | 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-54-17` | Three provider evidence events and ten operations; recorded both activation and a separate direct skill read with no unsupported calls or warnings |
 
 ## Additional Format Observations

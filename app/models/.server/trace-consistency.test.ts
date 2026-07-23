@@ -63,6 +63,36 @@ describe('traceConsistencyMatrix', () => {
     expect(summarizeConsistencyMatrix(rows)).toBe('pass')
   })
 
+  test('annotates matching context-only provider reads without changing verdicts', () => {
+    let rows = traceConsistencyMatrix([
+      passivePath(SKILL, 'skill_file_read'),
+      semanticPath(SKILL, 'skill_use_started'),
+      semanticPath(SKILL, 'skill_use_finished'),
+      reflection({ skills_read: [SKILL] }),
+      providerContextRead([`/repo/${SKILL}`, '/repo/src/profile.ts']),
+    ])
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        provider: false,
+        provider_context: true,
+        issue_count: 0,
+        status: 'pass',
+      }),
+    ])
+    expect(rows.some((row) => row.file.endsWith('src/profile.ts'))).toBe(false)
+    expect(summarizeConsistencyMatrix(rows)).toBe('pass')
+  })
+
+  test('does not create rows from context-only provider reads', () => {
+    let rows = traceConsistencyMatrix([
+      providerContextRead([SKILL, REFERENCE, 'src/profile.ts']),
+    ])
+
+    expect(rows).toEqual([])
+    expect(summarizeConsistencyMatrix(rows)).toBe('unknown')
+  })
+
   test('keeps provider-only observations neutral', () => {
     let rows = traceConsistencyMatrix([
       providerPath(SKILL, 'skill_file_read'),
@@ -265,6 +295,18 @@ function providerPath(skill_path: string, event_type: string) {
     source: 'provider_history',
     event_type,
     skill_path,
+  }
+}
+
+function providerContextRead(artifact_refs: string[]) {
+  return {
+    source: 'provider_history',
+    event_type: 'execution_operation_observed',
+    artifact_refs,
+    payload: {
+      operation_kind: 'file_read',
+      evidence_status: 'context_only',
+    },
   }
 }
 
