@@ -618,16 +618,6 @@ Relevant observed operations included:
 Every passive skill path in the four associated Claude Code runs also appeared
 in a structured `Read` invocation in the provider history.
 
-In the 2026-07-23 validation runs, Claude Code used both forms allowed by the
-adapter: one run read skill files through structured `Read`, while another used
-successful `Bash` content-read commands. The latter also recorded three
-typechecks whose normalized outcomes were failed, failed, then successful.
-
-The demo exposes `.claude/skills` as a symlink to `.agents/skills`. Claude Code
-recorded the resolved `.agents/skills/...` targets, so SkillTrace now supplies
-both the logical and real skill roots to the shared passive probe and compares
-provider paths through the same realpath-aware alias policy.
-
 ### Top-Level Result Metadata
 
 Some records included `toolUseResult` with fields such as stdout, stderr,
@@ -674,8 +664,44 @@ Therefore Claude Code completeness should normally be `stable_at_stop`. Message
 `stop_reason` is a model-message stop condition and must not be promoted to a
 guarantee that the provider session file will never receive another turn.
 
-The implemented 2.1.218 validation retained only provider/session and tool-call
-provenance, normalized paths, operation kinds, outcome, duration, confidence,
+### Implementation Validation
+
+Two native Claude Code `2.1.218` runs on 2026-07-23 exercised the implemented
+adapter against the type-fix demo.
+
+The exploratory run exposed two useful gaps:
+
+- the demo's logical `.claude/skills` root is a symlink to `.agents/skills`,
+  while Claude recorded the resolved `.agents/skills/...` paths
+- unclassified `Bash` records made the provider stream lose the typecheck
+  failure and recovery sequence
+
+SkillTrace now supplies both logical and resolved skill roots to the shared
+passive probe, compares provider paths through the same realpath-aware alias
+policy, and sends Claude `Bash` commands through the shared conservative shell
+reader and verification classifier.
+
+The refined validation run produced 22 events across all four streams:
+
+| Observation | Refined result |
+| --- | --- |
+| Passive evidence | One skill read and one reference read |
+| Provider evidence | The same skill and reference reads |
+| Provider operations | Three typechecks, one ordinary file read, and three file edits |
+| Typecheck outcomes | `failed`, `failed`, `success` |
+| Semantic stream | Run context, skill start, reference read, skill finish, and reflection |
+| Session stream | Start, injection/probe state, collection summary, cleanup, and finish |
+| Provider match | One candidate, `high` confidence, stable source |
+| Provider identity | `claude-sonnet-5`, Claude Code `2.1.218`, `sdk-cli`, `acceptEdits` |
+| Completeness | `stable_at_stop` |
+| Unclassified calls | One `Bash` call counted as unsupported and not retained |
+
+Claude used both evidence forms across the two runs: structured `Read` in one
+and successful `Bash` content-read commands in the other. This supports keeping
+both paths while assigning stronger classification confidence to direct reads.
+
+The retained projection contained only provider/session and tool-call
+provenance, normalized paths, operation kinds, outcomes, durations, confidence,
 client version, model, entrypoint, working directory, and permission mode. It
 did not retain prompts, responses, reasoning, commands, file contents, command
 output, edit strings, patches, snapshots, or generated metadata.
