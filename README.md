@@ -411,7 +411,8 @@ Useful pages:
   note is omitted.
 - `/app/runs/<run-id>`: timeline, run context, execution-log collection
   summary, Git snapshot if available, captured instruction contents,
-  consistency table, and reflection.
+  consistency table, and reflection. The timeline can switch to a compact,
+  single-line view for scanning long runs.
 - `/app/diagnostics`: daemon/server health, active session, passive probe state,
   and MCP registration for supported command-line clients.
 

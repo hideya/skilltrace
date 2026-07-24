@@ -37,6 +37,25 @@ describe('compactPathLabel', () => {
 })
 
 describe('Timeline', () => {
+  test('offers a compact timeline view', () => {
+    let markup = renderToStaticMarkup(
+      createElement(Timeline, {
+        events: [
+          {
+            id: 1,
+            timestamp: '2026-07-23T06:00:48.338Z',
+            source: 'provider_history',
+            event_type: 'provider_collection_completed',
+            payload: {},
+          },
+        ],
+      }),
+    )
+
+    expect(markup).toContain('aria-pressed="false"')
+    expect(markup).toContain('Compact')
+  })
+
   test('shows tool, operation kind, and known outcome above an operation', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {

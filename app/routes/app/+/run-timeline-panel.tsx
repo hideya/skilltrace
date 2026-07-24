@@ -1,27 +1,59 @@
-import { Fragment } from 'react'
+import { ListCollapseIcon } from 'lucide-react'
+import { Fragment, useState } from 'react'
 import { skillPathFromRoot } from '~/lib/skill-path'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
 
 export function Timeline({ events }: TimelineProps) {
+  let [compact, setCompact] = useState(false)
+
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
-      <SectionSummaryHeader
-        className="mb-5"
-        summary={`${events.length} event${events.length === 1 ? '' : 's'}`}
-        title="Timeline"
-      />
+      <div className="mb-5 flex min-w-0 items-start justify-between gap-4">
+        <SectionSummaryHeader
+          summary={`${events.length} event${events.length === 1 ? '' : 's'}`}
+          title="Timeline"
+        />
+        {events.length > 0 ? (
+          <button
+            aria-pressed={compact}
+            className={`btn shrink-0 font-normal btn-xs ${
+              compact
+                ? 'border-indigo-500 bg-indigo-500 text-white'
+                : 'btn-outline'
+            }`}
+            onClick={() => setCompact(!compact)}
+            type="button"
+          >
+            <ListCollapseIcon aria-hidden="true" className="size-3.5" />
+            Compact
+          </button>
+        ) : null}
+      </div>
 
       {events.length > 0 ? (
-        <ol className="relative space-y-4 before:absolute before:top-2 before:bottom-0 before:left-3 before:w-px before:bg-base-300">
+        <ol
+          className={`relative before:absolute before:top-2 before:bottom-0 before:w-px before:bg-base-300 ${
+            compact ? 'space-y-0.5 before:left-2' : 'space-y-4 before:left-3'
+          }`}
+        >
           {events.map((event) => (
-            <li className="relative pl-9" key={event.id}>
+            <li
+              className={`relative ${compact ? 'pl-6' : 'pl-9'}`}
+              key={event.id}
+            >
               <span
-                className={`absolute rounded-full ring-4 ring-base-100 ${eventDotSizeClass(
-                  event,
-                )} ${eventDotClass(event)}`}
+                className={`absolute rounded-full ring-base-100 ${
+                  compact
+                    ? 'top-2.5 left-1 size-2 ring-2'
+                    : `ring-4 ${eventDotSizeClass(event)}`
+                } ${eventDotClass(event)}`}
               />
-              <TimelineItem event={event} />
+              {compact ? (
+                <CompactTimelineItem event={event} />
+              ) : (
+                <TimelineItem event={event} />
+              )}
             </li>
           ))}
         </ol>
@@ -31,6 +63,66 @@ export function Timeline({ events }: TimelineProps) {
         </div>
       )}
     </section>
+  )
+}
+
+function CompactTimelineItem({ event }: TimelineItemProps) {
+  let name = primaryLabelForEvent(event)
+  let operationKind = operationKindForEvent(event)
+  let artifactRefs = artifactRefsForEvent(event)
+  let outcome = outcomeForEvent(event)
+  let process = name ? null : observedProcessForEvent(event)
+  let label = name || event.event_type
+  let fullLabel = [
+    label,
+    operationKind,
+    artifactRefs.join(', '),
+    outcome,
+    process ? `by ${process}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
+      <div
+        className="flex min-w-0 items-baseline gap-2 overflow-hidden whitespace-nowrap"
+        title={fullLabel}
+      >
+        <span
+          className={`min-w-0 truncate text-sm ${
+            name
+              ? `font-mono ${eventFileNameClass(event)}`
+              : eventTitleClass(event)
+          }`}
+        >
+          {label}
+        </span>
+        {operationKind ? (
+          <span className="shrink-0 font-mono text-sm font-semibold text-amber-500">
+            {operationKind}
+          </span>
+        ) : null}
+        {artifactRefs.length > 0 ? (
+          <span className="min-w-0 truncate font-mono text-sm text-amber-500">
+            {artifactRefs.join(', ')}
+          </span>
+        ) : null}
+        {outcome ? (
+          <span className="shrink-0 font-mono text-sm text-amber-500 opacity-70">
+            {outcome}
+          </span>
+        ) : null}
+        {process ? (
+          <span className="min-w-0 truncate font-mono text-sm text-base-content/50">
+            by {process}
+          </span>
+        ) : null}
+      </div>
+      <span className="shrink-0 font-mono text-xs text-base-content/50">
+        {formatTime(event.timestamp)}
+      </span>
+    </div>
   )
 }
 
