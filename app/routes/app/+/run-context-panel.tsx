@@ -1,4 +1,7 @@
-import { withProviderExecutionIdentity } from '~/lib/provider-history'
+import {
+  providerExecutionIdentity,
+  withProviderExecutionIdentity,
+} from '~/lib/provider-history'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import {
   CompactDisclosureHeader,
@@ -12,13 +15,18 @@ export function RunContextPanel({
   providerHistory,
 }: RunContextPanelProps) {
   let displayContext = withProviderExecutionIdentity(context, providerHistory)
+  let recordedIdentity = providerExecutionIdentity(providerHistory)
+  let agentNotes =
+    recordedIdentity.model && recordedIdentity.client
+      ? undefined
+      : displayContext?.notes
   let rows: ContextRow[] = [
     ['Agent', displayContext?.agent],
     ['Model', displayContext?.model],
     ['Client', displayContext?.client],
     ['Working directory', displayContext?.cwd],
     ['Task', displayContext?.task_summary],
-    ['Agent notes', displayContext?.notes],
+    ['Agent notes', agentNotes],
   ].filter((row): row is ContextRow => !!row[1])
   let extra = extraContext(context)
   let environmentRows = executionEnvironmentRows(environment)

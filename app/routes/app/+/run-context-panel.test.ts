@@ -10,6 +10,7 @@ describe('RunContextPanel', () => {
         context: {
           model: 'GPT-5 (uncertain)',
           client: 'Codex (uncertain)',
+          notes: 'Model and client are inferred from the current environment.',
         },
         providerHistory: {
           provider: 'codex',
@@ -25,6 +26,31 @@ describe('RunContextPanel', () => {
     expect(markup).toContain('Client version')
     expect(markup).not.toContain('GPT-5 (uncertain)')
     expect(markup).not.toContain('Codex (uncertain)')
+    expect(markup).not.toContain('Agent notes')
+    expect(markup).not.toContain(
+      'Model and client are inferred from the current environment.',
+    )
+  })
+
+  test('keeps declared identity notes when the agent log identity is partial', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        context: {
+          model: 'Declared model',
+          client: 'Declared client',
+          notes: 'Client identity remains uncertain.',
+        },
+        providerHistory: {
+          provider_session_id: 'session-1',
+          provider_model: 'recorded-model',
+        },
+      }),
+    )
+
+    expect(markup).toContain('recorded-model')
+    expect(markup).toContain('Declared client')
+    expect(markup).toContain('Agent notes')
+    expect(markup).toContain('Client identity remains uncertain.')
   })
 
   test('keeps declared identity when no agent log session was matched', () => {

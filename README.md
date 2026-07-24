@@ -406,7 +406,9 @@ Useful pages:
 
 - `/app/runs`: grouped trace runs, status, mode, result, model/client context,
   and mode comparison. When an agent execution log is matched, its recorded
-  model and client identity take precedence over agent-declared values.
+  model and client identity take precedence over agent-declared values. When
+  both are available from the log, the corresponding agent-declared uncertainty
+  note is omitted.
 - `/app/runs/<run-id>`: timeline, run context, execution-log collection
   summary, Git snapshot if available, captured instruction contents,
   consistency table, and reflection.

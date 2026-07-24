@@ -938,7 +938,10 @@ and provenance fields.
 The runs list and primary Run context rows prefer model and client identity from
 a matched agent log session. Agent-declared identity remains the fallback when
 agent execution logs are unavailable, ambiguous, or lack the corresponding
-value.
+value. When the matched session supplies both model and client identity, the
+primary context also omits the agent-declared identity uncertainty note because
+it no longer describes the displayed values. A partial log identity retains the
+note for the remaining declared fallback.
 
 The current consistency view aligns execution-log paths with passive, semantic,
 and reflection paths while preserving source boundaries. Confidence and
