@@ -241,6 +241,14 @@ SkillTrace cleans up stale shared probe workers for that server before starting
 a new one. A shared worker also exits on its own if it cannot reach the daemon
 for about 10 minutes.
 
+If a stale SkillTrace shared probe remains during local development, stop all
+detected SkillTrace shared-probe workers without affecting unrelated
+`fs_usage` processes or the server listening on port 5777:
+
+```bash
+pnpm skilltrace:kill-probe
+```
+
 The packaged server binds to `127.0.0.1` by default. For Linux containers or
 VMs where you want to open the UI from the host machine, bind to all interfaces:
 
