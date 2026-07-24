@@ -37,7 +37,7 @@ describe('compactPathLabel', () => {
 })
 
 describe('Timeline', () => {
-  test('offers a compact timeline view', () => {
+  test('offers detailed and compact timeline views', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {
         events: [
@@ -53,6 +53,8 @@ describe('Timeline', () => {
     )
 
     expect(markup).toContain('aria-pressed="false"')
+    expect(markup).toContain('aria-pressed="true"')
+    expect(markup).toContain('Detailed')
     expect(markup).toContain('Compact')
   })
 

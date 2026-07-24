@@ -1,11 +1,13 @@
-import { ListCollapseIcon } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { skillPathFromRoot } from '~/lib/skill-path'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
 
+const timelineModes = ['detailed', 'compact'] as const
+
 export function Timeline({ events }: TimelineProps) {
-  let [compact, setCompact] = useState(false)
+  let [mode, setMode] = useState<TimelineMode>('detailed')
+  let compact = mode === 'compact'
 
   return (
     <section className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -15,19 +17,23 @@ export function Timeline({ events }: TimelineProps) {
           title="Timeline"
         />
         {events.length > 0 ? (
-          <button
-            aria-pressed={compact}
-            className={`btn shrink-0 font-normal btn-xs ${
-              compact
-                ? 'border-indigo-500 bg-indigo-500 text-white'
-                : 'btn-outline border-indigo-500 text-indigo-600'
-            }`}
-            onClick={() => setCompact(!compact)}
-            type="button"
-          >
-            <ListCollapseIcon aria-hidden="true" className="size-3.5" />
-            Compact
-          </button>
+          <div className="join shrink-0 gap-2">
+            {timelineModes.map((option) => (
+              <button
+                aria-pressed={mode === option}
+                className={`btn join-item font-normal btn-xs ${
+                  mode === option
+                    ? 'border-indigo-500 bg-indigo-500 text-white'
+                    : 'btn-outline border-indigo-500 text-indigo-600'
+                }`}
+                key={option}
+                onClick={() => setMode(option)}
+                type="button"
+              >
+                {capitalize(option)}
+              </button>
+            ))}
+          </div>
         ) : null}
       </div>
 
@@ -473,9 +479,15 @@ function formatTime(value?: Date | string | null) {
   return new Date(value).toLocaleTimeString()
 }
 
+function capitalize(value: string) {
+  return `${value[0].toUpperCase()}${value.slice(1)}`
+}
+
 type TimelineProps = {
   events: any[]
 }
+
+type TimelineMode = (typeof timelineModes)[number]
 
 type TimelineItemProps = {
   event: any
