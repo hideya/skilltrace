@@ -84,45 +84,53 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
     .join(' ')
 
   return (
-    <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
-      <div
-        className="flex min-w-0 items-baseline gap-2 overflow-hidden whitespace-nowrap"
-        title={fullLabel}
-      >
-        <span
-          className={`min-w-0 truncate text-sm ${
-            name
-              ? `font-mono ${eventFileNameClass(event)}`
-              : eventTitleClass(event)
-          }`}
-        >
-          {label}
-        </span>
-        {operationKind ? (
-          <span className="shrink-0 font-mono text-sm font-semibold text-amber-500">
-            {operationKind}
+    <AnimatedDisclosure
+      childrenClassName="pb-3 pl-1"
+      header={
+        <>
+          <div
+            className="flex min-w-0 items-baseline gap-2 overflow-hidden whitespace-nowrap"
+            title={fullLabel}
+          >
+            <span
+              className={`min-w-0 truncate text-sm ${
+                name
+                  ? `font-mono ${eventFileNameClass(event)}`
+                  : eventTitleClass(event)
+              }`}
+            >
+              {label}
+            </span>
+            {operationKind ? (
+              <span className="shrink-0 font-mono text-sm font-semibold text-amber-500">
+                {operationKind}
+              </span>
+            ) : null}
+            {artifactRefs.length > 0 ? (
+              <span className="min-w-0 truncate font-mono text-sm text-amber-500">
+                {artifactRefs.join(', ')}
+              </span>
+            ) : null}
+            {outcome ? (
+              <span className="shrink-0 font-mono text-sm text-amber-500 opacity-70">
+                {outcome}
+              </span>
+            ) : null}
+            {process ? (
+              <span className="min-w-0 truncate font-mono text-sm text-base-content/50">
+                by {process}
+              </span>
+            ) : null}
+          </div>
+          <span className="shrink-0 font-mono text-xs text-base-content/50">
+            {formatTime(event.timestamp)}
           </span>
-        ) : null}
-        {artifactRefs.length > 0 ? (
-          <span className="min-w-0 truncate font-mono text-sm text-amber-500">
-            {artifactRefs.join(', ')}
-          </span>
-        ) : null}
-        {outcome ? (
-          <span className="shrink-0 font-mono text-sm text-amber-500 opacity-70">
-            {outcome}
-          </span>
-        ) : null}
-        {process ? (
-          <span className="min-w-0 truncate font-mono text-sm text-base-content/50">
-            by {process}
-          </span>
-        ) : null}
-      </div>
-      <span className="shrink-0 font-mono text-xs text-base-content/50">
-        {formatTime(event.timestamp)}
-      </span>
-    </div>
+        </>
+      }
+      headerClassName="grid min-h-7 w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1 text-left"
+    >
+      <EventCard event={event} />
+    </AnimatedDisclosure>
   )
 }
 
