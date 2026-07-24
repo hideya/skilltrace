@@ -767,3 +767,11 @@ decisions, see:
 - [docs/provider-history-formats.md](https://github.com/hideya/skilltrace/blob/main/docs/provider-history-formats.md) (observed agent execution-log format field guide)
 - [docs/tested-clients-and-models.md](https://github.com/hideya/skilltrace/blob/main/docs/tested-clients-and-models.md) (dated client, model, and workflow validation ledger)
 - [docs/type-fix-demo-mcp-test.md](https://github.com/hideya/skilltrace/blob/main/docs/type-fix-demo-mcp-test.md)
+
+## Changelog
+
+Can be found [here](https://raw.githubusercontent.com/hideya/skilltrace/refs/heads/main/CHANGELOG.md)
+
+## License
+
+MIT License - see [Notices](https://raw.githubusercontent.com/hideya/skilltrace/refs/heads/main/NOTICE.md) and [LICENSE](https://raw.githubusercontent.com/hideya/skilltrace/refs/heads/main/LICENSE) file for details.
