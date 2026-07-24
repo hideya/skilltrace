@@ -22,7 +22,7 @@ export function RunReflectionPanel({ reflection }: RunReflectionPanelProps) {
                   className={`btn join-item font-normal btn-xs ${
                     mode === option
                       ? 'border-indigo-500 bg-indigo-500 text-white'
-                      : 'btn-outline'
+                      : 'btn-outline border-indigo-500 text-indigo-600'
                   }`}
                   key={option}
                   onClick={() => setMode(option)}
