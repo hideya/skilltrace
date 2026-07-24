@@ -20,7 +20,7 @@ export function Timeline({ events }: TimelineProps) {
             className={`btn shrink-0 font-normal btn-xs ${
               compact
                 ? 'border-indigo-500 bg-indigo-500 text-white'
-                : 'btn-outline'
+                : 'btn-outline border-indigo-500 text-indigo-600'
             }`}
             onClick={() => setCompact(!compact)}
             type="button"
