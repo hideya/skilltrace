@@ -70,12 +70,12 @@ containers, operating systems, and SkillTrace versions.
 <table>
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-1.webp" height="250px"><br>
-      <sub>SkillTrace Run Details Page</sub>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
+      <sub>SkillTrace Consistency Check</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-2.webp" height="250px"><br>
-      <sub>Consistency Check</sub>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
+      <sub>Run Timeline</sub>
     </td>
   </tr>
 </table>
