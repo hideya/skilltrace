@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   agent traces
 - Optional `skilltrace run --keep-on-error` preservation for failed child
   commands, which are discarded by default
+- "OKF and SkillTrace" document
 
 ## [0.2.1] - 2026-07-24
 
