@@ -238,8 +238,9 @@ From the target repo you want to trace:
 SkillTrace expects the repo to have an agent instruction surface, such as
 `AGENTS.md` with `.agents/skills/`, or `CLAUDE.md` with `.claude/skills/`.
 
-The recommended foreground workflow starts the trace, runs the agent with the
-terminal attached, and stops the trace automatically when the agent exits:
+The normal SkillTrace workflow is one command. It starts the trace, runs the
+agent with the terminal attached, and stops the trace automatically when the
+agent exits:
 
 ```bash
 cd <repo>
@@ -261,69 +262,38 @@ skilltrace run --mode passive_only -- codex --model gpt-5.6 "fix the errors"
 
 `run` inherits the terminal and environment and launches the child from the
 trace target root. It forwards interrupt and termination signals to the child,
-collects agent execution logs after the child exits, performs the normal
-instruction cleanup, and returns the child's exit code.
+performs the normal instruction cleanup after the child exits, and returns the
+child's exit code. When the trace is retained, SkillTrace also collects matching
+agent execution-log evidence after the child exits.
 
 By default, a nonzero exit, handled signal termination, or post-preflight
 startup failure discards the trace after showing the child's complete native
-output and a concise SkillTrace outcome. Preserve failed runs explicitly when
-their startup, authentication, configuration, or task evidence is useful:
+output and a concise SkillTrace outcome. Use `--keep-on-error` when diagnosing
+a failure and you want to preserve what happened before the agent exited:
 
 ```bash
-skilltrace run --keep-on-error -- codex --no-such-option
-```
-
-Use the manual lifecycle when the agent is launched elsewhere, the trace spans
-multiple foreground processes, or the agent intentionally detaches:
-
-```bash
-cd <repo>
-skilltrace start
+skilltrace run --keep-on-error -- codex "reproduce the unexpected crash"
 ```
 
 Add a short note when you want the run list to show what you were trying:
 
 ```bash
-skilltrace start --note "trying to simplify AGENTS.md"
+skilltrace run --note "trying to simplify AGENTS.md" -- codex
 ```
 
 `-n` is accepted as a short alias.
 
-Then run your agent task as normal using the `codex`, `claude`, or `gemini`
-command.
-
-Be sure to allow skilltrace MCP server tool invocations.
-
-A smaller LLM sometimes skips the instructions for invoking the MCP tools.
-Try a larger model if you encounter this issue.
-
-When the task is finished:
-
-```bash
-skilltrace stop
-```
-
-If the child is forcibly killed while the SkillTrace wrapper remains alive,
-the wrapper observes the signal and discards the failed run by default.
-Background agent modes, GUI launches, and machine crashes cannot guarantee
-automatic cleanup. Use `skilltrace status` and `skilltrace stop` if a wrapped
-run is interrupted outside the normal signal path.
+Be sure to allow SkillTrace MCP server tool invocations. A smaller LLM
+sometimes skips the instructions for invoking the MCP tools. Try a larger model
+if you encounter this issue.
 
 SkillTrace rejects a missing or non-executable child command before starting a
 trace, so a typo such as `codexx` creates no DB record or temporary injection.
 Once the executable passes preflight and the trace starts, failed children are
-discarded by default. `--keep-on-error` preserves a finished run for diagnosis.
-For a manual session, only explicit `skilltrace stop --discard` removes the
-active run.
+discarded by default unless `--keep-on-error` is present.
 
-If you realize immediately that the active run was a mistake, discard it:
-
-```bash
-skilltrace stop --discard
-```
-
-This cleans up temporary instruction injection and deletes the active run
-record after confirmation. Use `--yes` to skip the prompt.
+For cases that need separate control over the trace and agent lifecycles, see
+[Manual Start And Stop](#manual-start-and-stop).
 
 Before tracing sensitive repositories, read
 [Privacy And Data](#privacy-and-data).
@@ -361,10 +331,10 @@ cd tmp/type-fix-demo
 npm install
 ```
 
-### Target Repo Requirements
+## Target Repo Requirements
 
-By default, `skilltrace start` auto-detects one of these supported instruction
-profiles (skill file directory formats):
+By default, SkillTrace auto-detects one of these supported instruction profiles
+(skill file directory formats) when a trace begins:
 
 - `agents`: `AGENTS.md` and `.agents/skills/`
 - `claude_code`: `CLAUDE.md` or `.claude/CLAUDE.md`, plus `.claude/skills/`
@@ -392,18 +362,19 @@ surface or when you want to be explicit.
 
 SkillTrace injects a temporary tracing-policy instruction into the selected
 instruction file, writes `.skilltrace/instrumentation.md`, and creates
-`.skilltrace.json` when needed. `skilltrace stop` removes the temporary
-instruction and generated files when they are unchanged.
+`.skilltrace.json` when needed. `skilltrace run` removes the temporary
+instruction and generated files when the child exits and they are unchanged.
+A manual `skilltrace stop` performs the same cleanup.
 
-Only one trace session can be active at a time. If a session is active,
-`skilltrace start` refuses until you run `skilltrace stop`.
+Only one trace session can be active at a time. `skilltrace run` and
+`skilltrace start` both refuse to begin while another session is active.
 
 ## Trace Modes
 
 For your first run, just type:
 
 ```bash
-skilltrace start
+skilltrace run -- codex
 ```
 
 This enables all available probing methods.
@@ -416,14 +387,6 @@ If you want to reduce instrumentation effects, you can try less interfering
 modes to see whether the agent keeps working as expected.
 
 SkillTrace supports three modes:
-
-```bash
-skilltrace start --mode full
-skilltrace start --mode passive_reflection
-skilltrace start --mode passive_only
-```
-
-The same options work with the automatic lifecycle:
 
 ```bash
 skilltrace run --mode full -- codex
@@ -455,6 +418,50 @@ available skills. SkillTrace keeps those reads in the timeline, but classifies
 entrypoint-only scans as neutral `discovered` evidence unless later semantic,
 reflection, or reference-file evidence shows material use. See
 [`docs/passive-skill-discovery.md`](./docs/passive-skill-discovery.md).
+
+## Manual Start And Stop
+
+For most foreground agent tasks, use `skilltrace run`. The separate
+`skilltrace start` and `skilltrace stop` lifecycle is useful when:
+
+- you are investigating recurring unexpected agent termination and want the
+  trace to remain active until you explicitly stop it
+- the agent is launched by another process or terminal
+- the trace needs to span multiple commands or foreground processes
+- the agent intentionally detaches from its launcher
+
+For a single foreground child whose failed run should be retained,
+`skilltrace run --keep-on-error -- ...` is usually simpler. The manual
+lifecycle gives you control when the agent and trace cannot share one process
+lifecycle:
+
+```bash
+cd <repo>
+skilltrace start --note "investigating an unexpected agent crash"
+codex "reproduce the crash"
+skilltrace stop
+```
+
+The start command accepts the same trace options, such as
+`--mode passive_only` and `--instruction-profile claude-code`.
+
+If the agent terminates unexpectedly, use `skilltrace status` to confirm the
+session is still active, then run `skilltrace stop`. SkillTrace finishes and
+preserves the run, including events captured before termination and any
+matching agent execution-log evidence available at stop time.
+
+Only an explicit discard deletes a manual run:
+
+```bash
+skilltrace stop --discard
+```
+
+This cleans up temporary instruction injection and deletes the active run
+record after confirmation. Use `--yes` to skip the prompt.
+
+Background or detached agent modes and machine crashes cannot guarantee
+automatic cleanup. After an interrupted session, use `skilltrace status` and
+`skilltrace stop` to recover the active trace when possible.
 
 ## UI
 
@@ -581,8 +588,8 @@ marker does not make a missing file present and does not affect
 
 When repeatedly modifying Skill files and verifying their behavior, you may want to know the state of the Skill files actually used during a run.
 
-To facilitate this, when the target repo is inside a Git worktree, `skilltrace start` records a
-lightweight run snapshot:
+To facilitate this, when a trace begins inside a Git worktree, SkillTrace
+records a lightweight run snapshot:
 
 - HEAD commit and branch
 - broad changed-file status
@@ -624,7 +631,7 @@ It reports daemon/server state, active session, shared probe status when
 applicable, and MCP registration for Codex CLI, Claude Code, and Gemini CLI
 separately.
 
-If `skilltrace start` cannot connect to the server, start the daemon first:
+If `skilltrace run` cannot connect to the server, start the daemon first:
 
 ```bash
 skilltrace daemon start
@@ -636,7 +643,9 @@ state before launching the agent.
 
 If no passive events appear:
 
-- Make sure `skilltrace start` was run before launching the agent.
+- Prefer `skilltrace run -- <agent> ...`, which begins tracing before it
+  launches the child. With the manual lifecycle, make sure `skilltrace start`
+  completed before launching the agent.
 - On macOS, check `/app/diagnostics` or `skilltrace daemon status` and confirm
   the shared probe is running. Starting the daemon may ask for your admin
   password once because the macOS passive probe uses `fs_usage`.
@@ -762,15 +771,15 @@ Depending on the trace mode and repository state, captured data may include:
 - for `skilltrace run`, the launched executable, process ID, exit code, and
   terminating signal when applicable
 
-During a normal `skilltrace stop`, SkillTrace transiently inspects the matching
-local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
-session.
+When a trace finishes normally through `skilltrace run` or a manual
+`skilltrace stop`, SkillTrace transiently inspects the matching local Codex CLI
+rollout, Claude Code project session, or Gemini CLI chat session.
 SkillTrace checks all three supported local stores and imports only one
 uniquely matched session. Multiple plausible execution-log matches are reported
 as ambiguous and import no events. SkillTrace does not store or send
 prompts, responses, reasoning, raw tool output, full shell commands, file
-contents, or patch bodies. `skilltrace stop --discard` skips execution-log
-collection.
+contents, or patch bodies. Discarding a failed `skilltrace run` or using
+`skilltrace stop --discard` skips execution-log collection.
 
 `skilltrace run` does not retain the child arguments or prompt. It records only
 the executable passed after `--` and bounded process-lifecycle metadata.
