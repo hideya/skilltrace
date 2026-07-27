@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  commandExists,
   parseProcessLine,
   processAlive,
   processOwnsServer,
@@ -27,6 +28,11 @@ describe('skilltrace process helpers', () => {
   test('checks basic process liveness', () => {
     expect(processAlive(process.pid)).toBe(true)
     expect(processAlive()).toBe(false)
+  })
+
+  test('checks whether a command is executable', () => {
+    expect(commandExists('node')).toBe(true)
+    expect(commandExists('skilltrace-command-that-does-not-exist')).toBe(false)
   })
 
   test('treats matching server pid as owned by parent process', () => {

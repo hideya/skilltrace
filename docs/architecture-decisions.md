@@ -247,6 +247,45 @@ provides the same cleanup path as normal stop, then deletes that active run's
 record and events after CLI confirmation. Discard is intentionally scoped to the
 current active session; deleting older finished runs remains a UI operation.
 
+## Foreground Agent Runs Should Own Their Trace Lifetime
+
+The preferred single-agent CLI workflow is:
+
+```bash
+skilltrace run [start options] -- <command> [args...]
+```
+
+SkillTrace starts the session through the same path as `skilltrace start`,
+launches the command directly without a shell, inherits the terminal, and
+stops through the same path as `skilltrace stop` after the child exits. This
+removes the common forgotten-stop failure while keeping lifecycle ownership
+explicit.
+
+The child receives the active run ID, server URL, and target root through the
+environment. SkillTrace forwards `SIGHUP`, `SIGINT`, `SIGQUIT`, and `SIGTERM`,
+preserves conventional signal exit codes, and still attempts trace cleanup
+after child startup or execution failures. Agent execution-log collection
+therefore occurs after the foreground client exits and has its best opportunity
+to flush local history.
+
+SkillTrace records the launched executable, PID, exit code, and terminating
+signal, but not child arguments or prompt text. Manual start and stop remain
+necessary for external, multi-process, detached, GUI, or crash-interrupted
+workflows. A forcibly killed child is observable and follows the selected error
+policy.
+
+Command availability is checked before starting the trace, so an obvious typo
+or non-executable command creates no run or injection. After successful
+preflight, nonzero, signaled, and race-condition spawn failures use the normal
+discard path by default. `--keep-on-error` preserves those runs for diagnosis.
+
+SkillTrace does not infer usage errors from exit codes or parse client stderr:
+supported clients use different codes, their option surfaces evolve, and
+capturing output would weaken terminal fidelity and the content-retention
+boundary. Child stdout and stderr remain inherited in full.
+SkillTrace follows the native output with its own bounded exit/signal and
+disposition message.
+
 The runs page should not show a final consistency diagnosis for an active run.
 While a run is active, the Result column shows `Running`. After
 `trace_session_finished`, the Result column shows the final consistency

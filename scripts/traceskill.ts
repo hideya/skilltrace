@@ -28,6 +28,7 @@ import {
   parseDaemonStartArgs,
   parseDiagnosticsArgs,
   parseMcpArgs,
+  parseRunArgs,
   parseStartArgs,
   parseStatusArgs,
   parseStopArgs,
@@ -48,6 +49,7 @@ import {
 } from './lib/skilltrace-daemon-state'
 import {
   cleanupSharedProbeWorkers,
+  commandExists,
   killProcessGroup,
   killProcessTree,
   processAlive,
@@ -63,6 +65,13 @@ import {
   printMcpStatus,
 } from './lib/skilltrace-mcp-management'
 import { skilltraceVersion } from './lib/skilltrace-package'
+import {
+  childFailureMessage,
+  childStartFailureMessage,
+  runTraceLifecycle,
+  shouldDiscardChild,
+  spawnForegroundCommand,
+} from './lib/skilltrace-run'
 
 const DEFAULT_SERVER = 'http://localhost:7555'
 const PROJECT_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -88,7 +97,10 @@ async function main() {
   if (!(command === 'mcp' && args[0] === 'serve')) warnIfDevWrapperStale()
 
   if (command === 'start') {
-    await start(args)
+    let session = await start(args)
+    if (!session) process.exitCode = 1
+  } else if (command === 'run') {
+    process.exitCode = await runCommand(args)
   } else if (command === 'end' || command === 'stop') {
     await end(args)
   } else if (command === 'status') {
@@ -147,7 +159,7 @@ function isCurrentDevWrapper(content: string) {
   )
 }
 
-async function start(args: string[]) {
+async function start(args: string[], context: StartContext = {}) {
   let options = parseStartArgs(args, usage)
   let targetRoot = path.resolve(options.target || defaultTargetRoot())
   let server = options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
@@ -172,14 +184,18 @@ async function start(args: string[]) {
   let active = await getJson(server, '/api/sessions/status')
   if (active.session) {
     printActiveSessionRefusal(server, active.session)
-    process.exit(1)
+    return null
   }
 
   let useSharedProbe = sharedProbe.available
   if (probe.supported && probe.platform === 'darwin' && !useSharedProbe) primeSudo()
   cleanupTargetInjection(targetRoot)
   let gitSnapshot = captureGitSnapshot(targetRoot)
-  let executionEnvironment = runExecutionEnvironment(probe, sharedProbe)
+  let executionEnvironment = runExecutionEnvironment(
+    probe,
+    sharedProbe,
+    context,
+  )
 
   let result = await postJson(server, '/api/sessions/start', {
     target_root: targetRoot,
@@ -268,6 +284,84 @@ async function start(args: string[]) {
       : worker?.logPath,
     probe_kind: sharedProbe.available ? 'shared' : worker ? 'run' : undefined,
   })
+
+  return result.session
+}
+
+async function runCommand(args: string[]) {
+  let input = parseRunArgs(args, usage)
+  if (!commandExists(input.command)) {
+    throw new Error(
+      `Cannot run \`${input.command}\`: command was not found or is not executable.`,
+    )
+  }
+
+  let server = serverFromStartArgs(input.traceArgs)
+  let session = await start(input.traceArgs, {
+    launched_command: input.command,
+  })
+  if (!session) return 1
+
+  let childPid: number | undefined
+  let discard = false
+
+  console.log(`Launching ${input.command} under SkillTrace.`)
+  return await runTraceLifecycle({
+    run: async () => {
+      try {
+        let child = spawnForegroundCommand({
+          command: input.command,
+          args: input.commandArgs,
+          cwd: session.target_root,
+          env: {
+            ...process.env,
+            SKILLTRACE_RUN_ID: session.run_id,
+            SKILLTRACE_SERVER: server,
+            SKILLTRACE_TARGET_ROOT: session.target_root,
+          },
+        })
+        childPid = child.pid
+        if (childPid) {
+          await postSessionEvent(server, session.run_id, 'agent_process_started', {
+            command: input.command,
+            pid: childPid,
+          })
+        }
+
+        let result = await child.result
+        let failureMessage = childFailureMessage(
+          input.command,
+          result,
+          input.keepOnError,
+        )
+        if (failureMessage) console.error(failureMessage)
+        await postSessionEvent(server, session.run_id, 'agent_process_finished', {
+          command: input.command,
+          pid: childPid,
+          exit_code: result.exitCode,
+          signal: result.signal,
+        })
+        discard = shouldDiscardChild(result, input.keepOnError)
+        return result.exitCode
+      } catch (error) {
+        discard = !input.keepOnError
+        console.error(
+          childStartFailureMessage(input.command, input.keepOnError),
+        )
+        await postSessionEvent(server, session.run_id, 'agent_process_failed', {
+          command: input.command,
+          error_code: processErrorCode(error),
+        })
+        throw error
+      }
+    },
+    stop: async () => {
+      let stopArgs = ['--server', server]
+      if (discard) stopArgs.push('--discard', '--yes')
+      await end(stopArgs)
+    },
+    onCleanupError: printRunCleanupWarning,
+  })
 }
 
 async function end(args: string[]) {
@@ -308,6 +402,24 @@ async function end(args: string[]) {
       ? 'No active SkillTrace session to discard.'
       : 'No active SkillTrace session.')
   }
+}
+
+function serverFromStartArgs(args: string[]) {
+  let options = parseStartArgs(args, usage)
+  return options.server || process.env.SKILLTRACE_SERVER || DEFAULT_SERVER
+}
+
+function printRunCleanupWarning(error: unknown) {
+  let message = error instanceof Error ? error.message : String(error)
+  console.warn(`Warning: failed to stop the SkillTrace session: ${message}`)
+}
+
+function processErrorCode(error: unknown) {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return 'unknown'
+  }
+
+  return typeof error.code === 'string' ? error.code : 'unknown'
 }
 
 async function status(args: string[]) {
@@ -1272,6 +1384,7 @@ function passiveProbeSupport() {
 function runExecutionEnvironment(
   probe: PassiveProbeSupport,
   sharedProbe: SharedProbeStatus,
+  context: StartContext = {},
 ) {
   return {
     skilltrace_version: skilltraceVersion(),
@@ -1287,6 +1400,7 @@ function runExecutionEnvironment(
       : probe.supported
         ? 'run'
         : 'unavailable',
+    ...context,
   }
 }
 
@@ -1435,10 +1549,6 @@ function traceModeForStart(options: CliOptions): TraceMode {
   return 'full'
 }
 
-function commandExists(command: string) {
-  return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
-}
-
 function primeSudo() {
   let sudo = spawnSync('sudo', ['-v'], { stdio: 'inherit' })
   if (sudo.status !== 0) {
@@ -1481,8 +1591,9 @@ function usage(message: string): never {
 }
 
 function printUsage(write = console.log) {
-  write('Usage: skilltrace [--help] [--version] <serve|start|status|diagnostics|end|stop|mcp|daemon>')
+  write('Usage: skilltrace [--help] [--version] <serve|start|run|status|diagnostics|end|stop|mcp|daemon>')
   write('       skilltrace start [--target <repo>] [--server <url>] [--mode full|passive_reflection|passive_only] [--instruction-profile auto|agents|claude-code] [--note <text>]')
+  write('       skilltrace run [start options] [--keep-on-error] -- <command> [args...]')
   write('       skilltrace stop [--discard] [--yes]')
   write('       skilltrace diagnostics [--verbose]')
   write('       skilltrace mcp <serve|install|status|uninstall> [--agent codex|claude|gemini] [--verbose]')
@@ -1509,6 +1620,10 @@ type ProbeWorkerOptions = {
   targetRoot: string
   server: string
   debug?: boolean
+}
+
+type StartContext = {
+  launched_command?: string
 }
 
 type ProbeWorker = {

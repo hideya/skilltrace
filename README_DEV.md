@@ -107,10 +107,33 @@ pnpm pack
 npm install -g "./skilltrace-$version.tgz"
 skilltrace daemon start
 cd <repo>
-skilltrace start
-codex
-skilltrace stop
+skilltrace run -- codex
 ```
+
+`skilltrace run [start options] -- <command> [args...]` is the preferred
+foreground workflow. It reuses the normal start and stop paths, launches the
+child without a shell using inherited stdio, forwards `SIGHUP`, `SIGINT`,
+`SIGQUIT`, and `SIGTERM`, and returns the child's exit code after trace cleanup.
+The child receives `SKILLTRACE_RUN_ID`, `SKILLTRACE_SERVER`, and
+`SKILLTRACE_TARGET_ROOT`.
+
+The wrapper records the executable and bounded process-lifecycle metadata, but
+does not persist child arguments or prompt text. Manual `skilltrace start` and
+`skilltrace stop` remain available for multi-process traces, detached agents,
+and agents launched outside SkillTrace.
+
+Command availability is checked before session creation. A missing or
+non-executable command fails without creating a run or applying instruction
+injection.
+
+Child stdio remains inherited, including complete native usage and startup
+errors. Failed wrapped runs are discarded by default through the normal
+confirmed-bypass discard cleanup. `--keep-on-error` preserves the finished run
+instead. SkillTrace prints its own exit/signal and disposition message after
+the child's native output.
+
+A child-side `SIGKILL` is still observable through the child close event and
+therefore follows the default discard policy.
 
 For local package trials before publishing to npm, build a tarball from this
 checkout:
@@ -199,6 +222,7 @@ remains available as an alias for passive-only troubleshooting.
 
 Only one trace session can be active at a time. If a session is already active,
 `skilltrace start` refuses and asks you to run `skilltrace stop` first.
+`skilltrace run` follows the same rule.
 
 `skilltrace serve` runs the local server in the foreground. The usual local
 workflow uses daemon mode:

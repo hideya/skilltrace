@@ -292,7 +292,19 @@ in `/app/diagnostics` when the `gemini` CLI is available to the server process.
 
 ## Run The Experiment
 
-Start the trace session from the demo working copy:
+The preferred foreground workflow starts the trace, launches the agent, and
+stops the trace automatically:
+
+```bash
+cd tmp/type-fix-demo
+skilltrace-dev run -- codex "Fix the TypeScript error using the available skill"
+```
+
+Use `claude` or `gemini` after `--` for their corresponding trials. For
+package-style trials, use `skilltrace run`.
+
+For step-by-step experiments where the agent is launched separately, start the
+trace session manually from the demo working copy:
 
 ```bash
 cd tmp/type-fix-demo
@@ -487,10 +499,12 @@ The timeline should show the semantic started, reference-read, and finished
 events. It should also show passive file access for `.agents/skills/type-fix/SKILL.md`
 and `.agents/skills/type-fix/references/checklist.md`.
 
-After `skilltrace-dev stop` or `skilltrace stop`, a uniquely matching Codex,
-Claude Code, or Gemini CLI session should add `provider_history` events and a
-`provider_history_collection_finished` summary. Execution-log operations appear in
-the timeline in this order when values are available:
+After a wrapped `skilltrace-dev run` or `skilltrace run` returns successfully,
+or after a manual `skilltrace-dev stop` or `skilltrace stop`, a uniquely
+matching Codex, Claude Code, or Gemini CLI session should add
+`provider_history` events and a `provider_history_collection_finished` summary.
+Execution-log operations appear in the timeline in this order when values are
+available:
 
 ```text
 tool name  operation kind  target paths  outcome

@@ -121,4 +121,19 @@ describe('RunContextPanel', () => {
     expect(markup).toContain('Permission mode')
     expect(markup).toContain('acceptEdits')
   })
+
+  test('shows the launched command in the SkillTrace environment', () => {
+    let markup = renderToStaticMarkup(
+      createElement(RunContextPanel, {
+        environment: {
+          skilltrace_version: '0.2.1',
+          skilltrace_mode: 'dev',
+          launched_command: 'codex',
+        },
+      }),
+    )
+
+    expect(markup).toContain('Launched command')
+    expect(markup).toContain('codex')
+  })
 })

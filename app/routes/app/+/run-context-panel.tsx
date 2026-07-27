@@ -124,6 +124,7 @@ function executionEnvironmentRows(
     ['SkillTrace', environment.skilltrace_version],
     ['Mode', environment.skilltrace_mode],
     ['Command', environment.skilltrace_command],
+    ['Launched command', environment.launched_command],
     ['Platform', environment.platform],
     ['Architecture', environment.arch],
     ['OS release', environment.os_release],

@@ -37,8 +37,12 @@ For the normal local workflow, prefer the local server flow:
 pnpm skilltrace:install
 skilltrace-dev daemon start
 cd <repo>
-skilltrace-dev start
+skilltrace-dev run -- codex
 ```
+
+The foreground wrapper stops the trace automatically when the agent exits.
+Use separate `skilltrace-dev start` and `skilltrace-dev stop` commands when the
+agent is launched elsewhere or the trace must span multiple processes.
 
 For package-style trials, create and install a local tarball instead:
 

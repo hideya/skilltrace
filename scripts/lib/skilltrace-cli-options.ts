@@ -21,6 +21,30 @@ export function parseStopArgs(args: string[], fail: Fail) {
   return parseArgs(args, ['server', 'discard', 'yes'], fail)
 }
 
+export function parseRunArgs(args: string[], fail: Fail): RunArgs {
+  let separator = args.indexOf('--')
+  if (separator === -1) {
+    fail('Missing -- before the command to run')
+  }
+
+  let runArgs = args.slice(0, separator)
+  let keepOnError = runArgs.includes('--keep-on-error')
+  let traceArgs = runArgs.filter((arg) => arg !== '--keep-on-error')
+  parseStartArgs(traceArgs, fail)
+
+  let [command, ...commandArgs] = args.slice(separator + 1)
+  if (!command) {
+    fail('Missing command after --')
+  }
+
+  return {
+    traceArgs,
+    command,
+    commandArgs,
+    keepOnError,
+  }
+}
+
 export function parseStatusArgs(args: string[], fail: Fail) {
   return parseArgs(args, ['server'], fail)
 }
@@ -159,6 +183,13 @@ export type CliOptions = {
   lines?: number
   verbose?: boolean
   agent?: string
+}
+
+type RunArgs = {
+  traceArgs: string[]
+  command: string
+  commandArgs: string[]
+  keepOnError: boolean
 }
 
 type OptionKey = keyof CliOptions

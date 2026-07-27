@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - CHANGELOG.md
+- `skilltrace run -- <command> [args...]` for automatically scoped foreground
+  agent traces
+- Optional `skilltrace run --keep-on-error` preservation for failed child
+  commands, which are discarded by default
 
 ## [0.2.1] - 2026-07-24
 

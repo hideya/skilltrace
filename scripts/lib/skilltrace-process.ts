@@ -14,6 +14,10 @@ export function processAlive(pid?: number) {
   }
 }
 
+export function commandExists(command: string) {
+  return spawnSync('which', [command], { stdio: 'pipe' }).status === 0
+}
+
 export function processOwnsServer(parentPid: number, serverPid?: number) {
   if (!serverPid) return false
   if (serverPid === parentPid) return true

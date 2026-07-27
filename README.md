@@ -238,6 +238,44 @@ From the target repo you want to trace:
 SkillTrace expects the repo to have an agent instruction surface, such as
 `AGENTS.md` with `.agents/skills/`, or `CLAUDE.md` with `.claude/skills/`.
 
+The recommended foreground workflow starts the trace, runs the agent with the
+terminal attached, and stops the trace automatically when the agent exits:
+
+```bash
+cd <repo>
+skilltrace run -- codex "fix the TypeScript errors in this repo"
+```
+
+The same wrapper works with the other supported command-line agents:
+
+```bash
+skilltrace run -- claude "review this change"
+skilltrace run -- gemini "update the tests"
+```
+
+Put SkillTrace options before `--` and agent options after it:
+
+```bash
+skilltrace run --mode passive_only -- codex --model gpt-5.6 "fix the errors"
+```
+
+`run` inherits the terminal and environment and launches the child from the
+trace target root. It forwards interrupt and termination signals to the child,
+collects agent execution logs after the child exits, performs the normal
+instruction cleanup, and returns the child's exit code.
+
+By default, a nonzero exit, handled signal termination, or post-preflight
+startup failure discards the trace after showing the child's complete native
+output and a concise SkillTrace outcome. Preserve failed runs explicitly when
+their startup, authentication, configuration, or task evidence is useful:
+
+```bash
+skilltrace run --keep-on-error -- codex --no-such-option
+```
+
+Use the manual lifecycle when the agent is launched elsewhere, the trace spans
+multiple foreground processes, or the agent intentionally detaches:
+
 ```bash
 cd <repo>
 skilltrace start
@@ -264,6 +302,19 @@ When the task is finished:
 ```bash
 skilltrace stop
 ```
+
+If the child is forcibly killed while the SkillTrace wrapper remains alive,
+the wrapper observes the signal and discards the failed run by default.
+Background agent modes, GUI launches, and machine crashes cannot guarantee
+automatic cleanup. Use `skilltrace status` and `skilltrace stop` if a wrapped
+run is interrupted outside the normal signal path.
+
+SkillTrace rejects a missing or non-executable child command before starting a
+trace, so a typo such as `codexx` creates no DB record or temporary injection.
+Once the executable passes preflight and the trace starts, failed children are
+discarded by default. `--keep-on-error` preserves a finished run for diagnosis.
+For a manual session, only explicit `skilltrace stop --discard` removes the
+active run.
 
 If you realize immediately that the active run was a mistake, discard it:
 
@@ -292,13 +343,10 @@ skilltrace daemon start
 skilltrace mcp install
 skilltrace diagnostics
 
-skilltrace start --note "demo type-fix run"
-
-codex "Fix the TypeScript error using the available skill"
-# claude "Fix the TypeScript error using the available skill"
-# gemini "Fix the TypeScript error using the available skill"
-
-skilltrace stop
+skilltrace run --note "demo type-fix run" -- \
+  codex "Fix the TypeScript error using the available skill"
+# skilltrace run -- claude "Fix the TypeScript error using the available skill"
+# skilltrace run -- gemini "Fix the TypeScript error using the available skill"
 ```
 
 Open `http://localhost:7555` in your browser after `skilltrace daemon start`.
@@ -373,6 +421,14 @@ SkillTrace supports three modes:
 skilltrace start --mode full
 skilltrace start --mode passive_reflection
 skilltrace start --mode passive_only
+```
+
+The same options work with the automatic lifecycle:
+
+```bash
+skilltrace run --mode full -- codex
+skilltrace run --mode passive_reflection -- codex
+skilltrace run --mode passive_only -- codex
 ```
 
 - `full`: passive file access, live semantic MCP declarations, and final
@@ -703,6 +759,8 @@ Depending on the trace mode and repository state, captured data may include:
   and collection status
 - SkillTrace version and local runtime metadata such as OS platform, CPU
   architecture, Node.js version, and probe backend
+- for `skilltrace run`, the launched executable, process ID, exit code, and
+  terminating signal when applicable
 
 During a normal `skilltrace stop`, SkillTrace transiently inspects the matching
 local Codex CLI rollout, Claude Code project session, or Gemini CLI chat
@@ -713,6 +771,9 @@ as ambiguous and import no events. SkillTrace does not store or send
 prompts, responses, reasoning, raw tool output, full shell commands, file
 contents, or patch bodies. `skilltrace stop --discard` skips execution-log
 collection.
+
+`skilltrace run` does not retain the child arguments or prompt. It records only
+the executable passed after `--` and bounded process-lifecycle metadata.
 
 Raw reasoning can contain useful planning or uncertainty clues, but normal
 SkillTrace collection deliberately excludes it because it is sensitive,
