@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-27
+
+### Fixed
+
+- Video clip URL on README.md
+- Minor improvements in README.md
+
 ## [0.3.0] - 2026-07-27
 
 ### Added

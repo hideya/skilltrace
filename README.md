@@ -239,8 +239,8 @@ SkillTrace expects the repo to have an agent instruction surface, such as
 `AGENTS.md` with `.agents/skills/`, or `CLAUDE.md` with `.claude/skills/`.
 
 The normal SkillTrace workflow is one command. It starts the trace, runs the
-agent with the terminal attached, and stops the trace automatically when the
-agent exits:
+agent specified via the command line with the terminal attached, and stops the
+trace automatically when the agent exits:
 
 ```bash
 cd <repo>
