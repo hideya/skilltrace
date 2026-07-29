@@ -14,7 +14,7 @@ the work to specific skills, references, files, steps, and uncertainties.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/e12ae1b2-0e91-4c6b-94a7-39a9555bc538" target=”_blank”>
+      <a href="https://github.com/user-attachments/assets/ddcdebc4-9050-4614-b9ac-14f484620a99" target=”_blank”>
         <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />
@@ -74,7 +74,7 @@ containers, operating systems, and SkillTrace versions.
       <sub>SkillTrace Consistency Check</sub>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-run-details-3.webp" height="250px"><br>
+      <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-timeline.webp" height="250px"><br>
       <sub>Run Timeline</sub>
     </td>
   </tr>
@@ -374,7 +374,7 @@ Only one trace session can be active at a time. `skilltrace run` and
 For your first run, just type:
 
 ```bash
-skilltrace run -- codex
+skilltrace run -- <agent> ...
 ```
 
 This enables all available probing methods.
@@ -389,9 +389,9 @@ modes to see whether the agent keeps working as expected.
 SkillTrace supports three modes:
 
 ```bash
-skilltrace run --mode full -- codex
-skilltrace run --mode passive_reflection -- codex
-skilltrace run --mode passive_only -- codex
+skilltrace run --mode full -- <agent> ...
+skilltrace run --mode passive_reflection -- <agent> ...
+skilltrace run --mode passive_only -- <agent> ...
 ```
 
 - `full`: passive file access, live semantic MCP declarations, and final
