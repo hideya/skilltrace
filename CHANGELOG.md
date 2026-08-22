@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-### Changed
+## [0.3.2] - 2026-08-23
 
+- Show event types in compact run timeline
 - Make compact view of run details page default
 - Minor improvements in README.md
 
