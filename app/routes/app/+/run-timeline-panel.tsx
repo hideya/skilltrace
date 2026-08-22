@@ -3,10 +3,10 @@ import { skillPathFromRoot } from '~/lib/skill-path'
 import { AnimatedDisclosure } from '~/ui/animated-disclosure'
 import { JsonBlock, SectionSummaryHeader } from './run-detail-ui'
 
-const timelineModes = ['detailed', 'compact'] as const
+const timelineModes = ['compact', 'detailed'] as const
 
 export function Timeline({ events }: TimelineProps) {
-  let [mode, setMode] = useState<TimelineMode>('detailed')
+  let [mode, setMode] = useState<TimelineMode>('compact')
   let compact = mode === 'compact'
 
   return (
@@ -24,7 +24,7 @@ export function Timeline({ events }: TimelineProps) {
                 className={`btn join-item font-normal btn-xs ${
                   mode === option
                     ? 'border-indigo-500 bg-indigo-500 text-white'
-                    : 'btn-outline border-indigo-500 text-indigo-600'
+                    : 'border-indigo-500 btn-outline text-indigo-600'
                 }`}
                 key={option}
                 onClick={() => setMode(option)}

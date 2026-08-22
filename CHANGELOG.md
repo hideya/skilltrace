@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
+- Make compact view of run details page default
 - Minor improvements in README.md
 
 ## [0.3.1] - 2026-07-27
