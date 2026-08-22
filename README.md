@@ -14,7 +14,7 @@ the work to specific skills, references, files, steps, and uncertainties.
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/ddcdebc4-9050-4614-b9ac-14f484620a99" target=”_blank”>
+      <a href="https://github.com/user-attachments/assets/5958429c-e98b-43e9-a872-329998b2e0f6" target=”_blank”>
         <img src="https://raw.githubusercontent.com/hideya/skilltrace/main/docs/images/skilltrace-video-cover.webp" height="250px" />
       </a>
       <br />

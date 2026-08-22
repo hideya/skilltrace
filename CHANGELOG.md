@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-08-23
+
+### Changed
+
+- Replace Arctic OAuth helper with local implementation
+
 ## [0.3.2] - 2026-08-23
+
+### Changed
 
 - Show event types in compact run timeline
 - Make compact view of run details page default
