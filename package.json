@@ -72,7 +72,6 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@react-router/node": "^7.18.1",
     "acorn": "^8.17.0",
-    "arctic": "^3.7.0",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
