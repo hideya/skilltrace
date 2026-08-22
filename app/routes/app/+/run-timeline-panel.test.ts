@@ -77,6 +77,8 @@ describe('Timeline', () => {
     expect(markup).toContain('type-fix/')
     expect(markup).toContain('SKILL.md')
     expect(markup).toContain('skill_file_read')
+    expect(markup).toContain('font-mono font-semibold text-teal-500')
+    expect(markup).toContain('font-mono text-sm text-teal-500')
     expect(markup.indexOf('SKILL.md')).toBeLessThan(
       markup.indexOf('skill_file_read'),
     )

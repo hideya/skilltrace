@@ -103,14 +103,18 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
             <span
               className={`min-w-0 truncate text-sm ${
                 name
-                  ? `font-mono ${eventFileNameClass(event)}`
+                  ? `font-mono font-semibold ${eventFileNameClass(event)}`
                   : eventTitleClass(event)
               }`}
             >
               {label}
             </span>
             {eventTypeLabel ? (
-              <span className="shrink-0 font-mono text-sm text-base-content/50">
+              <span
+                className={`shrink-0 font-mono text-sm ${eventFileNameClass(
+                  event,
+                )}`}
+              >
                 {eventTypeLabel}
               </span>
             ) : null}
