@@ -101,13 +101,7 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
             title={fullLabel}
           >
             <span
-              className={`text-sm ${
-                name
-                  ? `shrink-0 font-mono font-semibold ${eventFileNameClass(
-                      event,
-                    )}`
-                  : eventTitleClass(event)
-              }`}
+              className={compactPrimaryLabelClass(event, name, operationKind)}
             >
               {label}
             </span>
@@ -151,6 +145,20 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
       <EventCard event={event} />
     </AnimatedDisclosure>
   )
+}
+
+function compactPrimaryLabelClass(
+  event: any,
+  primaryLabel: string | null,
+  operationKind: string | null,
+) {
+  if (!primaryLabel) return `text-sm ${eventTitleClass(event)}`
+  if (operationKind) {
+    return `min-w-0 truncate text-sm font-mono font-normal ${eventFileNameClass(
+      event,
+    )}`
+  }
+  return `shrink-0 text-sm font-mono font-semibold ${eventFileNameClass(event)}`
 }
 
 function compactEventTypeForEvent(event: any, primaryLabel: string | null) {
