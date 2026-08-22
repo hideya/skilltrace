@@ -1,6 +1,6 @@
 {
   "name": "skilltrace",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local observability for AI agent skill usage",
   "keywords": [
     "agent",
