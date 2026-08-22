@@ -58,6 +58,30 @@ describe('Timeline', () => {
     expect(markup).toContain('Compact')
   })
 
+  test('shows event type beside compact file labels', () => {
+    let markup = renderToStaticMarkup(
+      createElement(Timeline, {
+        events: [
+          {
+            id: 1,
+            timestamp: '2026-07-23T06:00:48.338Z',
+            source: 'passive_file_harness',
+            event_type: 'skill_file_read',
+            skill_path: '.agents/skills/type-fix/SKILL.md',
+            payload: {},
+          },
+        ],
+      }),
+    )
+
+    expect(markup).toContain('type-fix/')
+    expect(markup).toContain('SKILL.md')
+    expect(markup).toContain('skill_file_read')
+    expect(markup.indexOf('SKILL.md')).toBeLessThan(
+      markup.indexOf('skill_file_read'),
+    )
+  })
+
   test('shows tool, operation kind, and known outcome above an operation', () => {
     let markup = renderToStaticMarkup(
       createElement(Timeline, {
@@ -86,7 +110,7 @@ describe('Timeline', () => {
     expect(markup).toContain('SKILL.md')
     expect(markup).toContain('failed')
     expect(markup).toContain('text-amber-500')
-    expect(markup).toContain('font-normal opacity-70')
+    expect(markup).toContain('text-amber-500 opacity-70')
     expect(markup).toContain('font-semibold text-amber-500')
     expect(markup.indexOf('exec_command')).toBeLessThan(
       markup.indexOf('file_read'),
@@ -94,15 +118,7 @@ describe('Timeline', () => {
     expect(markup.indexOf('file_read')).toBeLessThan(markup.indexOf('failed'))
     expect(markup.indexOf('file_read')).toBeLessThan(markup.indexOf('.agents/'))
     expect(markup.indexOf('.agents/')).toBeLessThan(markup.indexOf('failed'))
-    expect(markup.indexOf('failed')).toBeLessThan(
-      markup.indexOf('execution_operation_observed'),
-    )
-    expect(markup.indexOf('file_read')).toBeLessThan(
-      markup.indexOf('execution_operation_observed'),
-    )
-    expect(markup.indexOf('exec_command')).toBeLessThan(
-      markup.indexOf('execution_operation_observed'),
-    )
+    expect(markup).not.toContain('execution_operation_observed')
   })
 
   test('shows file-edit targets but omits an unknown outcome', () => {

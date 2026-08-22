@@ -79,8 +79,10 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
   let outcome = outcomeForEvent(event)
   let process = name ? null : observedProcessForEvent(event)
   let label = name || event.event_type
+  let eventTypeLabel = compactEventTypeForEvent(event, name)
   let fullLabel = [
     label,
+    eventTypeLabel,
     operationKind,
     artifactRefs.join(', '),
     outcome,
@@ -107,6 +109,11 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
             >
               {label}
             </span>
+            {eventTypeLabel ? (
+              <span className="shrink-0 font-mono text-sm text-base-content/50">
+                {eventTypeLabel}
+              </span>
+            ) : null}
             {operationKind ? (
               <span className="shrink-0 font-mono text-sm font-semibold text-amber-500">
                 {operationKind}
@@ -138,6 +145,12 @@ function CompactTimelineItem({ event }: TimelineItemProps) {
       <EventCard event={event} />
     </AnimatedDisclosure>
   )
+}
+
+function compactEventTypeForEvent(event: any, primaryLabel: string | null) {
+  if (!primaryLabel) return null
+  if (event.event_type === 'execution_operation_observed') return null
+  return event.event_type
 }
 
 function TimelineItem({ event }: TimelineItemProps) {
