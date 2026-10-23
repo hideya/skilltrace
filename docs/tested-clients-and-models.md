@@ -1,6 +1,6 @@
 # Tested Clients And Models
 
-Status: living compatibility and validation ledger, current through 2026-07-23
+Status: living compatibility and validation ledger, current through 2026-10-23
 
 This document records concrete SkillTrace trials by agent client, client
 version, model recorded in the agent execution log, instruction profile, and
@@ -22,6 +22,7 @@ as Linux validation rows.
 | Level | Meaning |
 | --- | --- |
 | End-to-end | `skilltrace start`, agent work, MCP/passive tracing, `skilltrace stop`, execution-log collection, storage, and UI inspection were exercised |
+| CLI and log | `skilltrace run`, agent work, automatic stop, stored events, source-log comparison, and server-rendered pages were checked; visual UI inspection remains manual |
 | Execution-log | Matching, privacy projection, normalized events, collection summary, and UI identity were exercised against a real session |
 | Format inspection | A real agent log file was inspected safely, but the complete current workflow was not validated for that combination |
 
@@ -43,6 +44,15 @@ as Linux validation rows.
 | 2026-07-23 | Claude Code | `2.1.218` | `claude-sonnet-5` | `claude_code` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-07-05` | Four evidence streams; two execution-log skill/reference events, seven operations, stable source, and high-confidence match |
 | 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-47-54` | High-confidence stable match; the first-pass adapter exposed structured `activate_skill` but did not yet promote it, leaving the skill entrypoint without positive execution-log evidence |
 | 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-54-17` | Three execution-log evidence events and ten operations; recorded both activation and a separate direct skill read with no unsupported calls or warnings |
+| 2026-10-23 | Codex CLI | `0.145.0` | `gpt-5.6-sol` | `agents` | CLI and log | `compat-2026-10-23-codex-UwSL39-2026-10-23-13-22-17` | High-confidence complete match; seven operations, including context-only skill/reference reads with unknown outcomes; MCP, reflection, and passive reads present; consistency pass |
+| 2026-10-23 | Claude Code | `2.1.218` | `claude-sonnet-5` | `claude_code` | CLI and log | `compat-2026-10-23-claude-hzCzxj-2026-10-23-13-21-04` | High-confidence stable match; two positive reads and nine operations; all four streams present; consistency pass |
+| 2026-10-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | CLI and log | `compat-2026-10-23-gemini-ap2mCz-2026-10-23-13-25-07` | Medium-confidence stable match; two positive reads and eight operations; MCP/reflection present, passive reads absent; consistency warning; shell command outcomes incorrectly follow tool status |
+
+The October trials used the installed CLI versions, without upgrading them.
+They found a Gemini shell-outcome interpretation bug, not a general failure to
+discover or parse the logs. See the
+[2026-10-23 compatibility recheck](./agent-log-compatibility-2026-10-23.md)
+for source-level findings, setup issues, and remaining verification limits.
 
 ## Additional Format Observations
 

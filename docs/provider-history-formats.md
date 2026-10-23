@@ -21,6 +21,11 @@ Concrete client, version, model, and validation combinations are tracked
 separately in
 [Tested Clients And Models](./tested-clients-and-models.md).
 
+The [2026-10-23 compatibility recheck](./agent-log-compatibility-2026-10-23.md)
+confirmed readable logs for the installed clients, but found that Gemini shell
+tool success can conceal a nonzero command exit. That outcome-mapping issue
+remains open; see the report before interpreting Gemini verification outcomes.
+
 ## Scope And Date
 
 The initial observations were made on one macOS machine on 2026-07-21. The
