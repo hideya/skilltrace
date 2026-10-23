@@ -1,6 +1,8 @@
 # Agent Execution Log Compatibility Recheck: 2026-10-23
 
-Status: investigation complete; Gemini shell-outcome correction remains open.
+Status: investigation complete; the Gemini shell-outcome correction was
+confirmed in a later live run. A separate passive-probe coverage concern after
+agent CLI upgrades remains unexplained.
 
 ## Scope
 
@@ -26,13 +28,70 @@ each trace and removed its temporary instrumentation.
 | --- | --- | --- | --- | --- | --- |
 | Codex / `gpt-5.6-sol` | 0; two context-only file reads | 7 | High / explicit complete | Passive, MCP, reflection present | Pass |
 | Claude / `claude-sonnet-5` | 2 | 9 | High / stable at stop | Passive, MCP, reflection present | Pass |
-| Gemini / `gemini-3.5-flash` | 2 | 8 | Medium / stable at stop | MCP and reflection present; no passive reads in final trial | Warning |
+| Gemini / `gemini-3.5-flash` | 2 | 8 | Medium / stable at stop | Fresh-directory recheck confirmed passive, MCP, and reflection streams | Pass |
 
 Representative run IDs are recorded in the
 [validation ledger](./tested-clients-and-models.md). Their detail pages returned
 HTTP 200 with Timeline and Agent log sections. Consistency rows were checked
 using the application matrix function against stored events. Visual inspection
 of the pages remains a manual follow-up.
+
+The original Gemini representative run had no passive events, but a later
+brand-new demo directory captured them successfully. That absence was a test
+alignment issue in that earlier trial; it did not establish a Gemini-specific
+passive-probe limitation. A later post-upgrade recheck below found sparse
+passive events across all three clients, so passive coverage should not be
+considered settled.
+
+## Follow-up After Agent CLI Updates
+
+Three later runs used the same recorded target root,
+`/Users/hideya/tmp/type-fix-demo`, with the shared macOS probe process `72389`
+attached throughout. The run metadata records Codex CLI `0.164.0`, Claude Code
+`2.1.309`, and Gemini CLI `0.65.0` (verified separately with `gemini --version`,
+because Gemini's session log does not record its CLI version). Their models
+were `gpt-6-luna`, `claude-haiku-5-5`, and `gemini-3.8-flash`, respectively.
+
+| Client | Run | Passive skill reads | Agent-log observations |
+| --- | --- | --- | --- |
+| Gemini CLI `0.65.0` | `type-fix-demo-ks2l3r-2026-10-23-15-50-35` | One: `SKILL.md`; no passive reference read | Two positive skill/reference reads; nine operations; typechecks `failed`, `failed`, `unknown` |
+| Claude Code `2.1.309` | `type-fix-demo-ks2l3r-2026-10-23-15-54-26` | None | Two positive skill/reference reads; nine operations; typechecks `failed`, `success`, `success` |
+| Codex CLI `0.164.0` | `type-fix-demo-ks2l3r-2026-10-23-15-59-49` | None | Skill-path reads appear as context-only operations; seven operations; all three typecheck outcomes `unknown` |
+
+The shared probe's attach records and PID were present for each run, but that
+only confirms attachment, not complete OS-level event coverage. The same target
+pathname was reused; the logs do not establish whether the directory contents
+or client-side caches were reset between trials. Since the previous documented
+trials captured passive reads for all three clients and these newer client
+versions yielded only one across the three runs, a CLI-update-related change is
+a plausible lead. It is not yet a demonstrated cause: the probe log does not
+identify a lost-event reason, and the clients may have changed their file
+access strategy, process structure, or caching behavior. OS disk caching alone
+would not normally suppress an `open` operation from `fs_usage`.
+
+Treat passive events as best-effort observations. In particular, no passive
+event is not evidence that the client did not read a file. A useful next
+diagnostic would be a controlled before/after run on the same fixture with
+client versions recorded and the probe's raw `fs_usage` lines correlated to
+the relevant file paths and processes.
+
+### Codex Command Outcomes
+
+The newer Codex rollout stores each `custom_tool_call_output` as text blocks.
+For the three typechecks, two outputs visibly contained TypeScript diagnostics;
+the third contained no diagnostics. None included an explicit exit code or
+structured success field. SkillTrace therefore stores all three normalized
+outcomes as `unknown`. The wrapper's overall exit code of zero describes the
+Codex process, not each nested command, and should not be applied to individual
+typechecks. This differs from the earlier tested Codex envelope, whose printed
+result object exposed per-command exit codes. The visible output text is useful
+for investigation but is not currently retained or used to infer command
+success.
+
+The Gemini typecheck outcomes in this follow-up (`failed`, `failed`,
+`unknown`) confirm the updated shell-outcome parser against a live newer CLI
+session. The final `unknown` is intentional because that command result omitted
+explicit exit metadata.
 
 ## Codex
 
@@ -78,7 +137,7 @@ on MCP active-session resolution. The returned run ID appearing in tool results
 does not currently upgrade that match. Gemini's log did not provide a CLI
 version; 0.46.0 was verified separately with `gemini --version`.
 
-### Open Bug: Tool Success Is Not Command Success
+### Corrected: Tool Success Is Not Command Success
 
 Both Gemini trials demonstrated this shape in the actual source:
 
@@ -100,31 +159,17 @@ Both Gemini trials demonstrated this shape in the actual source:
 
 This is a sanitized structural example, not retained raw compiler output.
 `status: success` means the tool completed; the child command still failed.
-The current adapter uses only `call.status`, so all three typecheck operations
-were stored as successful. The final successful command omitted the `Exit Code`
-line altogether. The existing synthetic test fixture covers tool-level failure
-but does not catch this successful-tool/failed-command combination.
+Before correction, the adapter used only `call.status`, so all three typecheck
+operations were stored as successful. The final successful command omitted the
+`Exit Code` line altogether.
 
-The next correction should distinguish tool completion from shell command
-outcome, extract supported exit metadata conservatively, and keep unknown
-outcomes when command success cannot be established. Add sanitized regression
-coverage for nonzero exit, zero exit, and missing exit metadata. Do not persist
-raw command output to solve this problem. Existing run records will retain their
-original outcomes unless explicitly reprocessed; a fresh run should verify the
-correction.
-
-### Passive Observation Gap
-
-The first Gemini trial (`compat-2026-10-23-gemini-ap2mCz-2026-10-23-13-23-05`)
-captured passive reads and log reads, but MCP was unavailable. The final trial
-captured MCP, reflection, and log reads, but no passive events. The shared probe
-log confirms attachment and detachment for the final run, with no read events
-between them. Its deduplication key includes the run ID, so this is not explained
-by a shared cross-run deduplication key. The cause remains unverified.
-
-The final consistency warning is appropriate: positive Agent log evidence must
-not fill in missing passive evidence or change the verdict. This trial does not
-establish reliable four-stream capture for Gemini.
+The adapter now reads the structured `functionResponse.response.output` only to
+recognize an `Exit Code: <number>` marker. A zero code projects `success`, and a
+nonzero code projects `failed`; a successful tool call without explicit exit
+metadata projects `unknown`. The output itself is never stored in projected
+events, summaries, or the database. Sanitized regression cases cover nonzero,
+zero, and missing exit metadata. Existing run records retain their original
+outcomes; a fresh Gemini run should verify the correction against a live log.
 
 ## Setup Findings
 

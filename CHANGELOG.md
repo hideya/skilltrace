@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Update runtime and development dependencies within existing version ranges
+- Document compatibility observations from upgraded agent CLIs and clarify that passive probing is best-effort
+
+### Fixed
+
+- Derive Gemini shell command outcomes from explicit exit codes in recorded tool results; keep missing outcomes unknown
 
 ## [0.3.3] - 2026-08-23
 

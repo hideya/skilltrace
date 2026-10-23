@@ -46,13 +46,21 @@ as Linux validation rows.
 | 2026-07-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | End-to-end | `type-fix-demo-U44e2p-2026-07-23-12-54-17` | Three execution-log evidence events and ten operations; recorded both activation and a separate direct skill read with no unsupported calls or warnings |
 | 2026-10-23 | Codex CLI | `0.145.0` | `gpt-5.6-sol` | `agents` | CLI and log | `compat-2026-10-23-codex-UwSL39-2026-10-23-13-22-17` | High-confidence complete match; seven operations, including context-only skill/reference reads with unknown outcomes; MCP, reflection, and passive reads present; consistency pass |
 | 2026-10-23 | Claude Code | `2.1.218` | `claude-sonnet-5` | `claude_code` | CLI and log | `compat-2026-10-23-claude-hzCzxj-2026-10-23-13-21-04` | High-confidence stable match; two positive reads and nine operations; all four streams present; consistency pass |
-| 2026-10-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | CLI and log | `compat-2026-10-23-gemini-ap2mCz-2026-10-23-13-25-07` | Medium-confidence stable match; two positive reads and eight operations; MCP/reflection present, passive reads absent; consistency warning; shell command outcomes incorrectly follow tool status |
+| 2026-10-23 | Gemini CLI | `0.46.0` | `gemini-3.5-flash` | `agents` | CLI and log | `compat-2026-10-23-gemini-ap2mCz-2026-10-23-13-25-07` | Medium-confidence stable match; two positive reads and eight operations; this run prompted a later shell-outcome parser correction. A fresh-directory recheck then confirmed passive, MCP, and reflection streams together |
+| 2026-10-23 | Gemini CLI | `0.65.0` | `gemini-3.8-flash` | `agents` | CLI and log | `type-fix-demo-ks2l3r-2026-10-23-15-50-35` | Two positive execution-log reads and nine operations; live shell-outcome parser result `failed`, `failed`, `unknown`; only one passive `SKILL.md` read |
+| 2026-10-23 | Claude Code | `2.1.309` | `claude-haiku-5-5` | `agents` | CLI and log | `type-fix-demo-ks2l3r-2026-10-23-15-54-26` | Two positive execution-log reads and nine operations; no passive skill reads in this run |
+| 2026-10-23 | Codex CLI | `0.164.0` | `gpt-6-luna` | `agents` | CLI and log | `type-fix-demo-ks2l3r-2026-10-23-15-59-49` | Seven operations; per-command exit metadata was absent, leaving typecheck outcomes unknown; no passive skill reads in this run |
 
 The October trials used the installed CLI versions, without upgrading them.
-They found a Gemini shell-outcome interpretation bug, not a general failure to
-discover or parse the logs. See the
+They found a Gemini shell-outcome interpretation bug, which was corrected with
+regression coverage, not a general failure to discover or parse the logs. See the
 [2026-10-23 compatibility recheck](./agent-log-compatibility-2026-10-23.md)
 for source-level findings, setup issues, and remaining verification limits.
+The later runs above used newer clients. Gemini's CLI version was checked
+separately after the run because its session log omits that field. The probe was
+attached during all three later runs but captured only one passive skill read;
+this is a version-correlated observation, not proof that the CLI updates caused
+the reduced coverage.
 
 ## Additional Format Observations
 

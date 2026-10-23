@@ -419,6 +419,12 @@ entrypoint-only scans as neutral `discovered` evidence unless later semantic,
 reflection, or reference-file evidence shows material use. See
 [`docs/passive-skill-discovery.md`](./docs/passive-skill-discovery.md).
 
+Passive probing is best-effort: a missing event does not establish that the
+agent did not read a file. Client updates can change how files are accessed, and
+probe coverage should be rechecked after agent CLI upgrades. See the
+[October 2026 compatibility recheck](./docs/agent-log-compatibility-2026-10-23.md)
+for a recent version-related observation.
+
 ## Manual Start And Stop
 
 For most foreground agent tasks, use `skilltrace run`. The separate

@@ -258,7 +258,10 @@ function projectToolCall(
     return 'ignored'
   }
 
-  let outcome = toolOutcome(call.status)
+  let outcome =
+    call.name === 'run_shell_command'
+      ? shellCommandOutcome(call)
+      : toolOutcome(call.status)
 
   if (call.name === 'activate_skill') {
     let filePath = skillFileForName(
@@ -632,6 +635,7 @@ function toolCalls(row: ParsedRow) {
       status: stringValue(call.status),
       timestamp: timestampValue(call.timestamp),
       args: jsonObject(call.args) ?? {},
+      result: call.result,
     }))
 }
 
@@ -936,6 +940,33 @@ function toolOutcome(value?: string): Outcome {
   return 'unknown'
 }
 
+function shellCommandOutcome(call: GeminiToolCall): Outcome {
+  let exitCode = shellExitCode(call.result, call.id)
+  if (exitCode !== undefined) return exitCode === 0 ? 'success' : 'failed'
+
+  let outcome = toolOutcome(call.status)
+  return outcome === 'success' ? 'unknown' : outcome
+}
+
+function shellExitCode(value: unknown, callId: string) {
+  if (!Array.isArray(value)) return undefined
+
+  for (let item of value) {
+    let response = jsonObject(jsonObject(item)?.functionResponse)
+    if (stringValue(response?.id) !== callId) continue
+    if (stringValue(response?.name) !== 'run_shell_command') continue
+
+    let output = stringValue(jsonObject(response?.response)?.output)
+    let match = output?.match(/(?:^|\n)Exit Code:\s*(\d+)\b/)
+    if (!match) continue
+
+    let code = Number(match[1])
+    if (Number.isSafeInteger(code)) return code
+  }
+
+  return undefined
+}
+
 function unique<T>(values: (T | undefined)[]): T[] {
   return [...new Set(values.filter((value): value is T => value !== undefined))]
 }
@@ -1040,6 +1071,7 @@ type GeminiToolCall = {
   status?: string
   timestamp?: string
   args: Record<string, unknown>
+  result?: unknown
 }
 
 type ProjectionContext = {

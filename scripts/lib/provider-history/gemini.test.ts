@@ -26,18 +26,18 @@ describe('Gemini CLI provider history adapter', () => {
     expect(result.model).toBe('gemini-3.5-flash')
     expect(result.lastUpdated).toBe('2026-07-20T10:02:00.000Z')
     expect(result.evidenceCount).toBe(2)
-    expect(result.operationCount).toBe(5)
+    expect(result.operationCount).toBe(6)
     expect(result.operationCounts).toEqual({
       file_read: 2,
       file_edit: 1,
-      typecheck: 2,
+      typecheck: 3,
     })
     expect(result.circularCallCount).toBe(1)
     expect(result.unsupportedCallCount).toBe(0)
     expect(result.duplicateCallCount).toBe(1)
-    expect(result.recognizedRecordCount).toBe(6)
+    expect(result.recognizedRecordCount).toBe(7)
     expect(result.intentionallyIgnoredRecordCount).toBe(4)
-    expect(result.toolCallRecordCount).toBe(9)
+    expect(result.toolCallRecordCount).toBe(10)
 
     expect(
       result.events.map((event) => ({
@@ -88,6 +88,12 @@ describe('Gemini CLI provider history adapter', () => {
         path: undefined,
         artifacts: [],
         outcome: 'success',
+      },
+      {
+        type: 'execution_operation_observed',
+        path: undefined,
+        artifacts: [],
+        outcome: 'unknown',
       },
     ])
 
@@ -167,6 +173,9 @@ describe('Gemini CLI provider history adapter', () => {
       'PRIVATE_TYPECHECK_FAILURE_CANARY',
       'PRIVATE_STDERR_CANARY',
       'PRIVATE_STDOUT_CANARY',
+      'PRIVATE_UNKNOWN_RESPONSE_CANARY',
+      'PRIVATE_UNKNOWN_DESCRIPTION_CANARY',
+      'PRIVATE_UNKNOWN_OUTPUT_CANARY',
       'PRIVATE_DIRECTORY_QUERY_CANARY',
       'PRIVATE_DIRECTORY_RESULT_CANARY',
       'PRIVATE_SEMANTIC_SUMMARY_CANARY',
@@ -212,7 +221,7 @@ describe('Gemini CLI provider history adapter', () => {
         session_kind: 'main',
       },
     })
-    expect(result.events).toHaveLength(7)
+    expect(result.events).toHaveLength(8)
   })
 
   test('fails closed when exact project sessions are ambiguous', async () => {

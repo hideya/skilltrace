@@ -96,7 +96,7 @@ describe('provider history dispatcher', () => {
 
     expect(result.status).toBe('collected')
     expect(result.summary.provider).toBe('gemini_cli')
-    expect(result.events).toHaveLength(7)
+    expect(result.events).toHaveLength(8)
   })
 })
 
